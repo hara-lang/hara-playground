@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+OUT="$ROOT/site"
+
+if [ ! -f "$ROOT/.runtime/rust/hara.wasm" ]; then
+  "$ROOT/scripts/install-runtime"
+fi
+
+rm -rf "$OUT"
+mkdir -p "$OUT"
+cp "$ROOT"/{index.html,app.css,app.js,workspaces.js,publishing.js,creative.js,editor.js,hara-amp.html,hara-amp.css,hara-amp.js,scene.js,og.png,og-hara-ribbon.png} "$OUT/"
+cp -R "$ROOT"/{assets,vendor,sources} "$OUT/"
+cp -R "$ROOT/.runtime/rust" "$OUT/runtime"
+cp -R "$ROOT/.runtime/examples" "$OUT/examples"
+node -e 'process.stdout.write(`globalThis.HARA_GITHUB_OAUTH_CLIENT_ID = ${JSON.stringify(process.env.HARA_GITHUB_OAUTH_CLIENT_ID || "")};\\n`)' > "$OUT/github-auth-config.js"
+printf 'playground.hara-lang.org\\n' > "$OUT/CNAME"

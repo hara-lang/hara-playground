@@ -1,0 +1,39 @@
+{
+  "name": "@hara-lang/ui",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "Shared framework-free UI components and editor theme for Hara",
+  "exports": {
+    "./tokens.css": "./tokens.css",
+    "./components.css": "./components.css",
+    "./studio.css": "./studio.css",
+    "./studio-shell": "./studio-shell.js",
+    "./spec-explorer.css": "./spec-explorer.css",
+    "./spec-explorer": "./spec-explorer.js",
+    "./menu-bar": "./menu-bar.js",
+    "./workspace": "./workspace.js",
+    "./workbench": "./workbench.js"
+  },
+  "files": [
+    "tokens.css",
+    "components.css",
+    "studio.css",
+    "studio-shell.js",
+    "spec-explorer.css",
+    "spec-explorer.js",
+    "menu-bar.js",
+    "workspace.js",
+    "workbench.js",
+    "favicon-48.svg",
+    "favicon-128.svg",
+    "favicon-256.svg",
+    "logo.svg",
+    "logo-white.svg",
+    "index.html",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT"
+}

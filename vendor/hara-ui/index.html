@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#020408">
+  <meta name="description" content="Hara UI shared component preview">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Hara UI — Shared Interface System">
+  <meta property="og:description" content="The canonical components, palette, and editor language used across Hara.">
+  <meta property="og:image" content="https://ui.hara-lang.org/og-hara-ui.png">
+  <meta property="og:image:width" content="1730">
+  <meta property="og:image:height" content="909">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Hara UI — Shared Interface System">
+  <meta name="twitter:description" content="The canonical components, palette, and editor language used across Hara.">
+  <meta name="twitter:image" content="https://ui.hara-lang.org/og-hara-ui.png">
+  <link rel="icon" href="./favicon-48.svg" sizes="48x48" type="image/svg+xml">
+  <link rel="icon" href="./favicon-128.svg" sizes="128x128" type="image/svg+xml">
+  <link rel="icon" href="./favicon-256.svg" sizes="256x256" type="image/svg+xml">
+  <link rel="stylesheet" href="./tokens.css">
+  <link rel="stylesheet" href="./components.css">
+  <link rel="stylesheet" href="./spec-explorer.css">
+  <title>Hara UI — Component preview</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--hara-text); background: var(--hara-abyss); font-family: var(--hara-mono); }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem clamp(1rem, 4vw, 3rem); border-bottom: 1px solid var(--hara-line-strong); background: rgba(2, 4, 8, .88); }
+    .identity { display: flex; align-items: center; gap: .7rem; letter-spacing: .13em; font-size: .72rem; }
+    .mark { width: 26px; height: 26px; object-fit: contain; filter: drop-shadow(0 0 7px rgba(49, 207, 234, .45)); }
+    .topbar a { color: var(--hara-muted); font-size: .78rem; text-decoration: none; }
+    .topbar a:hover { color: var(--hara-cyan); }
+    main { width: min(1120px, calc(100% - 2rem)); margin: 0 auto; padding: clamp(2rem, 6vw, 5rem) 0; }
+    .eyebrow { color: var(--hara-cyan); font-size: .72rem; letter-spacing: .15em; }
+    h1 { margin: .7rem 0; font: 800 clamp(2rem, 6vw, 4.5rem)/.95 var(--hara-display); letter-spacing: -.05em; }
+    .lede { max-width: 48rem; color: var(--hara-muted); font: 1rem/1.7 system-ui, sans-serif; }
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem; margin-top: 3rem; }
+    .card { grid-column: span 6; min-width: 0; padding: 1.25rem; border: 1px solid var(--hara-line); background: var(--hara-panel); }
+    .card.wide { grid-column: span 12; }
+    .card h2 { margin: 0 0 1rem; color: var(--hara-cyan-bright); font-size: .8rem; letter-spacing: .11em; }
+    .swatches { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .6rem; }
+    .swatch { min-height: 92px; padding: .6rem; display: flex; align-items: end; border: 1px solid var(--hara-line); color: var(--hara-abyss); font-size: .66rem; }
+    .swatch.cyan { background: var(--hara-cyan); } .swatch.magenta { background: var(--hara-magenta); } .swatch.violet { background: var(--hara-violet); } .swatch.amber { background: var(--hara-amber); }
+    .sample-row { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; }
+    .sample-code { min-height: 190px; }
+    #explorer { min-height: 530px; border: 1px solid var(--hara-line); }
+    @media (max-width: 720px) { .card { grid-column: span 12; } .swatches { grid-template-columns: repeat(2, 1fr); } main { width: min(100% - 1.25rem, 1120px); } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="identity"><img class="mark" src="./logo-white.svg" alt=""><span>HARA UI / 0.1</span></div>
+    <a href="https://github.com/hara-lang/hara-ui">source ↗</a>
+  </header>
+  <main>
+    <div class="eyebrow">SHARED INTERFACE SYSTEM</div>
+    <h1>One palette.<br>Every Hara surface.</h1>
+    <p class="lede">The canonical editor theme and small framework-free components used by Hara’s website, specification explorer, and browser tools.</p>
+    <section class="grid" aria-label="Component samples">
+      <article class="card">
+        <h2>PALETTE</h2>
+        <div class="swatches"><div class="swatch cyan">CYAN<br>#41F5E4</div><div class="swatch magenta">MAGENTA<br>#FF2E88</div><div class="swatch violet">VIOLET<br>#9C7BFF</div><div class="swatch amber">AMBER<br>#F5D742</div></div>
+      </article>
+      <article class="card">
+        <h2>CONTROLS</h2>
+        <div class="sample-row"><button class="hara-button" type="button">compile</button><button class="hara-button" type="button" aria-pressed="true">running</button><span class="hara-badge">draft authority</span></div>
+        <p class="lede">Shared primitives use the same focus, border, and active-state language in each property.</p>
+        <input class="hara-input" value="(defn hello [] :hara)" aria-label="Example Hara source">
+      </article>
+      <article class="card wide">
+        <h2>EDN SOURCE</h2>
+        <pre class="hara-source sample-code"><code data-edn></code></pre>
+      </article>
+      <article class="card wide">
+        <h2>WINDOW, MENUS &amp; TOOLBAR</h2>
+        <div class="hara-window">
+          <div class="hara-window-bar">
+            <span class="hara-window-title">main.hal — hara editor</span>
+            <div class="hara-window-controls" aria-label="Window controls">
+              <button class="hara-window-control close" type="button" aria-label="Close"></button>
+              <button class="hara-window-control minimize" type="button" aria-label="Minimize"></button>
+              <button class="hara-window-control zoom" type="button" aria-label="Maximize"></button>
+            </div>
+          </div>
+          <nav class="hara-menu-bar" aria-label="Application menu">
+            <details class="hara-menu"><summary>file</summary><div class="hara-menu-popover"><button class="hara-menu-item" type="button">new file <span class="hara-menu-shortcut">⌘N</span></button><button class="hara-menu-item" type="button">save <span class="hara-menu-shortcut">⌘S</span></button></div></details>
+            <details class="hara-menu"><summary>edit</summary><div class="hara-menu-popover"><button class="hara-menu-item" type="button">format form <span class="hara-menu-shortcut">⌘I</span></button><button class="hara-menu-item" type="button">find symbol <span class="hara-menu-shortcut">⌘F</span></button></div></details>
+            <details class="hara-menu"><summary>run</summary><div class="hara-menu-popover"><button class="hara-menu-item" type="button">evaluate form <span class="hara-menu-shortcut">⌃E</span></button><button class="hara-menu-item" type="button">run file <span class="hara-menu-shortcut">⌃⌃E</span></button></div></details>
+          </nav>
+          <div class="hara-toolbar" aria-label="Editor toolbar">
+            <div class="hara-toolbar-group"><button class="hara-icon-button" type="button" aria-label="New file" title="New file">＋</button><button class="hara-icon-button" type="button" aria-label="Save" title="Save">↓</button></div>
+            <span class="hara-toolbar-separator" aria-hidden="true"></span>
+            <div class="hara-toolbar-group"><button class="hara-icon-button" type="button" aria-label="Undo" title="Undo">↶</button><button class="hara-icon-button" type="button" aria-label="Redo" title="Redo">↷</button></div>
+            <span class="hara-toolbar-separator" aria-hidden="true"></span>
+            <div class="hara-toolbar-group"><button class="hara-icon-button" type="button" aria-label="Search" title="Search">⌕</button><button class="hara-icon-button" type="button" aria-label="Run file" title="Run file">▶</button></div>
+          </div>
+          <div class="hara-window-body"><span class="hara-tok-heading">(defn</span> <span class="hara-tok-atom">greeting</span> [<span class="hara-tok-atom">name</span>]<br>&nbsp;&nbsp;(<span class="hara-tok-atom">str</span> <span class="hara-tok-string">&quot;hello &quot;</span> name))</div>
+          <div class="hara-status-bar"><span>HARA L0 // READY</span><span>UTF-8 · 2 SPACES · 1:1</span></div>
+        </div>
+      </article>
+      <article class="card wide">
+        <h2>WORKSPACE TABS, SECTIONS &amp; LINKS</h2>
+        <div data-workspace-tabs>
+          <div class="hara-tabs" role="tablist" aria-label="Studio areas">
+            <button class="hara-tab" role="tab" aria-selected="true" aria-controls="code-panel">main.hal</button>
+            <button class="hara-tab" role="tab" aria-selected="false" aria-controls="patch-panel">patch</button>
+            <button class="hara-tab" role="tab" aria-selected="false" aria-controls="inspect-panel">inspector</button>
+          </div>
+          <section class="hara-tab-panel" id="code-panel" role="tabpanel">Source-first area: select a form, evaluate it, or link it to a visual anchor.</section>
+          <section class="hara-tab-panel" id="patch-panel" role="tabpanel" hidden>Canvas-first area: nodes and cables project the same structured program.</section>
+          <section class="hara-tab-panel" id="inspect-panel" role="tabpanel" hidden>
+            <details class="hara-section" open><summary>Provenance</summary><div class="hara-section-body">source/main.hal · form/greeting · scene/greeting-card</div></details>
+            <details class="hara-section"><summary>Diagnostics</summary><div class="hara-section-body">No diagnostics.</div></details>
+          </section>
+        </div>
+        <div class="hara-code-visual-actions" data-code-visual-actions aria-label="Code visual actions">
+          <button class="hara-icon-button" data-code-visual-action="link-create" title="Link selection" aria-label="Link code and visual selection">⛓</button>
+          <button class="hara-icon-button" data-code-visual-action="reveal-visual" title="Reveal visual" aria-label="Reveal visual peer">◉</button>
+          <button class="hara-icon-button" data-code-visual-action="reveal-code" title="Reveal code" aria-label="Reveal code peer">&lt;/&gt;</button>
+          <button class="hara-icon-button" data-code-visual-action="evaluate-link" title="Evaluate link" aria-label="Evaluate link">▶</button>
+          <button class="hara-icon-button" data-code-visual-action="inspect-link" title="Inspect link" aria-label="Inspect link">ⓘ</button>
+          <span class="hara-link-status" data-link-status data-state="current">LINK // CURRENT</span>
+        </div>
+      </article>
+      <article class="card wide">
+        <h2>DOCKED PATCH WORKBENCH</h2>
+        <div id="workbench"></div>
+      </article>
+      <article class="card wide">
+        <h2>SPECIFICATION EXPLORER</h2>
+        <div id="explorer"></div>
+      </article>
+    </section>
+  </main>
+  <script type="module">
+    import { createSpecExplorer, highlightSource } from "./spec-explorer.js?tree-state=2";
+    import { bindMenuBar } from "./menu-bar.js";
+    import { bindTabs, bindCodeVisualActions } from "./workspace.js";
+    import { createWorkbench } from "./workbench.js";
+    document.querySelector("[data-edn]").innerHTML = highlightSource(`{:spec/id :hal/language\n :spec/status :draft\n :spec/sections [:syntax :semantics :evidence]\n :example \"(defn greeting [name] (str \\\"hello \\\" name))\"}`, "edn");
+    createSpecExplorer(document.querySelector("#explorer"), {
+      manifestUrl: "https://specs.hara-lang.org/spec-manifest.json",
+      fileUrl: (path) => `https://specs.hara-lang.org/${path}`,
+      repositoryUrl: "https://github.com/hara-lang/hara-specs/blob/main"
+    });
+    bindMenuBar(document.querySelector(".hara-menu-bar"));
+    bindTabs(document.querySelector("[data-workspace-tabs]"));
+    const actions = document.querySelector("[data-code-visual-actions]");
+    bindCodeVisualActions(actions);
+    actions.addEventListener("hara:code-visual-action", (event) => {
+      const status = actions.querySelector("[data-link-status]");
+      status.textContent = `${event.detail.action.toUpperCase().replace("-", " ")} // READY`;
+    });
+    createWorkbench(document.querySelector("#workbench"));
+  </script>
+</body>
+</html>
