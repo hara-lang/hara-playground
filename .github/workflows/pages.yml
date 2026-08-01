@@ -1,4 +1,4 @@
-name: Deploy Playground
+name: Deploy Hara Playground
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -22,17 +22,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          submodules: recursive
-      - name: Build Playground
-        env:
-          HARA_GITHUB_OAUTH_CLIENT_ID: ${{ vars.HARA_GITHUB_OAUTH_CLIENT_ID }}
-        run: bash scripts/build-site
-      - name: Test browser workspace contracts
-        run: node --test scene.test.mjs editor.test.mjs creative.test.mjs
+          node-version: 22
+      - run: npm run check
+      - run: npm test
+      - name: Install pinned Hara runtime
+        run: npm run runtime:download
+      - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
-      - uses: actions/deploy-pages@v4
-        id: deployment
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4

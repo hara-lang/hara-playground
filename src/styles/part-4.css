@@ -1,0 +1,33 @@
+@media (max-width: 700px) {
+  html, body, #app { overflow: auto; }
+  .studio-shell { min-height: 100vh; height: auto; grid-template-rows: auto auto auto 24px; }
+  .topbar { grid-template-columns: 1fr auto; gap: 8px; padding: 8px; }
+  .repo-loader { grid-column: 1 / 3; grid-row: 2; }
+  .toolbar-actions .icon-button:first-child, .secondary-button { display: none; }
+  .workspace-strip { height: 32px; }
+  .workspace-strip span:nth-child(2), .import-progress { display: none; }
+  .workbench { display: grid; grid-template-columns: 1fr; grid-template-rows: 160px 460px 220px; min-height: 840px; }
+  .explorer { grid-column: 1; grid-row: 1; }
+  .editor-panel { grid-column: 1; grid-row: 2; }
+  .repl-panel { grid-column: 1; grid-row: 3; }
+  .preview-panel { display: none; }
+  .statusbar span:nth-child(n+3) { display: none; }
+}
+
+.repo-loader select {
+  width: 118px;
+  min-width: 96px;
+  height: 100%;
+  padding: 0 9px;
+  border: 0;
+  border-right: 1px solid var(--border);
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 10px;
+}
+.repo-loader select:disabled { opacity: .55; }
+@media (max-width: 760px) {
+  .repo-loader select { width: 100px; }
+}

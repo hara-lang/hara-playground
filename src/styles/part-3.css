@@ -1,0 +1,130 @@
+.tree-folder-label { color: var(--text); font-weight: 600; }
+.tree-file { cursor: pointer; }
+.tree-file span { overflow: hidden; text-overflow: ellipsis; }
+.tree-file svg { width: 12px; height: 12px; flex: 0 0 auto; color: var(--muted-2); }
+.tree-file:hover { background: var(--panel-3); color: var(--text); }
+.tree-file.selected { background: var(--accent-soft); color: var(--accent); }
+.tree-file.selected svg { color: var(--accent); }
+.chevron { width: 11px; color: var(--muted-2); font-size: 10px; }
+
+.editor-tabs { display: flex; overflow: hidden; border-bottom: 1px solid var(--border); background: var(--panel-2); }
+.editor-tab {
+  height: 36px;
+  max-width: 260px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 10px;
+}
+.editor-tab span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.editor-tab svg { width: 12px; height: 12px; color: var(--accent); }
+.dirty-dot { width: 7px; height: 7px; margin-left: auto; flex: 0 0 auto; border-radius: 50%; background: var(--warning); }
+.editor-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted-2);
+  font-family: var(--mono);
+  font-size: 9px;
+}
+.editor-meta span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.editor-wrap { min-height: 0; display: grid; grid-template-columns: 45px minmax(0, 1fr); background: var(--panel); }
+.line-rail {
+  padding: 14px 9px 60px 0;
+  overflow: hidden;
+  border-right: 1px solid rgba(127,145,163,.07);
+  color: var(--muted-2);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.65;
+  text-align: right;
+  user-select: none;
+}
+.line-rail span { display: block; height: 18.15px; }
+#editor {
+  width: 100%;
+  height: 100%;
+  resize: none;
+  padding: 14px 18px 60px;
+  overflow: auto;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  caret-color: var(--accent);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.65;
+  tab-size: 2;
+  white-space: pre;
+}
+#editor::selection { background: rgba(92,224,179,.2); }
+#editor:disabled { opacity: .45; }
+
+#preview { width: 100%; height: 100%; border: 0; background: #f4f1e8; }
+
+.repl-output {
+  padding: 10px 14px 18px;
+  overflow: auto;
+  background: #090e13;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.55;
+}
+:root[data-theme="light"] .repl-output { background: #f9faf9; }
+.repl-line { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 9px; white-space: pre-wrap; word-break: break-word; }
+.repl-line.input { color: var(--text); margin-top: 4px; }
+.repl-line.result { color: var(--accent); }
+.repl-line.stdout { color: var(--muted); }
+.repl-line.error { color: var(--danger); }
+.prompt { color: #9d7cff; }
+.output-marker { color: var(--muted-2); }
+.repl-form {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-top: 1px solid var(--border);
+  background: var(--panel-2);
+  color: #9d7cff;
+  font-family: var(--mono);
+  font-size: 10.5px;
+}
+.repl-form input { min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font-family: var(--mono); font-size: 10.5px; }
+.repl-form input::placeholder { color: var(--muted-2); }
+
+.statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+  padding: 0 10px;
+  overflow: hidden;
+  border-top: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--muted-2);
+  font-family: var(--mono);
+  font-size: 8.5px;
+  white-space: nowrap;
+}
+.statusbar span:first-child { margin-right: auto; }
+
+@media (max-width: 1000px) {
+  .topbar { grid-template-columns: minmax(180px, .8fr) minmax(260px, 1.2fr) auto; }
+  .brand span { display: none; }
+  .primary-button { width: 34px; padding: 0; font-size: 0; }
+  .workbench { grid-template-columns: 190px minmax(360px, 1fr); }
+  .preview-panel { display: none; }
+  .repl-panel { grid-column: 2; }
+}
