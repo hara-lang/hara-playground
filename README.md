@@ -5,11 +5,11 @@ The browser-native Hara development environment published at
 
 Hara Playground opens a local project, a canonical bundled example, or a public
 GitHub repository; persists it in the browser; boots a long-lived Hara kernel in
-a Web Worker; exposes a live REPL; and renders HTA output in a sandboxed preview.
+a Web Worker; exposes a live REPL and InstaREPL result rail; and renders HTA
+output in a sandboxed preview.
 
 ![Status: prototype](https://img.shields.io/badge/status-working%20prototype-21c78e)
 ![License: EPL 2.0](https://img.shields.io/badge/license-EPL--2.0-8b93ff)
-
 
 ## What was merged
 
@@ -39,7 +39,16 @@ modules instead of retaining a second monolithic application host. See
 - File explorer with create, edit, autosave, explicit save, and delete.
 - Active workspace restoration across browser reloads.
 - Persistent worker-backed REPL with namespace state and command history.
-- `Alt+Enter` enclosing-form evaluation and `Ctrl/Cmd+Enter` file loading.
+- Dependency-free InstaREPL evaluation of the selection, current complete form,
+  or atom line after a short idle delay.
+- An aligned live result and diagnostic rail that does not flood the ordinary
+  REPL transcript.
+- `Alt+Enter` enclosing-form evaluation, `Ctrl/Cmd+Enter` file loading, and
+  `Ctrl/Cmd+Shift+Enter` InstaREPL toggling.
+- Selectable Core HAL, Data, HTA Interface, and Inspect & Debug toolsets with
+  insertable source templates.
+- Guided activities stored as dedicated workspace files, with non-destructive
+  open/reset behaviour and executable runtime checks.
 - Official Hara WASM kernel adapter with an embedded development fallback.
 - Sandboxed HTA preview with restrictive Content Security Policy.
 - Runtime-packaged Starter, Browser Game and Music examples in production.
@@ -61,7 +70,8 @@ npm test
 npm run build
 ```
 
-The embedded evaluator is used when the official runtime is absent.
+The embedded evaluator is used when the official runtime is absent. The built-in
+activity starters and documented solutions are tested against that evaluator.
 
 ## Install the pinned official runtime
 
@@ -135,6 +145,18 @@ https://playground.hara-lang.org/?repo=owner/repository&branch=feature/name
 https://playground.hara-lang.org/#github/owner/repository
 ```
 
+## Toolsets and activities
+
+The Playground toolbar selects a toolset and filters the available guided
+activities. Tool buttons insert small HAL templates at the current selection.
+Opening an activity creates `src/activities/<activity>.hal` only when absent;
+resetting is the explicit destructive action. Activity checks execute inside the
+same worker runtime as the editor and REPL.
+
+The initial catalog lives in `src/studio/catalog.js`. See
+[InstaREPL, toolsets and activities](docs/instarepl-activities.md) for the
+selection rules, catalog schema, check execution model and extension direction.
+
 ## Repository layout
 
 ```text
@@ -143,10 +165,12 @@ hara-playground/
 ├── runtime.lock.json
 ├── runtime/                  # installed official runtime artifacts
 ├── src/
+│   ├── app/
 │   ├── editor/
 │   ├── examples/
 │   ├── github/
 │   ├── runtime/
+│   ├── studio/               # toolset and activity catalog
 │   ├── ui/
 │   ├── workspace/
 │   ├── main.js
@@ -163,6 +187,7 @@ hara-playground/
 - [Runtime adapter](docs/runtime-adapter.md)
 - [Worker protocol](docs/worker-protocol.md)
 - [Security model](docs/security.md)
+- [InstaREPL, toolsets and activities](docs/instarepl-activities.md)
 - [Migration from the original Playground](docs/migration.md)
 - [Roadmap](docs/roadmap.md)
 
