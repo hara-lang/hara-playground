@@ -177,8 +177,12 @@ export async function openActivity({ reset = false } = {}) {
 
   try {
     if (state.dirty) {
-      if (reset && state.selectedPath === activity.path) state.dirty = false;
-      else await saveCurrentFile(false);
+      if (reset && state.selectedPath === activity.path) {
+        clearTimeout(getSaveTimer());
+        state.dirty = false;
+      } else {
+        await saveCurrentFile(false);
+      }
     }
     const existing = await store.read(activity.path);
     if (reset || existing == null) await store.write(activity.path, activity.source);
