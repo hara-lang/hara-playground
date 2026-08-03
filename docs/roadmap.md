@@ -7,6 +7,10 @@
 - Canonical `project.edn`, `workspace.edn`, and `.hal` support.
 - Public GitHub project import.
 - Persistent REPL worker protocol and enclosing-form evaluation.
+- Dependency-free InstaREPL form selection, debounced evaluation and aligned
+  result/diagnostic rail.
+- Data-driven Core, Data, HTA Interface and Inspect toolsets.
+- Guided activities with dedicated workspace files and executable checks.
 - Embedded evaluator for standalone development.
 - Adapter and installer for the official Hara Studio runtime archive.
 - Sandboxed HTA preview.
@@ -16,10 +20,12 @@
 
 - Mount the browser workspace into the official kernel filesystem service.
 - Route canonical stdout, traces, and structured values into the workbench.
-- Use kernel sessions for project, scratch, tests, and disposable previews.
+- Use kernel sessions for project, scratch, tests, activities and disposable
+  previews.
 - Replace the fallback-only `hta/render` demo with canonical program/document
   host rendering.
-- Add trace-backed result gutters and value inspection.
+- Enrich the current result rail with trace identity, expandable values and
+  canonical diagnostics.
 
 ## Next — editor intelligence
 
@@ -29,6 +35,8 @@
 - Completion, hover, definitions, references, diagnostics, and formatting from a
   Hara language-service worker.
 - Macroexpansion and emitted representation views.
+- Load project- and registry-provided toolsets and activities through a
+  declarative capability model.
 
 ## Next — GitHub App
 
