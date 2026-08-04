@@ -10,6 +10,11 @@ export function clamp(value, minimum, maximum) {
   return Math.max(minimum, Math.min(Number.isFinite(number) ? number : minimum, maximum));
 }
 
+function finiteOr(value, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
 export function normaliseMobileSurface(value, fallback = "code") {
   return MOBILE_SURFACES.includes(value) ? value : fallback;
 }
@@ -20,13 +25,13 @@ export function normaliseDesktopLayout(layout = {}, availableWidth = 1280) {
   const minimumEditorWidth = 420;
   const projectMaximum = Math.min(420, width - minimumEditorWidth - 280 - dividerSpace);
   const projectWidth = clamp(
-    layout.projectWidth ?? DEFAULT_DESKTOP_LAYOUT.projectWidth,
+    finiteOr(layout.projectWidth, DEFAULT_DESKTOP_LAYOUT.projectWidth),
     170,
     Math.max(170, projectMaximum)
   );
   const outputMaximum = Math.min(620, width - minimumEditorWidth - projectWidth - dividerSpace);
   const outputWidth = clamp(
-    layout.outputWidth ?? DEFAULT_DESKTOP_LAYOUT.outputWidth,
+    finiteOr(layout.outputWidth, DEFAULT_DESKTOP_LAYOUT.outputWidth),
     260,
     Math.max(260, outputMaximum)
   );
