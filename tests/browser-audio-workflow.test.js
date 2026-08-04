@@ -20,7 +20,15 @@ test("the browser toolchain is pinned and does not alter package metadata", asyn
   assert.match(workflow, /--no-save/);
   assert.match(workflow, /--package-lock=false/);
   assert.match(workflow, /playwright install --with-deps chromium/);
-  assert.match(workflow, /run-browser-audio-test\.mjs/);
+  assert.match(workflow, /verify-browser-audio\.mjs/);
+  assert.doesNotMatch(workflow, /run-browser-audio-test\.mjs/);
+});
+
+test("the browser runner name does not match Node's default test patterns", async () => {
+  const workflow = await read(".github/workflows/browser-audio-ci.yml");
+  const path = workflow.match(/node (scripts\/[A-Za-z0-9_.-]+\.mjs)/)?.[1];
+  assert.equal(path, "scripts/verify-browser-audio.mjs");
+  assert.doesNotMatch(path, /(?:^|[\/_-])test(?:[._-]|$)|\.test\./i);
 });
 
 test("the fixture prepares silently and unlocks audio only from a click", async () => {
@@ -35,7 +43,7 @@ test("the fixture prepares silently and unlocks audio only from a click", async 
 
 test("the real-browser result covers clock continuity and authority revocation", async () => {
   const fixture = await read("tests/browser/supersonic-audio.html");
-  const runner = await read("scripts/run-browser-audio-test.mjs");
+  const runner = await read("scripts/verify-browser-audio.mjs");
   for (const marker of [
     "timerPreserved",
     "phasePreserved",
@@ -54,7 +62,7 @@ test("the real-browser result covers clock continuity and authority revocation",
 });
 
 test("the browser runner serves only normalized repository paths", async () => {
-  const runner = await read("scripts/run-browser-audio-test.mjs");
+  const runner = await read("scripts/verify-browser-audio.mjs");
   assert.match(runner, /decodeURIComponent/);
   assert.match(runner, /unsafe request path/);
   assert.match(runner, /request escaped repository root/);
