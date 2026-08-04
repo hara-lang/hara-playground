@@ -21,6 +21,7 @@ await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 await cp(resolve(root, "index.html"), resolve(output, "index.html"));
 await cp(resolve(root, "src"), resolve(output, "src"), { recursive: true });
+await copyIfPresent("public/og-hara-playground.jpg", "og-hara-playground.jpg");
 
 // Source examples make local builds useful. A downloaded canonical runtime may
 // then overlay this directory with the richer Starter/Game/Music catalog.
