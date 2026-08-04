@@ -1,0 +1,154 @@
+name: Prepare Hara runtime update
+run-name: Prepare Hara Studio runtime ${{ inputs.version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Stable Hara release version, without the v prefix
+        required: true
+        default: 0.1.2
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: hara-runtime-update-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERSION: ${{ inputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate update request
+        id: release
+        shell: bash
+        run: |
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "version must be a stable semantic version without a v prefix" >&2
+            exit 1
+          }
+          CURRENT=$(node -p 'require("./runtime.lock.json").version')
+          node -e '
+            const current = process.argv[1].split(".").map(Number);
+            const next = process.argv[2].split(".").map(Number);
+            const order = next.findIndex((part, index) => part !== current[index]);
+            if (order < 0 || next[order] < current[order]) {
+              throw new Error(`runtime ${process.argv[2]} does not advance current pin ${process.argv[1]}`);
+            }
+          ' "$CURRENT" "$VERSION"
+          BRANCH="agent/hara-runtime-${VERSION//./-}"
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            echo "branch already exists: $BRANCH" >&2
+            exit 1
+          fi
+          ASSET="hara-studio-runtime-$VERSION.tar.gz"
+          URL="https://github.com/hara-lang/hara/releases/download/v$VERSION/$ASSET"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "asset=$ASSET" >> "$GITHUB_OUTPUT"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Download and verify the immutable release asset
+        id: checksum
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/hara-runtime-release"
+          ARCHIVE="$RUNNER_TEMP/hara-runtime-release/${{ steps.release.outputs.asset }}"
+          CHECKSUM="$ARCHIVE.sha256"
+          curl --fail --location --retry 3 --output "$ARCHIVE" "${{ steps.release.outputs.url }}"
+          curl --fail --location --retry 3 --output "$CHECKSUM" "${{ steps.release.outputs.url }}.sha256"
+          EXPECTED=$(node scripts/runtime-lock.mjs checksum "$CHECKSUM")
+          ACTUAL=$(sha256sum "$ARCHIVE" | cut -d ' ' -f 1)
+          [ "$ACTUAL" = "$EXPECTED" ] || {
+            echo "release checksum mismatch: expected $EXPECTED, received $ACTUAL" >&2
+            exit 1
+          }
+          echo "archive=$ARCHIVE" >> "$GITHUB_OUTPUT"
+          echo "checksum_file=$CHECKSUM" >> "$GITHUB_OUTPUT"
+          echo "sha256=$EXPECTED" >> "$GITHUB_OUTPUT"
+
+      - name: Create the Supersonic-complete runtime lock
+        shell: bash
+        run: |
+          git switch -c "${{ steps.release.outputs.branch }}"
+          node scripts/runtime-lock.mjs create \
+            "$VERSION" \
+            "${{ steps.release.outputs.url }}" \
+            "${{ steps.checksum.outputs.checksum_file }}" \
+            runtime.lock.json \
+            --supersonic
+
+      - name: Install and validate the pinned runtime
+        env:
+          HARA_STUDIO_RUNTIME_ARCHIVE: ${{ steps.checksum.outputs.archive }}
+        run: |
+          npm run runtime:download
+          test -f runtime/rust/studio/supersonic.js
+          test -f runtime/rust/studio/hal/supersonic.hal
+          npm run validate
+
+      - name: Guard the generated change scope
+        shell: bash
+        run: |
+          mapfile -t CHANGED < <(git status --short --untracked-files=no | awk '{print $2}')
+          [ "${#CHANGED[@]}" -eq 1 ] && [ "${CHANGED[0]}" = "runtime.lock.json" ] || {
+            printf 'unexpected tracked changes:\n' >&2
+            printf '  %s\n' "${CHANGED[@]}" >&2
+            exit 1
+          }
+
+      - name: Commit the verified pin and open a draft pull request
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add runtime.lock.json
+          git commit -m "Pin Hara Studio runtime $VERSION"
+          git push -u origin "${{ steps.release.outputs.branch }}"
+
+          BODY="$RUNNER_TEMP/runtime-update-pr.md"
+          cat > "$BODY" <<EOF
+          ## What changed
+
+          - pins Hara Studio runtime \`$VERSION\`
+          - uses the immutable release asset from \`hara-lang/hara@v$VERSION\`
+          - records SHA-256 \`${{ steps.checksum.outputs.sha256 }}\`
+          - requires the canonical adapter, Supersonic provider, and Supersonic HAL namespace
+
+          ## Automated validation
+
+          The release-sync workflow:
+
+          - downloaded the archive and its official checksum file
+          - independently recomputed and matched the archive SHA-256
+          - generated the runtime lock through the validated lock schema
+          - installed the archive through the atomic pinned-runtime installer
+          - verified \`rust/studio/supersonic.js\`
+          - verified \`rust/studio/hal/supersonic.hal\`
+          - passed the complete Playground test, syntax-check, and production-build suite
+          - confirmed that \`runtime.lock.json\` is the only tracked change
+
+          The pull request remains draft for review of the immutable URL, version, digest, and payload contract.
+          EOF
+
+          gh pr create \
+            --repo "${{ github.repository }}" \
+            --base main \
+            --head "${{ steps.release.outputs.branch }}" \
+            --draft \
+            --title "Pin Hara Studio runtime $VERSION" \
+            --body-file "$BODY"
