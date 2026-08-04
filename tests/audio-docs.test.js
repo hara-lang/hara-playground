@@ -17,7 +17,7 @@ test("the audio guide covers declaration, graph, gesture and lifecycle boundarie
   for (const marker of [
     ":audio/playback",
     "gw.audio.supersonic/start",
-    "gw.audio.supersonic/update",
+    "(sonic/update graph-id node-id parameter value)",
     "AudioContext",
     "explicit user gesture",
     "Every kernel boot is a new audio authority boundary",
@@ -43,5 +43,5 @@ test("the security model keeps browser audio resources outside the worker", asyn
   const security = await read("docs/security.md");
   assert.match(security, /AudioNode/);
   assert.match(security, /presses Play/);
-  assert.match(security, /cannot inherit the first project's Play gesture/);
+  assert.match(security, /cannot inherit the\s+first project's Play gesture/);
 });
