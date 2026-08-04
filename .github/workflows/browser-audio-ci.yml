@@ -1,0 +1,46 @@
+name: Browser audio CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/browser-audio-ci.yml
+      - scripts/run-browser-audio-test.mjs
+      - tests/browser/**
+      - tests/browser-audio-workflow.test.js
+      - src/audio/**
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/browser-audio-ci.yml
+      - scripts/run-browser-audio-test.mjs
+      - tests/browser/**
+      - tests/browser-audio-workflow.test.js
+      - src/audio/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-audio-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install pinned browser test tooling
+        run: |
+          npm install --no-save --ignore-scripts --package-lock=false playwright@1.53.2
+          npx playwright install --with-deps chromium
+
+      - name: Exercise the real Web Audio path
+        run: node scripts/run-browser-audio-test.mjs
