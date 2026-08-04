@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Supersonic browser audio test</title>
+</head>
+<body>
+  <button id="authorize" type="button">Authorize audio</button>
+  <output id="status">preparing</output>
+
+  <script type="module">
+    import { SupersonicProvider } from "../../src/audio/supersonic-provider.js";
+    import { SupersonicWebAudioEngine } from "../../src/audio/web-audio-engine.js";
+
+    const graphId = "browser/audio-test";
+    const graph = {
+      "graph/id": graphId,
+      title: "Browser Audio Test",
+      nodes: [
+        {
+          id: "transport",
+          type: "control/transport",
+          label: "Transport",
+          params: { playing: false, tempo: 112, "steps-per-beat": 2 },
+          controls: [
+            { parameter: "playing", type: "boolean", label: "Playing" },
+            { parameter: "tempo", type: "number", label: "Tempo", min: 40, max: 240, step: 1, integer: true },
+            { parameter: "steps-per-beat", type: "number", label: "Steps / beat", min: 1, max: 8, step: 1, integer: true }
+          ]
+        },
+        {
+          id: "sequence",
+          type: "data/sequence",
+          label: "Sequence",
+          params: {
+            steps: [0, 7, 12, 7, 3, 10, 15, 10, 5, 12, 17, 12, 3, 10, 15, 10]
+          },
+          controls: [
+            { parameter: "steps", type: "steps", label: "Note offsets" }
+          ]
+        },
+        {
+          id: "source",
+          type: "audio/oscillator",
+          label: "Oscillator",
+          params: { waveform: "sine", root: 48, gate: 0.45 },
+          controls: [
+            { parameter: "waveform", type: "choice", label: "Waveform", choices: ["sine", "square", "saw", "triangle"] },
+            { parameter: "root", type: "number", label: "MIDI root", min: 24, max: 84, step: 1, integer: true },
+            { parameter: "gate", type: "number", label: "Gate", min: 0.05, max: 1, step: 0.01 }
+          ]
+        },
+        {
+          id: "mixer",
+          type: "audio/mixer",
+          label: "Mixer",
+          params: { volume: 0.02 },
+          controls: [
+            { parameter: "volume", type: "number", label: "Volume", min: 0, max: 1, step: 0.01 }
+          ]
+        },
+        { id: "output", type: "audio/output", label: "Browser output", params: {}, controls: [] }
+      ],
+      connections: [
+        { from: ["transport", "tick"], to: ["sequence", "tick"], kind: "control" },
+        { from: ["sequence", "note"], to: ["source", "note"], kind: "control" },
+        { from: ["source", "audio"], to: ["mixer", "audio"], kind: "audio" },
+        { from: ["mixer", "audio"], to: ["output", "audio"], kind: "audio" }
+      ]
+    };
+
+    const engine = new SupersonicWebAudioEngine();
+    const provider = new SupersonicProvider({ engine });
+    const prepared = await provider.start(graph);
+
+    globalThis.supersonicPrepared = {
+      graphId: prepared["graph/id"],
+      preparedSilently: engine.context === null && engine.playing === false,
+      status: prepared.status
+    };
+    document.querySelector("#status").value = "prepared";
+
+    document.querySelector("#authorize").addEventListener("click", async () => {
+      try {
+        await engine.authorize();
+        await provider.update(graphId, "transport", "playing", true);
+        await delay(220);
+
+        const timerBefore = engine.timer;
+        const stepBefore = engine.stepIndex;
+        const nextStepBefore = engine.nextStepTime;
+        const revisionBefore = provider.status(graphId)["active/revision"];
+
+        await provider.update(graphId, "transport", "tempo", 148);
+        const timerAfterTempo = engine.timer;
+        const stepAfterTempo = engine.stepIndex;
+        const nextStepAfterTempo = engine.nextStepTime;
+
+        await provider.update(
+          graphId,
+          "sequence",
+          "steps",
+          [0, 3, 7, 10, 12, 10, 7, 3, 0, 5, 9, 12, 14, 12, 9, 5]
+        );
+        await delay(240);
+
+        const snapshot = provider.status(graphId);
+        const contextState = engine.context?.state || "missing";
+        const clockAdvanced = engine.stepIndex !== stepBefore
+          || engine.nextStepTime > nextStepBefore;
+        const timerPreserved = timerBefore != null
+          && timerAfterTempo === timerBefore
+          && engine.timer === timerBefore;
+        const phasePreserved = stepAfterTempo === stepBefore
+          && nextStepAfterTempo === nextStepBefore;
+
+        await provider.update(graphId, "transport", "playing", false);
+        const paused = engine.playing === false && engine.timer === null;
+
+        await provider.reset({ revoke: true });
+        const contextRevoked = engine.context === null
+          && engine.authorized === false
+          && engine.playing === false;
+
+        globalThis.supersonicResult = {
+          preparedSilently: globalThis.supersonicPrepared.preparedSilently,
+          contextRunning: contextState === "running",
+          clockAdvanced,
+          timerPreserved,
+          phasePreserved,
+          paused,
+          contextRevoked,
+          revisionAdvanced: snapshot["active/revision"] > revisionBefore,
+          generation: snapshot.generation,
+          error: null
+        };
+        document.querySelector("#status").value = "complete";
+      } catch (error) {
+        globalThis.supersonicResult = {
+          error: error?.stack || error?.message || String(error)
+        };
+        document.querySelector("#status").value = "error";
+      }
+    }, { once: true });
+
+    function delay(milliseconds) {
+      return new Promise((resolve) => setTimeout(resolve, milliseconds));
+    }
+  </script>
+</body>
+</html>
