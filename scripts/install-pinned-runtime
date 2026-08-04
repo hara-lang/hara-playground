@@ -2,19 +2,48 @@
 set -euo pipefail
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-LOCK="$ROOT/runtime.lock.json"
-DEST="$ROOT/runtime"
+LOCK=${HARA_RUNTIME_LOCK:-"$ROOT/runtime.lock.json"}
+DEST=${HARA_RUNTIME_DEST:-"$ROOT/runtime"}
 ARCHIVE=${HARA_STUDIO_RUNTIME_ARCHIVE:-}
+DOWNLOADED=0
+STAGE=""
+BACKUP=""
+LISTING=""
+VERBOSE_LISTING=""
+
+cleanup() {
+  status=$?
+  set +e
+  if [ -n "$STAGE" ] && [ -e "$STAGE" ]; then rm -rf "$STAGE"; fi
+  if [ -n "$BACKUP" ] && [ -e "$BACKUP" ]; then
+    if [ ! -e "$DEST" ]; then mv "$BACKUP" "$DEST"; else rm -rf "$BACKUP"; fi
+  fi
+  if [ -n "$LISTING" ] && [ -e "$LISTING" ]; then rm -f "$LISTING"; fi
+  if [ -n "$VERBOSE_LISTING" ] && [ -e "$VERBOSE_LISTING" ]; then rm -f "$VERBOSE_LISTING"; fi
+  if [ "$DOWNLOADED" = 1 ] && [ -n "$ARCHIVE" ] && [ -e "$ARCHIVE" ]; then rm -f "$ARCHIVE"; fi
+  trap - EXIT
+  exit "$status"
+}
+trap cleanup EXIT
+trap 'exit 130' INT TERM
 
 read_lock() {
-  node -e 'const x=require(process.argv[1]); console.log(x[process.argv[2]])' "$LOCK" "$1"
+  node -e 'const fs=require("node:fs"); const x=JSON.parse(fs.readFileSync(process.argv[1], "utf8")); process.stdout.write(String(x[process.argv[2]] ?? ""))' "$LOCK" "$1"
 }
 
+node "$ROOT/scripts/runtime-lock.mjs" validate "$LOCK" >/dev/null
 VERSION=$(read_lock version)
 EXPECTED=$(read_lock sha256)
+URL=$(read_lock url)
+
 if [ -z "$ARCHIVE" ]; then
-  ARCHIVE="${RUNNER_TEMP:-/tmp}/hara-studio-runtime-$VERSION.tar.gz"
-  curl --fail --location --retry 3 --output "$ARCHIVE" "$(read_lock url)"
+  ARCHIVE="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/hara-studio-runtime-$VERSION-$$.tar.gz"
+  DOWNLOADED=1
+  curl --fail --location --retry 3 --output "$ARCHIVE" "$URL"
+fi
+if [ ! -f "$ARCHIVE" ]; then
+  echo "runtime archive not found: $ARCHIVE" >&2
+  exit 1
 fi
 
 if command -v sha256sum >/dev/null 2>&1; then
@@ -22,8 +51,77 @@ if command -v sha256sum >/dev/null 2>&1; then
 else
   ACTUAL=$(shasum -a 256 "$ARCHIVE" | cut -d ' ' -f 1)
 fi
-[ "$ACTUAL" = "$EXPECTED" ] || { echo "runtime checksum mismatch" >&2; exit 1; }
+[ "$ACTUAL" = "$EXPECTED" ] || {
+  echo "runtime checksum mismatch: expected $EXPECTED, received $ACTUAL" >&2
+  exit 1
+}
 
-rm -rf "$DEST/rust" "$DEST/examples" "$DEST/assets"
-mkdir -p "$DEST"
-tar -xzf "$ARCHIVE" -C "$DEST"
+PARENT=$(dirname "$DEST")
+mkdir -p "$PARENT"
+STAGE=$(mktemp -d "$PARENT/.hara-runtime-install.XXXXXX")
+LISTING=$(mktemp "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/hara-runtime-listing.XXXXXX")
+VERBOSE_LISTING=$(mktemp "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/hara-runtime-verbose.XXXXXX")
+
+tar -tzf "$ARCHIVE" > "$LISTING"
+tar -tvzf "$ARCHIVE" > "$VERBOSE_LISTING"
+[ -s "$LISTING" ] || { echo "runtime archive is empty" >&2; exit 1; }
+
+while IFS= read -r entry; do
+  normalized=${entry#./}
+  [ -z "$normalized" ] && continue
+  case "$normalized" in
+    /*|..|../*|*/..|*/../*|*/./*|*\\*)
+      echo "runtime archive contains an unsafe path: $entry" >&2
+      exit 1
+      ;;
+  esac
+done < "$LISTING"
+
+while IFS= read -r entry; do
+  [ -n "$entry" ] || continue
+  entry_type=${entry%"${entry#?}"}
+  case "$entry_type" in
+    -|d) ;;
+    *)
+      echo "runtime archive contains an unsupported entry type: $entry" >&2
+      exit 1
+      ;;
+  esac
+done < "$VERBOSE_LISTING"
+
+tar -xzf "$ARCHIVE" -C "$STAGE"
+UNSAFE_NODE=$(find "$STAGE" ! -type f ! -type d -print -quit)
+if [ -n "$UNSAFE_NODE" ]; then
+  echo "runtime archive contains an unsupported filesystem entry: ${UNSAFE_NODE#"$STAGE/"}" >&2
+  exit 1
+fi
+
+while IFS= read -r required; do
+  [ -n "$required" ] || continue
+  if [ ! -f "$STAGE/$required" ]; then
+    echo "runtime archive is missing required payload: $required" >&2
+    exit 1
+  fi
+done < <(node "$ROOT/scripts/runtime-lock.mjs" paths "$LOCK")
+
+if [ -f "$DEST/README.md" ] && [ ! -e "$STAGE/README.md" ]; then
+  cp "$DEST/README.md" "$STAGE/README.md"
+fi
+
+if [ -e "$DEST" ]; then
+  BACKUP=$(mktemp -d "$PARENT/.hara-runtime-backup.XXXXXX")
+  rmdir "$BACKUP"
+  mv "$DEST" "$BACKUP"
+fi
+
+if ! mv "$STAGE" "$DEST"; then
+  echo "unable to activate the validated Hara runtime" >&2
+  exit 1
+fi
+STAGE=""
+if [ -n "$BACKUP" ]; then
+  rm -rf "$BACKUP"
+  BACKUP=""
+fi
+
+printf 'Installed Hara Studio runtime %s at %s\n' "$VERSION" "$DEST"
