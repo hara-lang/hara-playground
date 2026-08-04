@@ -228,7 +228,7 @@ export function installAudioOutput(applicationRoot = document.querySelector("#ap
   root = applicationRoot;
   runtime.setBootContextProvider(async () => {
     const project = detectProjectConfiguration(await store.files());
-    await audio.configure(project.capabilities);
+    await audio.configure(project.capabilities, store.workspace);
     return { capabilities: project.capabilities };
   });
   observer = new MutationObserver(scheduleMount);

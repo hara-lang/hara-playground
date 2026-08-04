@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { midiToFrequency, normalizeWaveform, readPlaybackModel } from "../src/audio/web-audio-engine.js";
+import {
+  SupersonicWebAudioEngine,
+  midiToFrequency,
+  normalizeWaveform,
+  readPlaybackModel
+} from "../src/audio/web-audio-engine.js";
 
 test("MIDI notes map to concert pitch", () => {
   assert.equal(midiToFrequency(69), 440);
@@ -33,4 +38,34 @@ test("playback model is derived from graph parameters and one pending update", (
     volume: 0.4,
     playing: false
   });
+});
+
+test("a project reset closes the AudioContext and revokes playback authorization", async () => {
+  let closed = 0;
+  const gain = {
+    value: 0,
+    cancelScheduledValues() {},
+    setTargetAtTime() {}
+  };
+  const context = {
+    currentTime: 0,
+    destination: {},
+    createGain() {
+      return { gain, connect() { return this; } };
+    },
+    async resume() {},
+    async close() { closed += 1; }
+  };
+  const engine = new SupersonicWebAudioEngine({ contextFactory: () => context });
+
+  await engine.authorize();
+  assert.equal(engine.authorized, true);
+  assert.equal(engine.context, context);
+
+  await engine.reset({ revoke: true });
+  assert.equal(closed, 1);
+  assert.equal(engine.authorized, false);
+  assert.equal(engine.context, null);
+  assert.equal(engine.graph, null);
+  assert.equal(engine.playing, false);
 });

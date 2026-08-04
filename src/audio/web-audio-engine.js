@@ -11,6 +11,10 @@ const DEFAULT_MODEL = Object.freeze({
 const LOOKAHEAD_SECONDS = 0.12;
 const SCHEDULER_INTERVAL_MS = 25;
 
+function defaultModel() {
+  return { ...DEFAULT_MODEL, steps: [...DEFAULT_MODEL.steps], playing: false };
+}
+
 export function midiToFrequency(note) {
   return 440 * (2 ** ((Number(note) - 69) / 12));
 }
@@ -74,7 +78,7 @@ export class SupersonicWebAudioEngine {
     this.context = null;
     this.master = null;
     this.graph = null;
-    this.model = { ...DEFAULT_MODEL, steps: [...DEFAULT_MODEL.steps], playing: false };
+    this.model = defaultModel();
     this.authorized = false;
     this.playing = false;
     this.stepIndex = 0;
@@ -151,12 +155,23 @@ export class SupersonicWebAudioEngine {
     return true;
   }
 
-  async dispose() {
+  async reset({ revoke = false } = {}) {
     this.stop();
-    await this.context?.close?.();
-    this.context = null;
-    this.master = null;
-    this.authorized = false;
+    this.graph = null;
+    this.model = defaultModel();
+    if (revoke) {
+      await this.context?.close?.();
+      this.context = null;
+      this.master = null;
+      this.authorized = false;
+    } else {
+      this.applyVolume();
+    }
+    return true;
+  }
+
+  async dispose() {
+    await this.reset({ revoke: true });
   }
 
   async ensureContext() {
