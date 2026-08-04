@@ -10,6 +10,7 @@ on:
         default: 0.1.2
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -112,6 +113,7 @@ jobs:
           }
 
       - name: Commit the verified pin and open a draft pull request
+        id: pull_request
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
@@ -141,14 +143,44 @@ jobs:
           - verified \`rust/studio/hal/supersonic.hal\`
           - passed the complete Playground test, syntax-check, and production-build suite
           - confirmed that \`runtime.lock.json\` is the only tracked change
+          - explicitly dispatched the ordinary CI workflow for the generated commit
 
           The pull request remains draft for review of the immutable URL, version, digest, and payload contract.
           EOF
 
-          gh pr create \
+          PR_URL=$(gh pr create \
             --repo "${{ github.repository }}" \
             --base main \
             --head "${{ steps.release.outputs.branch }}" \
             --draft \
             --title "Pin Hara Studio runtime $VERSION" \
-            --body-file "$BODY"
+            --body-file "$BODY")
+          echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch and require ordinary branch CI
+        shell: bash
+        run: |
+          BRANCH="${{ steps.release.outputs.branch }}"
+          COMMIT=$(git rev-parse HEAD)
+          gh workflow run ci.yml --repo "${{ github.repository }}" --ref "$BRANCH"
+
+          RUN_ID=""
+          for _ in $(seq 1 30); do
+            RUN_ID=$(gh run list \
+              --repo "${{ github.repository }}" \
+              --workflow ci.yml \
+              --branch "$BRANCH" \
+              --event workflow_dispatch \
+              --limit 10 \
+              --json databaseId,headSha \
+              --jq ".[] | select(.headSha == \"$COMMIT\") | .databaseId" \
+              | head -n 1)
+            [ -n "$RUN_ID" ] && break
+            sleep 2
+          done
+          [ -n "$RUN_ID" ] || {
+            echo "unable to find the dispatched CI run for $COMMIT" >&2
+            exit 1
+          }
+          gh run watch "$RUN_ID" --repo "${{ github.repository }}" --exit-status
+          printf 'Prepared runtime update PR: %s\n' "${{ steps.pull_request.outputs.url }}"
