@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .bootstrap/part-* | base64 --decode > /tmp/hara-playground-changes.tar.gz
+          cat .bootstrap/part-* | LC_ALL=C tr -cd 'A-Za-z0-9+/=' | base64 --decode > /tmp/hara-playground-changes.tar.gz
           gzip -t /tmp/hara-playground-changes.tar.gz
           tar -xzf /tmp/hara-playground-changes.tar.gz -C "$GITHUB_WORKSPACE"
           rm -rf .bootstrap
