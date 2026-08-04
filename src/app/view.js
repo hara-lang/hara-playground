@@ -48,7 +48,6 @@ function renderResumeCard() {
 
 function renderProjectLobby() {
   return `<div class="project-lobby">
-    <div class="kernel-field" aria-hidden="true"></div>
     <header class="lobby-header">
       <a class="lobby-brand" href="./" aria-label="Hara Playground home">${haraMark("Hara Playground")}<span><strong>Hara</strong><em>Playground</em></span></a>
       <nav class="lobby-nav" aria-label="Hara links">
@@ -268,7 +267,6 @@ function renderWorkbench() {
   const activity = activityById(state.activityId) || ACTIVITIES[0];
   const repositoryUrl = state.metadata.url || (state.metadata.source === "github" ? `https://github.com/${state.metadata.owner}/${state.metadata.repository}` : null);
   return `<div class="playground-shell">
-    <div class="workbench-field" aria-hidden="true"></div>
     <header class="workbench-header hara-surface">
       <button id="projects-home-button" class="brand-button" type="button" title="Open project browser">${haraMark("Hara Playground")}<span><strong>Hara</strong><em>Playground</em></span></button>
       <div class="project-identity"><span>${icon(state.metadata.source === "github" ? "github" : "code")}</span><div><strong>${escapeHtml(sourceLabel())}</strong><small>${escapeHtml(state.metadata.branch || "browser")}${state.metadata.commit ? ` · ${escapeHtml(state.metadata.commit.slice(0, 8))}` : ""}</small></div>${repositoryUrl ? `<a href="${escapeHtml(repositoryUrl)}" target="_blank" rel="noreferrer" title="Open source repository">${icon("external")}</a>` : ""}</div>

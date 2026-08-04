@@ -1,4 +1,4 @@
-/* Project browser — one dominant kernel field, quiet material surfaces. */
+/* Project browser — quiet material surfaces. */
 .project-lobby {
   min-height: 100vh;
   position: relative;
@@ -8,25 +8,6 @@
     radial-gradient(circle at 50% -10%, color-mix(in srgb, var(--hara-spectrum-blue) 10%, transparent), transparent 38%),
     var(--hara-bg);
 }
-.kernel-field,
-.workbench-field {
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  pointer-events: none;
-  background: url("../assets/kernel-depth.svg") center / cover no-repeat;
-  opacity: .18;
-  filter: saturate(.78) contrast(.92);
-}
-.kernel-field::after,
-.workbench-field::after {
-  position: absolute;
-  inset: 0;
-  content: "";
-  background: linear-gradient(180deg, color-mix(in srgb, var(--hara-bg) 26%, transparent), var(--hara-bg) 78%);
-}
-:root[data-theme="dark"] .kernel-field,
-:root[data-theme="dark"] .workbench-field { opacity: .24; filter: saturate(.92) contrast(1.03); }
 
 .lobby-header,
 .lobby-main,
@@ -339,8 +320,6 @@ html[data-screen="workspace"] #app { width: 100%; height: 100%; overflow: hidden
   padding: 9px 10px 0;
   background: var(--hara-bg);
 }
-.workbench-field { opacity: .065; }
-.workbench-field::after { background: color-mix(in srgb, var(--hara-bg) 90%, transparent); }
 .workbench-header {
   min-width: 0;
   display: grid;
