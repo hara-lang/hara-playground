@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/browser-audio-ci.yml
-      - scripts/run-browser-audio-test.mjs
+      - scripts/verify-browser-audio.mjs
       - tests/browser/**
       - tests/browser-audio-workflow.test.js
       - src/audio/**
@@ -13,7 +13,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/browser-audio-ci.yml
-      - scripts/run-browser-audio-test.mjs
+      - scripts/verify-browser-audio.mjs
       - tests/browser/**
       - tests/browser-audio-workflow.test.js
       - src/audio/**
@@ -43,4 +43,4 @@ jobs:
           npx playwright install --with-deps chromium
 
       - name: Exercise the real Web Audio path
-        run: node scripts/run-browser-audio-test.mjs
+        run: node scripts/verify-browser-audio.mjs
