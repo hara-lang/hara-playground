@@ -145,7 +145,7 @@ make studio-build
 npm run runtime:install -- /path/to/hara-studio-runtime-VERSION
 ```
 
-The adapter expects:
+The minimum canonical adapter contract is:
 
 ```text
 runtime/rust/hara.wasm
@@ -153,9 +153,19 @@ runtime/rust/hta-worker.js
 runtime/rust/hta-shared-worker.js
 runtime/rust/host/broker.js
 runtime/rust/host/services.js
+```
+
+The Playground carries a local HAL compatibility resource for the currently
+pinned archive. A newly built, Supersonic-complete Studio archive additionally
+provides the canonical reusable provider and namespace:
+
+```text
 runtime/rust/studio/supersonic.js
 runtime/rust/studio/hal/supersonic.hal
 ```
+
+The browser-owned renderer remains in `src/audio`; packaging the canonical
+provider lets other Studio hosts consume the same Supersonic contract.
 
 ## Canonical project shape
 
