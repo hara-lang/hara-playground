@@ -149,7 +149,7 @@ test("a checksum mismatch leaves the working runtime untouched", async (t) => {
   await assertNoInstallerScratch(paths.root);
 });
 
-test("archives containing symbolic links are rejected before activation", { skip: process.platform === "win32" }, async (t) => {
+test("archives containing symbolic links are rejected before extraction", { skip: process.platform === "win32" }, async (t) => {
   const paths = await fixture();
   t.after(() => rm(paths.root, { recursive: true, force: true }));
   await writeTree(paths.source, { link: true });
@@ -159,7 +159,7 @@ test("archives containing symbolic links are rejected before activation", { skip
 
   const result = install(paths);
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /unsupported filesystem entry: rust\/hara-link\.wasm/);
+  assert.match(result.stderr, /unsupported entry type: l/);
   assert.equal(await readFile(join(paths.destination, "old-marker.txt"), "utf8"), "old runtime\n");
   await assertNoInstallerScratch(paths.root);
 });
