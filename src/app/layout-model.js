@@ -11,6 +11,7 @@ export function clamp(value, minimum, maximum) {
 }
 
 function finiteOr(value, fallback) {
+  if (value == null || value === "") return fallback;
   const number = Number(value);
   return Number.isFinite(number) ? number : fallback;
 }
