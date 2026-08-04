@@ -4,17 +4,22 @@ on:
   push:
     branches:
       - agent/visual-playground-editor
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
 
 jobs:
   materialize:
+    if: github.head_ref == 'agent/visual-playground-editor' || github.ref_name == 'agent/visual-playground-editor'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: agent/visual-playground-editor
       - name: Expand the validated source bundle
         shell: bash
         run: |
