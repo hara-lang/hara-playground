@@ -31,6 +31,6 @@ test("desktop splitters resize the project and output panels in opposite directi
 
 test("desktop layout falls back when stored preferences are invalid", () => {
   const layout = normaliseDesktopLayout({ projectWidth: "bad", outputWidth: null }, 1440);
-  assert.equal(layout.projectWidth, 170);
-  assert.equal(layout.outputWidth, 260);
+  assert.equal(layout.projectWidth, DEFAULT_DESKTOP_LAYOUT.projectWidth);
+  assert.equal(layout.outputWidth, DEFAULT_DESKTOP_LAYOUT.outputWidth);
 });
