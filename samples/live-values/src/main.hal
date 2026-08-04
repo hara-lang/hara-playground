@@ -1,0 +1,17 @@
+(ns samples.live-values)
+
+(def order
+  {:customer "Ari"
+   :items [12 18 24]})
+
+(defn total [values]
+  (apply + values))
+
+(defn view []
+  [:main {:class "preview-shell"}
+   [:article {:class "card"}
+    [:span {:class "eyebrow"} "LIVE VALUES"]
+    [:h1 (str "$" (total (get order :items)))]
+    [:p (str (get order :customer) " · " (count (get order :items)) " items")]]])
+
+(view)

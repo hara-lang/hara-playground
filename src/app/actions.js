@@ -1,6 +1,7 @@
 import {
   DEFAULT_WORKSPACE,
   STUDIO_SETTING_KEYS,
+  getCompletionTimer,
   getSaveTimer,
   renderNow as render,
   runtime,
@@ -8,7 +9,7 @@ import {
   store
 } from "./context.js";
 import { defaultProject } from "../workspace/default-project.js";
-import { importGitHubRepository } from "../github/importer.js";
+import { importGitHubRepository, parseGitHubRepository } from "../github/importer.js";
 import { detectProjectConfiguration, isHaraSource, isProjectSource } from "../workspace/project.js";
 import { formAtCursor } from "../editor/forms.js";
 import { loadExampleCatalog, loadExampleProject } from "../examples/catalog.js";
@@ -18,6 +19,7 @@ import {
   activityCheckPassed,
   toolsetById
 } from "../studio/catalog.js";
+import { featuredProject } from "../studio/projects.js";
 
 function writeSetting(key, value) {
   try {
@@ -29,6 +31,31 @@ function writeSetting(key, value) {
 
 function resetActivityRun() {
   state.activityRun = { status: "idle", checks: [], message: "" };
+}
+
+export function resetCompletion() {
+  clearTimeout(getCompletionTimer());
+  state.editor.completion = {
+    ...state.editor.completion,
+    open: false,
+    items: [],
+    selected: 0,
+    prefix: "",
+    start: 0,
+    end: 0,
+    request: state.editor.completion.request + 1,
+    line: 0,
+    column: 0
+  };
+}
+
+export function resetEditorAssist() {
+  state.editor.cursor = 0;
+  state.editor.selectionStart = 0;
+  state.editor.selectionEnd = 0;
+  state.editor.structuralMessage = "";
+  resetCompletion();
+  resetInstantEvaluation();
 }
 
 export function resetInstantEvaluation() {
@@ -43,6 +70,52 @@ export function resetInstantEvaluation() {
   };
 }
 
+export async function prepareProjectHome() {
+  let paths = await store.list();
+  if (!paths.length) {
+    store.use(DEFAULT_WORKSPACE, { source: "local", branch: null, commit: null });
+    await store.seed(defaultProject);
+    paths = await store.list();
+  }
+  state.workspace = store.workspace;
+  state.metadata = store.metadata;
+  state.home.resume = paths.length ? {
+    workspace: store.workspace,
+    metadata: { ...store.metadata },
+    fileCount: paths.length
+  } : null;
+  state.home.error = "";
+  state.screen = "projects";
+  render();
+}
+
+export async function showProjectHome({ updateLocation = true } = {}) {
+  if (state.dirty) await saveCurrentFile(false);
+  const paths = await store.list();
+  state.home.resume = paths.length ? {
+    workspace: store.workspace,
+    metadata: { ...store.metadata },
+    fileCount: paths.length
+  } : null;
+  state.screen = "projects";
+  state.home.error = "";
+  resetCompletion();
+  if (updateLocation && globalThis.history?.replaceState) {
+    globalThis.history.replaceState({}, "", globalThis.location?.pathname || "./");
+  }
+  render();
+}
+
+export async function resumeWorkspace() {
+  state.screen = "workspace";
+  state.workspace = store.workspace;
+  state.metadata = store.metadata;
+  resetEditorAssist();
+  await refreshFiles(state.selectedPath);
+  await bootRuntime();
+  return true;
+}
+
 export async function refreshFiles(selectPath = state.selectedPath) {
   state.files = await store.list();
   if (selectPath && state.files.includes(selectPath)) await selectFile(selectPath, false);
@@ -50,7 +123,7 @@ export async function refreshFiles(selectPath = state.selectedPath) {
   else {
     state.selectedPath = null;
     state.content = "";
-    resetInstantEvaluation();
+    resetEditorAssist();
   }
   render();
 }
@@ -60,7 +133,7 @@ export async function selectFile(path, shouldRender = true) {
   state.selectedPath = path;
   state.content = (await store.read(path)) ?? "";
   state.dirty = false;
-  resetInstantEvaluation();
+  resetEditorAssist();
   if (shouldRender) render();
 }
 
@@ -90,7 +163,7 @@ export async function bootRuntime() {
     state.namespace = result.namespace;
     state.runtimeKind = result.runtimeKind || state.runtimeKind;
     state.runtimeStatus = "ready";
-    appendRepl("result", `Hara runtime ready · ${sourceFiles.length} source files loaded · ${files.length} workspace files`);
+    appendRepl("result", `Hara kernel ready · ${sourceFiles.length} source files loaded · ${files.length} workspace files`);
   } catch (error) {
     state.runtimeStatus = "error";
     appendRepl("error", error.message);
@@ -169,6 +242,14 @@ export function selectActivity(activityId) {
   return true;
 }
 
+export function selectOutputTab(tab) {
+  if (tab !== "preview" && tab !== "repl") return false;
+  state.outputTab = tab;
+  writeSetting(STUDIO_SETTING_KEYS.output, tab);
+  render();
+  return true;
+}
+
 export async function openActivity({ reset = false } = {}) {
   const activity = activityById(state.activityId);
   if (!activity) return false;
@@ -190,7 +271,7 @@ export async function openActivity({ reset = false } = {}) {
     const source = (await store.read(activity.path)) ?? activity.source;
 
     if (state.runtimeStatus !== "ready") await bootRuntime();
-    if (state.runtimeStatus !== "ready") throw new Error("The Hara runtime is not ready");
+    if (state.runtimeStatus !== "ready") throw new Error("The Hara kernel is not ready");
     const result = await runtime.loadFile(activity.path, source, state.namespace);
     state.namespace = result.namespace;
 
@@ -218,7 +299,7 @@ export async function checkActivity() {
 
   try {
     if (state.runtimeStatus !== "ready") await bootRuntime();
-    if (state.runtimeStatus !== "ready") throw new Error("The Hara runtime is not ready");
+    if (state.runtimeStatus !== "ready") throw new Error("The Hara kernel is not ready");
     if (state.selectedPath === activity.path && state.dirty) await saveCurrentFile(false);
     let source = await store.read(activity.path);
     if (source == null) {
@@ -269,6 +350,7 @@ export async function openLocalWorkspace() {
   if (state.dirty) await saveCurrentFile(false);
   store.use(DEFAULT_WORKSPACE, { source: "local", branch: null, commit: null });
   await store.seed(defaultProject);
+  state.screen = "workspace";
   state.workspace = store.workspace;
   state.metadata = store.metadata;
   state.selectedPath = null;
@@ -276,14 +358,15 @@ export async function openLocalWorkspace() {
   state.dirty = false;
   state.repl = [];
   resetActivityRun();
-  resetInstantEvaluation();
+  resetEditorAssist();
+  if (globalThis.history?.replaceState) globalThis.history.replaceState({}, "", globalThis.location?.pathname || "./");
   await refreshFiles("src/app/core.hal");
   await bootRuntime();
 }
 
 export async function runCurrentFile() {
   if (!state.selectedPath || !isHaraSource(state.selectedPath)) {
-    appendRepl("error", "Select a HAL source file before loading it into the runtime");
+    appendRepl("error", "Select a HAL source file before loading it into the kernel");
     render();
     return;
   }
@@ -291,7 +374,7 @@ export async function runCurrentFile() {
   appendRepl("input", `;; loading ${state.selectedPath}`);
   render();
   try {
-    const result = await runtime.loadFile(state.selectedPath, state.content);
+    const result = await runtime.loadFile(state.selectedPath, state.content, state.namespace);
     state.namespace = result.namespace;
     appendRepl("result", `${result.display} · loaded ${state.selectedPath}`);
   } catch (error) {
@@ -300,24 +383,36 @@ export async function runCurrentFile() {
   render();
 }
 
+function updateImportProgress(progress) {
+  state.importProgress = progress.phase === "files"
+    ? `Loading files ${progress.completed}/${progress.total}${progress.path ? ` · ${progress.path}` : ""}`
+    : "Resolving repository and commit…";
+  const target = document.querySelector(".import-progress-card span, .import-progress");
+  if (target) target.textContent = state.importProgress;
+}
+
+function updateRepositoryLocation(metadata) {
+  if (!globalThis.history?.replaceState || !metadata?.owner || !metadata?.repository) return;
+  const query = new URLSearchParams({
+    repo: `${metadata.owner}/${metadata.repository}`,
+    branch: metadata.branch || "main"
+  });
+  if (metadata.path) query.set("path", metadata.path);
+  globalThis.history.replaceState({}, "", `${globalThis.location?.pathname || "./"}?${query}`);
+}
+
 export async function importRepository(value) {
-  if (!value.trim()) return false;
+  if (!value || (typeof value === "string" && !value.trim())) return false;
   let importedSuccessfully = false;
   state.importBusy = true;
+  state.home.error = "";
   state.importProgress = "Connecting to GitHub…";
   render();
   try {
-    const imported = await importGitHubRepository(value, {
-      onProgress(progress) {
-        state.importProgress = progress.phase === "files"
-          ? `Loading files ${progress.completed}/${progress.total}${progress.path ? ` · ${progress.path}` : ""}`
-          : "Reading repository metadata…";
-        const target = document.querySelector(".import-progress");
-        if (target) target.textContent = state.importProgress;
-      }
-    });
+    const imported = await importGitHubRepository(value, { onProgress: updateImportProgress });
     store.use(imported.workspace, imported.metadata);
     await store.replace(imported.files, imported.metadata);
+    state.screen = "workspace";
     state.workspace = imported.workspace;
     state.metadata = imported.metadata;
     state.selectedPath = null;
@@ -325,19 +420,27 @@ export async function importRepository(value) {
     state.dirty = false;
     state.repl = [];
     resetActivityRun();
-    resetInstantEvaluation();
+    resetEditorAssist();
+    updateRepositoryLocation(imported.metadata);
     await refreshFiles();
     await bootRuntime();
-    appendRepl("result", `Imported ${imported.files.length} files from ${imported.metadata.owner}/${imported.metadata.repository}@${imported.metadata.branch}`);
+    appendRepl("result", `Imported ${imported.files.length} files from ${imported.metadata.owner}/${imported.metadata.repository}@${imported.metadata.branch}${imported.metadata.path ? `/${imported.metadata.path}` : ""}`);
     importedSuccessfully = true;
   } catch (error) {
-    appendRepl("error", error.message);
+    state.home.error = error.message;
+    if (state.screen === "workspace") appendRepl("error", error.message);
   } finally {
     state.importBusy = false;
     state.importProgress = "";
     render();
   }
   return importedSuccessfully;
+}
+
+export async function openFeaturedProject(projectId) {
+  const project = featuredProject(projectId);
+  if (!project) return false;
+  return importRepository(project.repository);
 }
 
 export async function openExample(exampleId) {
@@ -350,12 +453,13 @@ export async function openExample(exampleId) {
     const loaded = await loadExampleProject(example, {
       onProgress(progress) {
         state.importProgress = `Loading example ${progress.completed}/${progress.total} · ${progress.path}`;
-        const target = document.querySelector(".import-progress");
+        const target = document.querySelector(".import-progress-card span, .import-progress");
         if (target) target.textContent = state.importProgress;
       }
     });
     store.use(loaded.workspace, loaded.metadata);
     await store.replace(loaded.files, loaded.metadata);
+    state.screen = "workspace";
     state.workspace = loaded.workspace;
     state.metadata = loaded.metadata;
     state.selectedPath = null;
@@ -363,12 +467,13 @@ export async function openExample(exampleId) {
     state.dirty = false;
     state.repl = [];
     resetActivityRun();
-    resetInstantEvaluation();
+    resetEditorAssist();
     await refreshFiles();
     await bootRuntime();
     appendRepl("result", `Opened ${example.title} with ${loaded.files.length} files`);
     return true;
   } catch (error) {
+    state.home.error = error.message;
     appendRepl("error", error.message);
     return false;
   } finally {
@@ -385,5 +490,13 @@ export async function loadExamples() {
     state.examples = [];
     appendRepl("error", `Examples unavailable: ${error.message}`);
   }
-  render();
+}
+
+export function describeRepositoryInput(value) {
+  try {
+    const parsed = parseGitHubRepository(value);
+    return `${parsed.owner}/${parsed.repo}${parsed.path ? `/${parsed.path}` : ""}`;
+  } catch {
+    return String(value || "");
+  }
 }

@@ -1,3 +1,5 @@
+import { completionItems, collectSourceSymbols } from "../language/completion.js";
+
 const DEFAULT_RUNTIME_ROOT = new URL("../../runtime/", import.meta.url);
 const KERNEL_NAME = "STUDIO";
 
@@ -69,6 +71,7 @@ export class CanonicalHaraRuntime {
     this.kernelName = kernelName;
     this.currentNamespace = "user";
     this.started = false;
+    this.knownSymbols = new Set();
   }
 
   async initialise() {
@@ -83,12 +86,21 @@ export class CanonicalHaraRuntime {
     if (this.started) await this.broker.close(this.kernelName).catch(() => {});
     this.started = false;
     this.currentNamespace = "user";
+    this.knownSymbols.clear();
     await this.initialise();
   }
 
   setNamespace(namespace) {
     this.currentNamespace = namespace || "user";
     return this.currentNamespace;
+  }
+
+  complete(prefix = "", _namespace = this.currentNamespace, source = "") {
+    return completionItems({
+      prefix,
+      namespaceSymbols: [...this.knownSymbols],
+      source
+    });
   }
 
   async evaluateSource(source, namespace = this.currentNamespace) {
@@ -98,6 +110,7 @@ export class CanonicalHaraRuntime {
     const scopedSource = declaredNamespace || requestedNamespace === "user"
       ? source
       : `(ns ${requestedNamespace})\n${source}`;
+    for (const symbol of collectSourceSymbols(source)) this.knownSymbols.add(symbol);
     const result = await this.broker.eval(this.kernelName, scopedSource);
     this.currentNamespace = declaredNamespace || requestedNamespace;
     return result;
