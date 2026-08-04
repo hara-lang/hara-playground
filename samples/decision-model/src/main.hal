@@ -1,0 +1,23 @@
+(ns samples.decision-model)
+
+(def signals
+  [3 4 2])
+
+(def score
+  (apply + signals))
+
+(def decision
+  (if (>= score 8)
+    "ready"
+    "review"))
+
+(println "decision" decision "score" score)
+
+(defn view []
+  [:main {:class "preview-shell"}
+   [:article {:class "card"}
+    [:span {:class "eyebrow"} "DECISION MODEL"]
+    [:h1 decision]
+    [:p (str "Current score: " score)]]])
+
+(view)

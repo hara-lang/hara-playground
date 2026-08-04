@@ -12,9 +12,27 @@ export function icon(name) {
     sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"/>',
     moon: '<path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5z"/>',
     file: '<path d="M6 2h8l4 4v16H6zM14 2v6h6"/>',
-    branch: '<circle cx="6" cy="5" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10M8 7c4 0 3-1 8-1M16 8c0 6-3 6-8 6"/>'
+    folder: '<path d="M3 6h7l2 2h9v11H3z"/>',
+    branch: '<circle cx="6" cy="5" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10M8 7c4 0 3-1 8-1M16 8c0 6-3 6-8 6"/>',
+    home: '<path d="m3 11 9-8 9 8M5 10v10h14V10M9 20v-6h6v6"/>',
+    code: '<path d="m8 8-4 4 4 4M16 8l4 4-4 4M14 4l-4 16"/>',
+    sparkles: '<path d="m12 3 1.2 3.8L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2zM5 14l.8 2.2L8 17l-2.2.8L5 20l-.8-2.2L2 17l2.2-.8zM18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8z"/>',
+    eye: '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/>',
+    list: '<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+    check: '<path d="m5 12 4 4L19 6"/>',
+    external: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 13v6H5V6h6"/>',
+    command: '<path d="M9 6V5a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3v14a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3z"/>',
+    wrap: '<path d="M4 7h10a4 4 0 0 1 0 8H8M8 12l-3 3 3 3"/>',
+    slurp: '<path d="M5 5h4v14H5M19 5h-4v14h4M10 12h4M12 10l2 2-2 2"/>',
+    barf: '<path d="M5 5h4v14H5M19 5h-4v14h4M14 12h-4M12 10l-2 2 2 2"/>',
+    format: '<path d="M4 6h16M4 10h10M4 14h16M4 18h7"/>',
+    kernel: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8 9h8M8 13h5M8 17h8"/>'
   };
   return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name] || ""}</svg>`;
+}
+
+export function haraMark(title = "Hara") {
+  return `<svg class="hara-mark" viewBox="0 0 64 64" role="img" aria-label="${escapeHtml(title)}"><path fill="currentColor" stroke="none" d="M10 8h13v18h18V8h13v48H41V38H23v18H10z"/><path class="hara-mark-signal" fill="currentColor" stroke="none" d="M27 8h10v10H27z"/></svg>`;
 }
 
 export function escapeHtml(value) {
@@ -51,7 +69,7 @@ export function renderTree(tree, prefix = "", depth = 0) {
   }).map(([name, children]) => {
     const path = prefix ? `${prefix}/${name}` : name;
     if (children !== null) {
-      return `<div class="tree-folder" style="--depth:${depth}"><div class="tree-folder-label"><span class="chevron">⌄</span>${escapeHtml(name)}</div>${renderTree(children, path, depth + 1)}</div>`;
+      return `<div class="tree-folder" style="--depth:${depth}"><div class="tree-folder-label">${icon("folder")}<span>${escapeHtml(name)}</span></div>${renderTree(children, path, depth + 1)}</div>`;
     }
     return `<button class="tree-file ${path === state.selectedPath ? "selected" : ""}" data-path="${escapeHtml(path)}" style="--depth:${depth}" title="${escapeHtml(path)}">${icon("file")}<span>${escapeHtml(name)}</span></button>`;
   }).join("");
@@ -65,4 +83,3 @@ export function renderRepl() {
     return `<div class="repl-line result"><span class="output-marker">→</span><span>${escapeHtml(entry.text)}</span></div>`;
   }).join("");
 }
-

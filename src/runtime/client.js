@@ -42,6 +42,14 @@ export class RuntimeClient extends EventTarget {
     return this.request("load-file", { path, source, namespace });
   }
 
+  complete(prefix, namespace, source = "") {
+    return this.request("complete", { prefix, namespace, source });
+  }
+
+  inspect(valueId) {
+    return this.request("inspect", { valueId });
+  }
+
   reset() {
     return this.request("reset");
   }

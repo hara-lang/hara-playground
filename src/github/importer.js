@@ -3,7 +3,23 @@ const TEXT_EXTENSIONS = new Set([
   "css", "scss", "html", "svg", "xml", "yml", "yaml", "toml", "properties", "sh", "bash", "rs", "java"
 ]);
 
+function normalizeSubpath(path) {
+  const normalized = String(path || "").replace(/^\/+|\/+$/g, "").replace(/\\/g, "/").replace(/\/{2,}/g, "/");
+  if (normalized.split("/").some((part) => part === "..")) throw new Error("GitHub project paths cannot contain '..'");
+  return normalized;
+}
+
 export function parseGitHubRepository(input) {
+  if (input && typeof input === "object") {
+    const owner = String(input.owner || "").trim();
+    const repo = String(input.repo || input.repository || "").trim().replace(/\.git$/, "");
+    if (!owner || !repo) throw new Error("A GitHub owner and repository are required");
+    const result = { owner, repo, branch: input.branch || input.ref || null };
+    const path = normalizeSubpath(input.path);
+    if (path) result.path = path;
+    return result;
+  }
+
   const value = String(input).trim();
   const shorthand = value.match(/^([\w.-]+)\/([\w.-]+?)(?:\.git)?$/);
   if (shorthand) return { owner: shorthand[1], repo: shorthand[2], branch: null };
@@ -21,6 +37,10 @@ export function parseGitHubRepository(input) {
   if (parts.length < 2) throw new Error("The GitHub URL must include an owner and repository");
   const result = { owner: parts[0], repo: parts[1].replace(/\.git$/, ""), branch: null };
   if (parts[2] === "tree" && parts[3]) result.branch = decodeURIComponent(parts.slice(3).join("/"));
+  const explicitBranch = url.searchParams.get("branch") || url.searchParams.get("ref");
+  if (explicitBranch) result.branch = explicitBranch;
+  const path = normalizeSubpath(url.searchParams.get("path"));
+  if (path) result.path = path;
   return result;
 }
 
@@ -30,6 +50,11 @@ export function repositoryFromStudioLocation(location) {
   const queryRepository = search.get("repo");
   if (queryRepository) {
     const branch = search.get("branch");
+    const path = normalizeSubpath(search.get("path"));
+    if (path) {
+      const [owner, repo] = queryRepository.replace(/^\/+|\/+$/g, "").split("/");
+      return { owner, repo, branch: branch || null, path };
+    }
     return branch
       ? `https://github.com/${queryRepository.replace(/^\/+|\/+$/g, "")}/tree/${branch}`
       : queryRepository;
@@ -121,29 +146,39 @@ export async function importGitHubRepository(input, {
   const tree = await request(`${api}/git/trees/${encodeURIComponent(commit)}?recursive=1`);
   if (tree.truncated) throw new Error("This repository is too large for the browser importer. A server-side archive importer is required.");
 
-  const entries = tree.tree.filter((entry) => shouldImport(entry, maxFileSize)).slice(0, maxFiles);
+  const prefix = parsed.path ? `${parsed.path}/` : "";
+  const scoped = tree.tree.filter((entry) => shouldImport(entry, maxFileSize) && (!prefix || entry.path.startsWith(prefix)));
+  const entries = scoped.slice(0, maxFiles);
+  if (!entries.length) {
+    throw new Error(parsed.path
+      ? `No supported project files were found under ${parsed.path}`
+      : "No supported project files were found in this repository");
+  }
   onProgress({ phase: "files", completed: 0, total: entries.length });
   let completed = 0;
   const files = await mapLimit(entries, concurrency, async (entry) => {
+    const projectPath = prefix ? entry.path.slice(prefix.length) : entry.path;
     const contentUrl = rawContentUrl(parsed.owner, parsed.repo, commit, entry.path);
     const content = await requestText(contentUrl);
     completed += 1;
-    onProgress({ phase: "files", completed, total: entries.length, path: entry.path });
-    return { path: entry.path, content };
+    onProgress({ phase: "files", completed, total: entries.length, path: projectPath });
+    return { path: projectPath, content };
   });
 
+  const workspaceSuffix = parsed.path ? `/${parsed.path}` : "";
   return {
-    workspace: `github.com/${parsed.owner}/${parsed.repo}/${branch}`,
+    workspace: `github.com/${parsed.owner}/${parsed.repo}/${branch}${workspaceSuffix}`,
     files,
     metadata: {
       source: "github",
       owner: parsed.owner,
       repository: parsed.repo,
       branch,
+      path: parsed.path || null,
       commit,
-      url: repository.html_url,
+      url: parsed.path ? `${repository.html_url}/tree/${encodeURIComponent(branch)}/${parsed.path}` : repository.html_url,
       importedAt: new Date().toISOString(),
-      skipped: tree.tree.length - entries.length
+      skipped: Math.max(0, scoped.length - entries.length)
     }
   };
 }

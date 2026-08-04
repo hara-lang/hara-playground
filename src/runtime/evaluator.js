@@ -1,6 +1,7 @@
 import { readAll } from "./reader.js";
 import { Environment, HaraRuntimeError, asName, formatValue, isNode, isTruthy, keywordKey } from "./evaluator-core.js";
 import { createBuiltins } from "./evaluator-builtins.js";
+import { completionItems } from "../language/completion.js";
 
 export class HaraRuntime {
   constructor({ onStdout = () => {}, onEffect = () => {} } = {}) {
@@ -27,6 +28,21 @@ export class HaraRuntime {
     this.currentNamespace = name || "user";
     this.ensureNamespace(this.currentNamespace);
     return this.currentNamespace;
+  }
+
+  complete(prefix = "", namespace = this.currentNamespace, source = "") {
+    const current = this.ensureNamespace(namespace || this.currentNamespace || "user");
+    const qualified = [];
+    for (const [namespaceName, environment] of this.namespaces) {
+      for (const name of environment.values.keys()) qualified.push(`${namespaceName}/${name}`);
+    }
+    return completionItems({
+      prefix,
+      builtins: [...this.builtins.keys()],
+      namespaceSymbols: [...current.values.keys(), ...qualified],
+      namespaces: [...this.namespaces.keys()],
+      source
+    });
   }
 
   writeStdout(text) {
@@ -228,6 +244,5 @@ export class HaraRuntime {
     }
   }
 }
-
 
 export { HaraRuntimeError, formatValue } from "./evaluator-core.js";

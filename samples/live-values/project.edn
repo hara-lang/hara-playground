@@ -1,0 +1,10 @@
+{:hara/type :project
+ :hara/version "1.0.0"
+ :project/id playground.live-values
+ :project/version "0.1.0"
+ :project/source-paths ["src"]
+ :project/test-paths ["test"]
+ :project/extension-paths ["extensions"]
+ :project/main samples.live-values
+ :project/capabilities
+ #{:studio/eval}}

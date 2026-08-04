@@ -20,8 +20,6 @@ const host = await createRuntimeHost({
 });
 const runtime = host.runtime;
 
-
-
 function maybeEmitPreview(value) {
   if (!isHtaTree(value)) return false;
   postMessage({ type: "effect", id: activeRequestId, effect: { type: "render", tree: toPlainHta(value) } });
@@ -70,8 +68,21 @@ async function handle(request) {
         type: "file-loaded",
         id: request.id,
         path: request.path,
+        valueId: retain(result),
         display: formatValue(result),
         namespace: runtime.currentNamespace
+      };
+    }
+    case "complete": {
+      const items = typeof runtime.complete === "function"
+        ? await runtime.complete(request.prefix || "", request.namespace || runtime.currentNamespace, request.source || "")
+        : [];
+      return {
+        type: "completions",
+        id: request.id,
+        prefix: request.prefix || "",
+        namespace: runtime.currentNamespace,
+        items: Array.isArray(items) ? items : []
       };
     }
     case "inspect": {

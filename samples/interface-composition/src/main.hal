@@ -1,0 +1,13 @@
+(ns samples.interface-composition)
+
+(defn metric [label value note]
+  [:article {:class "card"}
+   [:span {:class "eyebrow"} label]
+   [:h1 value]
+   [:p note]])
+
+(defn view []
+  [:main {:class "preview-shell"}
+   (metric "KERNEL SESSION" "Ready" "The interface is an ordinary Hara value.")])
+
+(view)
