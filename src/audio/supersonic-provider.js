@@ -5,12 +5,18 @@ const GRAPH_ID = "graph/id";
  * HAL owns the graph; the page owns browser resources such as AudioContext.
  */
 export class SupersonicProvider {
-  constructor({ engine = null, storage = null, onSnapshot = null } = {}) {
+  constructor({ engine = null, storage = null, onSnapshot = null, scope = "default" } = {}) {
     this.engine = engine;
     this.storage = storage;
     this.onSnapshot = onSnapshot;
+    this.scope = normalizeScope(scope);
     this.graphs = new Map();
     this.generations = new Map();
+  }
+
+  setScope(scope) {
+    this.scope = normalizeScope(scope);
+    return this.scope;
   }
 
   async start(input) {
@@ -85,9 +91,12 @@ export class SupersonicProvider {
     return this.publish(id);
   }
 
-  async reset() {
-    await this.engine?.stop?.();
+  async reset({ revoke = false } = {}) {
+    if (this.engine?.reset) await this.engine.reset({ revoke });
+    else await this.engine?.stop?.();
     this.graphs.clear();
+    this.generations.clear();
+    this.onSnapshot?.(null);
   }
 
   snapshot(state) {
@@ -109,9 +118,13 @@ export class SupersonicProvider {
     return snapshot;
   }
 
+  storageKey(graphId) {
+    return `supersonic:${encodeURIComponent(this.scope)}:${encodeURIComponent(String(graphId))}`;
+  }
+
   readOverlay(graphId) {
     try {
-      return JSON.parse(this.storage?.getItem?.(`supersonic:${graphId}`) ?? "{}");
+      return JSON.parse(this.storage?.getItem?.(this.storageKey(graphId)) ?? "{}");
     } catch {
       return {};
     }
@@ -122,7 +135,7 @@ export class SupersonicProvider {
     const overlay = this.readOverlay(graphId);
     overlay[nodeId] ??= {};
     overlay[nodeId][parameter] = value;
-    this.storage.setItem(`supersonic:${graphId}`, JSON.stringify(overlay));
+    this.storage.setItem(this.storageKey(graphId), JSON.stringify(overlay));
   }
 }
 
@@ -280,6 +293,11 @@ function finite(value) {
   if (value == null) return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+function normalizeScope(value) {
+  const scope = String(value ?? "").trim();
+  return scope || "default";
 }
 
 function clone(value) {
