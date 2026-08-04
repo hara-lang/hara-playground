@@ -24,8 +24,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .bootstrap/part-* | LC_ALL=C tr -cd 'A-Za-z0-9+/=' | base64 --decode > /tmp/hara-playground-changes.tar.gz
-          gzip -t /tmp/hara-playground-changes.tar.gz
+          python3 - <<'PY'
+          import base64
+          import gzip
+          from pathlib import Path
+
+          paths = sorted(Path('.bootstrap').glob('part-*'))
+          pieces = [path.read_text() for path in paths]
+          alphabet = set('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=')
+          clean = ''.join(character for piece in pieces for character in piece if character in alphabet)
+          print('fragments:', [(path.name, len(piece)) for path, piece in zip(paths, pieces)])
+          print('base64:', {'length': len(clean), 'mod4': len(clean) % 4, 'padding': clean.count('='), 'first_padding': clean.find('=')})
+          payload = base64.b64decode(clean, validate=True)
+          gzip.decompress(payload)
+          Path('/tmp/hara-playground-changes.tar.gz').write_bytes(payload)
+          PY
           tar -xzf /tmp/hara-playground-changes.tar.gz -C "$GITHUB_WORKSPACE"
           rm -rf .bootstrap
           rm -f .github/workflows/materialize-visual-playground.yml
