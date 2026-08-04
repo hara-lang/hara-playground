@@ -188,11 +188,11 @@ export class RuntimeClient extends EventTarget {
     return this.request("reset");
   }
 
-  advanceHostGeneration(reason) {
+  advanceHostGeneration(hostReason) {
     this.hostGeneration += 1;
-    const error = abortError(reason);
-    this.abortBootContext(error);
-    this.cancelHostCalls(error);
+    const lifecycle = String(hostReason).replace(/^host\/call-cancelled:/, "");
+    this.abortBootContext(abortError(`runtime/boot-context-cancelled:${lifecycle}`));
+    this.cancelHostCalls(abortError(hostReason));
     return this.hostGeneration;
   }
 
@@ -224,9 +224,8 @@ export class RuntimeClient extends EventTarget {
     if (this.disposed) return;
     this.disposed = true;
     this.hostGeneration += 1;
-    const error = abortError("host/call-cancelled:dispose");
-    this.abortBootContext(error);
-    this.cancelHostCalls(error, { notify: false });
+    this.abortBootContext(abortError("runtime/boot-context-cancelled:dispose"));
+    this.cancelHostCalls(abortError("host/call-cancelled:dispose"), { notify: false });
     this.worker.terminate();
     this.rejectPending(new Error("Runtime disposed"));
     this.hostHandlers.clear();
