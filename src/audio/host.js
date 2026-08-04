@@ -11,6 +11,8 @@ export class PlaygroundAudioHost {
     this.onChange = onChange;
     this.engine = engine || new SupersonicWebAudioEngine();
     this.scope = "default";
+    this.authorityGeneration = 0;
+    this.operationTail = Promise.resolve();
     this.state = {
       requested: false,
       status: "idle",
@@ -33,36 +35,48 @@ export class PlaygroundAudioHost {
       }
     });
     this.unregister = [
-      runtime.registerHost("gw.audio.supersonic/start", (graph) =>
-        this.hostCall(() => this.provider.start(graph))),
-      runtime.registerHost("gw.audio.supersonic/update", (graphId, nodeId, parameter, value) =>
-        this.hostCall(() => this.provider.update(graphId, nodeId, parameter, value))),
-      runtime.registerHost("gw.audio.supersonic/status", (graphId) =>
-        this.hostCall(() => this.provider.status(graphId))),
-      runtime.registerHost("gw.audio.supersonic/stop", (graphId) =>
-        this.hostCall(() => this.provider.stop(graphId)))
+      runtime.registerHost("gw.audio.supersonic/start", (graph, context) =>
+        this.hostCall((signal) => this.provider.start(graph, { signal }), context)),
+      runtime.registerHost("gw.audio.supersonic/update", (graphId, nodeId, parameter, value, context) =>
+        this.hostCall((signal) =>
+          this.provider.update(graphId, nodeId, parameter, value, { signal }), context)),
+      runtime.registerHost("gw.audio.supersonic/status", (graphId, context) =>
+        this.hostCall(() => this.provider.status(graphId), context)),
+      runtime.registerHost("gw.audio.supersonic/stop", (graphId, context) =>
+        this.hostCall((signal) => this.provider.stop(graphId, { signal }), context))
     ];
   }
 
-  async configure(capabilities = [], scope = "default") {
-    const requested = new Set(capabilities).has(AUDIO_CAPABILITY);
-    this.state.requested = requested;
-    this.state.error = "";
+  async configure(capabilities = [], scope = "default", context = {}) {
+    const generation = Number.isSafeInteger(context?.generation)
+      ? context.generation
+      : this.authorityGeneration + 1;
 
-    // Each runtime boot is a new authority boundary. Stop the previous graph,
-    // close its AudioContext, and require a fresh user gesture before this
-    // project may produce sound, even when both projects request audio.
-    await this.provider.reset({ revoke: true });
-    this.scope = normalizeScope(scope);
-    this.provider.setScope(this.scope);
-    this.state.snapshot = null;
-    this.state.status = requested ? "waiting" : "idle";
-    this.publish();
-    return requested;
+    // Invalidate active and queued work immediately. The reset itself remains
+    // serialized behind any operation already unwinding from its abort signal.
+    this.authorityGeneration = generation;
+    return this.enqueue(async () => {
+      assertActiveAuthority(generation, this.authorityGeneration, context?.signal);
+      const requested = new Set(capabilities).has(AUDIO_CAPABILITY);
+      this.state.requested = requested;
+      this.state.error = "";
+
+      // Each runtime boot is a new authority boundary. Stop the previous graph,
+      // close its AudioContext, and require a fresh user gesture before this
+      // project may produce sound, even when both projects request audio.
+      await this.provider.reset({ revoke: true });
+      assertActiveAuthority(generation, this.authorityGeneration, context?.signal);
+      this.scope = normalizeScope(scope);
+      this.provider.setScope(this.scope);
+      this.state.snapshot = null;
+      this.state.status = requested ? "waiting" : "idle";
+      this.publish();
+      return requested;
+    });
   }
 
   async play() {
-    return this.perform(async () => {
+    return this.currentAction(async () => {
       this.requireGraph();
       await this.engine.authorize();
       const transport = transportControl(this.state.snapshot);
@@ -80,7 +94,7 @@ export class PlaygroundAudioHost {
   }
 
   async pause() {
-    return this.perform(async () => {
+    return this.currentAction(async () => {
       this.requireGraph();
       const transport = transportControl(this.state.snapshot);
       if (transport) {
@@ -97,7 +111,7 @@ export class PlaygroundAudioHost {
   }
 
   async stop() {
-    return this.perform(async () => {
+    return this.currentAction(async () => {
       if (!this.state.snapshot) {
         this.engine.stop();
         this.state.status = this.state.requested ? "waiting" : "idle";
@@ -118,7 +132,7 @@ export class PlaygroundAudioHost {
   }
 
   async updateControl(nodeId, parameter, value) {
-    return this.perform(async () => {
+    return this.currentAction(async () => {
       this.requireGraph();
       if (parameter === "playing" && value === true) await this.engine.authorize();
       const snapshot = await this.provider.update(
@@ -134,7 +148,8 @@ export class PlaygroundAudioHost {
 
   async dispose() {
     for (const unregister of this.unregister.splice(0)) unregister?.();
-    await this.provider.reset({ revoke: true });
+    this.authorityGeneration += 1;
+    await this.enqueue(() => this.provider.reset({ revoke: true }));
   }
 
   requireCapability() {
@@ -146,11 +161,33 @@ export class PlaygroundAudioHost {
     if (!this.state.snapshot) throw new Error("audio/graph-not-started");
   }
 
-  hostCall(action) {
-    return this.perform(async () => {
+  hostCall(action, context = {}) {
+    const generation = Number.isSafeInteger(context?.generation)
+      ? context.generation
+      : this.authorityGeneration;
+    return this.enqueue(() => this.perform(async () => {
+      assertActiveAuthority(generation, this.authorityGeneration, context?.signal);
       this.requireCapability();
-      return action();
-    });
+      const value = await action(context?.signal);
+      assertActiveAuthority(generation, this.authorityGeneration, context?.signal);
+      return value;
+    }));
+  }
+
+  currentAction(action) {
+    const generation = this.authorityGeneration;
+    return this.enqueue(() => this.perform(async () => {
+      assertActiveAuthority(generation, this.authorityGeneration);
+      const value = await action();
+      assertActiveAuthority(generation, this.authorityGeneration);
+      return value;
+    }));
+  }
+
+  enqueue(action) {
+    const operation = this.operationTail.then(action, action);
+    this.operationTail = operation.catch(() => {});
+    return operation;
   }
 
   async perform(action) {
@@ -161,9 +198,11 @@ export class PlaygroundAudioHost {
       this.publish();
       return value;
     } catch (error) {
-      this.state.error = error?.message || String(error);
-      this.state.status = "error";
-      this.publish();
+      if (!isLifecycleCancellation(error)) {
+        this.state.error = error?.message || String(error);
+        this.state.status = "error";
+        this.publish();
+      }
       throw error;
     }
   }
@@ -192,6 +231,25 @@ function transportControl(snapshot) {
     if (control) return { node, control };
   }
   return null;
+}
+
+function assertActiveAuthority(expected, actual, signal = null) {
+  if (signal?.aborted) {
+    throw signal.reason instanceof Error
+      ? signal.reason
+      : lifecycleError("audio/host-call-aborted");
+  }
+  if (expected !== actual) throw lifecycleError("audio/host-call-stale");
+}
+
+function lifecycleError(message) {
+  const error = new Error(message);
+  error.name = "AbortError";
+  return error;
+}
+
+function isLifecycleCancellation(error) {
+  return error?.name === "AbortError" || String(error?.message || "").startsWith("audio/host-call-stale");
 }
 
 function normalizeScope(value) {

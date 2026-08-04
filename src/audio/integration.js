@@ -226,9 +226,9 @@ function handleInput(event) {
 export function installAudioOutput(applicationRoot = document.querySelector("#app")) {
   if (!applicationRoot || observer) return () => {};
   root = applicationRoot;
-  runtime.setBootContextProvider(async () => {
+  runtime.setBootContextProvider(async ({ generation, signal } = {}) => {
     const project = detectProjectConfiguration(await store.files());
-    await audio.configure(project.capabilities, store.workspace);
+    await audio.configure(project.capabilities, store.workspace, { generation, signal });
     return { capabilities: project.capabilities };
   });
   observer = new MutationObserver(scheduleMount);

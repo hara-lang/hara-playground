@@ -19,17 +19,22 @@ export class SupersonicProvider {
     return this.scope;
   }
 
-  async start(input) {
+  async start(input, { signal = null } = {}) {
+    throwIfAborted(signal);
     const graph = normalizeGraph(input);
     const id = graph[GRAPH_ID];
     const previous = this.graphs.get(id);
     const generation = (this.generations.get(id) ?? 0) + 1;
     applyOverlay(graph, this.readOverlay(id));
+    throwIfAborted(signal);
 
     const prepared = await this.engine?.prepare?.(graph, previous?.graph);
     try {
+      throwIfAborted(signal);
       await prepared?.commit?.();
+      throwIfAborted(signal);
       if (!prepared && this.engine?.start) await this.engine.start(graph, previous?.graph);
+      throwIfAborted(signal);
     } catch (error) {
       await prepared?.discard?.();
       throw error;
@@ -43,10 +48,12 @@ export class SupersonicProvider {
       pending: []
     });
     this.generations.set(id, generation);
+    throwIfAborted(signal);
     return this.publish(id);
   }
 
-  async update(graphId, nodeId, parameter, value) {
+  async update(graphId, nodeId, parameter, value, { signal = null } = {}) {
+    throwIfAborted(signal);
     const state = requiredGraph(this.graphs, graphId);
     const node = state.graph.nodes.find((candidate) => candidate.id === String(nodeId));
     if (!node) throw new Error(`supersonic/node-not-found:${nodeId}`);
@@ -54,6 +61,7 @@ export class SupersonicProvider {
     if (!control) throw new Error(`supersonic/parameter-not-found:${nodeId}/${parameter}`);
     const normalized = normalizeControlValue(control, value);
     const result = await this.engine?.update?.(state.graph, node, control, normalized);
+    throwIfAborted(signal);
     node.params[control.parameter] = normalized;
     state.pending = state.pending.filter((entry) =>
       entry.node !== node.id || entry.parameter !== control.parameter);
@@ -67,6 +75,7 @@ export class SupersonicProvider {
       state.revision += 1;
     }
     this.writeOverlay(String(graphId), node.id, control.parameter, normalized);
+    throwIfAborted(signal);
     return this.publish(String(graphId));
   }
 
@@ -83,10 +92,12 @@ export class SupersonicProvider {
     return this.snapshot(requiredGraph(this.graphs, graphId));
   }
 
-  async stop(graphId) {
+  async stop(graphId, { signal = null } = {}) {
+    throwIfAborted(signal);
     const id = String(graphId);
     const state = requiredGraph(this.graphs, id);
     await this.engine?.stop?.(state.graph);
+    throwIfAborted(signal);
     state.status = "stopped";
     return this.publish(id);
   }
@@ -298,6 +309,14 @@ function finite(value) {
 function normalizeScope(value) {
   const scope = String(value ?? "").trim();
   return scope || "default";
+}
+
+function throwIfAborted(signal) {
+  if (!signal?.aborted) return;
+  if (signal.reason instanceof Error) throw signal.reason;
+  const error = new Error("supersonic/operation-aborted");
+  error.name = "AbortError";
+  throw error;
 }
 
 function clone(value) {
