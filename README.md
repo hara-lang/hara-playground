@@ -5,8 +5,9 @@ The browser-native Hara project browser and live kernel editor published at
 
 Hara Playground opens a local project, a featured sample project, or a public
 GitHub repository; persists it in the browser; boots a long-lived Hara kernel in
-a Web Worker; exposes REPL and InstaREPL workflows; and renders HTA output in a
-sandboxed preview.
+a Web Worker; exposes REPL and InstaREPL workflows; renders HTA output in a
+sandboxed preview; and routes declared Supersonic graphs to browser-owned audio
+output.
 
 ![Status: prototype](https://img.shields.io/badge/status-working%20prototype-21c78e)
 ![License: EPL 2.0](https://img.shields.io/badge/license-EPL--2.0-8b93ff)
@@ -18,15 +19,15 @@ new user into an empty IDE. It provides:
 
 - an arbitrary public GitHub project field;
 - resume for the active browser-persisted workspace;
-- complete GitHub sample projects for live values, HTA composition, and a small
-  decision model; and
+- complete GitHub sample projects for live values, HTA composition, a decision
+  model, and Supersonic audio live coding; and
 - a local scratch project using the same project and kernel model.
 
 After a project opens, the workbench presents a project tree, structural Hara
-editor, kernel status, toolsets and activities, preview, and REPL. The interface
-uses the Hara precision-material visual language: quiet neutral surfaces, one
-kernel-depth field, and cyan → blue → violet reserved for state, focus, and
-structural depth.
+editor, kernel status, toolsets and activities, Preview, REPL, and a
+capability-gated Audio output. The interface uses the Hara precision-material
+visual language: quiet neutral surfaces, one kernel-depth field, and cyan → blue
+→ violet reserved for state, focus, and structural depth.
 
 ## Lisp editor
 
@@ -58,6 +59,33 @@ Ctrl/Cmd + Shift + F          format buffer
 See [Visual Playground and structural Hara editor](docs/playground-interface.md)
 for the interaction model and kernel boundary.
 
+## Supersonic live coding
+
+Open the complete featured project:
+
+```text
+https://playground.hara-lang.org/?repo=hara-lang/hara-playground&branch=main&path=samples/supersonic-live
+```
+
+The project declares `:audio/playback`, starts a silent graph, and exposes its
+control metadata in the Audio output. Press **Play** once to authorize Web Audio,
+then evaluate forms without restarting the kernel:
+
+```clojure
+(sonic/update "playground/supersonic-live" "transport" "tempo" 138)
+(sonic/update "playground/supersonic-live" "source" "waveform" "saw")
+(sonic/update "playground/supersonic-live" "source" "root" 55)
+(sonic/update "playground/supersonic-live"
+              "sequence"
+              "steps"
+              [0 3 7 10 12 10 7 3])
+```
+
+The `AudioContext` and audio nodes stay on the page; the kernel exchanges only
+plain graph, control, status, and stop messages. See
+[Supersonic audio live coding](docs/audio-live-coding.md) for the graph contract,
+supported browser renderer, capability boundary, and authoring workflow.
+
 ## Implemented foundation
 
 - Persistent OPFS workspaces with a localStorage fallback.
@@ -70,6 +98,12 @@ for the interaction model and kernel boundary.
 - Core HAL, Data, HTA Interface, and Inspect & Debug toolsets.
 - Guided activities with dedicated files and executable kernel checks.
 - Official Hara WASM kernel adapter with an embedded development fallback.
+- Request-correlated worker-to-page host calls for browser-only capabilities.
+- Project-declared capability grants parsed from canonical `project.edn` files.
+- Supersonic Audio output with graph-derived controls and explicit user-gesture
+  authorization.
+- Per-workspace audio state, graph overlay isolation, and authorization
+  revocation on kernel boot.
 - Sandboxed HTA preview with restrictive Content Security Policy.
 - Responsive desktop/mobile layouts and one-press light/dark switching.
 - Unit tests, syntax checks, CI, and GitHub Pages deployment.
@@ -89,7 +123,9 @@ npm test
 npm run build
 ```
 
-The embedded evaluator is used when the official runtime is absent.
+The embedded evaluator is used when the official runtime is absent. It does not
+implement canonical host calls, so Supersonic projects require the installed
+WASM runtime.
 
 ## Install the pinned official runtime
 
@@ -117,6 +153,8 @@ runtime/rust/hta-worker.js
 runtime/rust/hta-shared-worker.js
 runtime/rust/host/broker.js
 runtime/rust/host/services.js
+runtime/rust/studio/supersonic.js
+runtime/rust/studio/hal/supersonic.hal
 ```
 
 ## Canonical project shape
@@ -142,6 +180,17 @@ my-project/
  :project/capabilities
  #{:studio/eval}}
 ```
+
+An audio project opts in explicitly:
+
+```clojure
+:project/capabilities
+#{:studio/eval
+  :audio/playback}
+```
+
+The workbench ignores capabilities it does not recognize, and the worker grants
+only capabilities supported by the current host.
 
 ## Open a GitHub project
 
@@ -173,6 +222,7 @@ hara-playground/
 ├── src/
 │   ├── app/
 │   ├── assets/
+│   ├── audio/                # Supersonic provider, UI bridge, Web Audio engine
 │   ├── editor/
 │   ├── examples/
 │   ├── github/
@@ -195,6 +245,7 @@ hara-playground/
 - [Runtime adapter](docs/runtime-adapter.md)
 - [Worker protocol](docs/worker-protocol.md)
 - [Security model](docs/security.md)
+- [Supersonic audio live coding](docs/audio-live-coding.md)
 - [Visual Playground and structural editor](docs/playground-interface.md)
 - [InstaREPL, toolsets and activities](docs/instarepl-activities.md)
 - [Migration from the original Playground](docs/migration.md)
