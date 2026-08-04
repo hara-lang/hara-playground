@@ -19,6 +19,8 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,3 +38,21 @@ jobs:
           path: dist
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  smoke:
+    name: Verify public Supersonic deployment
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Match public assets to the deployed commit
+        env:
+          HARA_PLAYGROUND_URL: ${{ needs.deploy.outputs.page_url }}
+          HARA_PLAYGROUND_COMMIT: ${{ github.sha }}
+        run: node scripts/verify-pages-deployment.mjs
