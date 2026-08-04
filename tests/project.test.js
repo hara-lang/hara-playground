@@ -16,6 +16,7 @@ test("detects canonical Hara project descriptors", () => {
     projectPath: "project.edn",
     mainNamespace: "hara.example.main",
     sourcePaths: ["src", "shared"],
+    capabilities: ["studio/eval"],
     canonical: true
   });
 });
@@ -26,6 +27,7 @@ test("falls back to the first HAL namespace", () => {
   ]);
   assert.equal(project.mainNamespace, "app.core");
   assert.equal(project.projectPath, null);
+  assert.deepEqual(project.capabilities, ["studio/eval"]);
 });
 
 test("recognises canonical and legacy Hara source extensions", () => {

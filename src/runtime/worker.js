@@ -3,11 +3,36 @@ import { createRuntimeHost } from "./host.js";
 import { isHaraSource } from "../workspace/project.js";
 import { isHtaTree, toPlainHta } from "./hta-value.js";
 
+const AVAILABLE_CAPABILITIES = new Set(["studio/eval", "audio/playback"]);
+
 let activeRequestId = null;
 let values = new Map();
 let valueSequence = 0;
+let hostSequence = 0;
+let grantedCapabilities = new Set(["studio/eval"]);
+const pendingHostCalls = new Map();
+
+function callPageHost(operation, args) {
+  const id = `host-${++hostSequence}`;
+  return new Promise((resolve, reject) => {
+    pendingHostCalls.set(id, { resolve, reject });
+    postMessage({ type: "host-call", id, requestId: activeRequestId, operation, args });
+  });
+}
+
+const supersonic = {
+  start: (graph) => callPageHost("gw.audio.supersonic/start", [graph]),
+  update: (graphId, nodeId, parameter, value) =>
+    callPageHost("gw.audio.supersonic/update", [graphId, nodeId, parameter, value]),
+  status: (graphId) => callPageHost("gw.audio.supersonic/status", [graphId]),
+  stop: (graphId) => callPageHost("gw.audio.supersonic/stop", [graphId])
+};
 
 const host = await createRuntimeHost({
+  capabilities: [...AVAILABLE_CAPABILITIES],
+  grantedCapabilities: ["studio/eval"],
+  grantsForSession: () => [...grantedCapabilities],
+  supersonic,
   onStdout(text) {
     postMessage({ type: "stdout", id: activeRequestId, text });
   },
@@ -33,10 +58,22 @@ function retain(value) {
   return valueId;
 }
 
+function installGrants(capabilities = []) {
+  const requested = new Set(
+    (Array.isArray(capabilities) ? capabilities : [])
+      .map((capability) => String(capability?.name ?? capability).replace(/^:/, ""))
+  );
+  requested.add("studio/eval");
+  grantedCapabilities = new Set(
+    [...requested].filter((capability) => AVAILABLE_CAPABILITIES.has(capability))
+  );
+}
+
 async function handle(request) {
   activeRequestId = request.id || null;
   switch (request.type) {
     case "boot": {
+      installGrants(request.capabilities);
       await runtime.reset();
       for (const file of request.files || []) {
         if (isHaraSource(file.path)) {
@@ -48,7 +85,13 @@ async function handle(request) {
         if (typeof runtime.setNamespace === "function") runtime.setNamespace(request.namespace);
         else await runtime.evaluateSource(`(ns ${request.namespace})`, request.namespace);
       }
-      return { type: "ready", id: request.id, namespace: runtime.currentNamespace, runtimeKind: host.kind };
+      return {
+        type: "ready",
+        id: request.id,
+        namespace: runtime.currentNamespace,
+        runtimeKind: host.kind,
+        capabilities: [...grantedCapabilities]
+      };
     }
     case "eval": {
       const result = await runtime.evaluateSource(request.source, request.namespace || runtime.currentNamespace);
@@ -92,13 +135,35 @@ async function handle(request) {
     case "reset":
       await runtime.reset();
       values = new Map();
-      return { type: "ready", id: request.id, namespace: runtime.currentNamespace, runtimeKind: host.kind };
+      return {
+        type: "ready",
+        id: request.id,
+        namespace: runtime.currentNamespace,
+        runtimeKind: host.kind,
+        capabilities: [...grantedCapabilities]
+      };
     default:
       throw new Error(`Unknown runtime request: ${request.type}`);
   }
 }
 
+function handleHostResponse(message) {
+  const pending = pendingHostCalls.get(message.id);
+  if (!pending) return false;
+  pendingHostCalls.delete(message.id);
+  if (message.type === "host-exception") {
+    pending.reject(Object.assign(new Error(message.error?.message || "Host call failed"), message.error));
+  } else {
+    pending.resolve(message.value);
+  }
+  return true;
+}
+
 self.addEventListener("message", async (event) => {
+  if (event.data?.type === "host-result" || event.data?.type === "host-exception") {
+    handleHostResponse(event.data);
+    return;
+  }
   try {
     const response = await handle(event.data);
     postMessage(response);

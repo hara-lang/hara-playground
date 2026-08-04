@@ -25,11 +25,14 @@ export function detectProjectConfiguration(files) {
   const sourcePaths = parseStringVector(source, ":project/source-paths")
     || parseStringVector(source, ":source-paths")
     || ["src"];
+  const capabilities = parseKeywordCollection(source, ":project/capabilities")
+    || ["studio/eval"];
 
   return Object.freeze({
     projectPath,
     mainNamespace: main,
-    sourcePaths,
+    sourcePaths: Object.freeze(sourcePaths),
+    capabilities: Object.freeze(capabilities),
     canonical: projectPath === "project.edn" && /:hara\/type\s+:project\b/.test(source)
   });
 }
@@ -63,4 +66,14 @@ function parseStringVector(source, key) {
   const values = [...body.matchAll(/"((?:\\.|[^"\\])*)"/g)].map((match) =>
     match[1].replace(/\\"/g, '"').replace(/\\\\/g, "\\"));
   return values.length ? values : null;
+}
+
+function parseKeywordCollection(source, key) {
+  const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = source.match(new RegExp(`${escaped}\\s*(?:#\\{([^}]*)\\}|\\[([^\\]]*)\\])`));
+  if (!match) return null;
+  const body = match[1] ?? match[2] ?? "";
+  const values = [...body.matchAll(/:([A-Za-z][A-Za-z0-9_.-]*(?:\/[A-Za-z][A-Za-z0-9_.?*-]*)?)/g)]
+    .map((entry) => entry[1]);
+  return [...new Set(values)];
 }

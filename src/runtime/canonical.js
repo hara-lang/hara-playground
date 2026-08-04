@@ -49,19 +49,43 @@ export async function createCanonicalRuntime(options = {}) {
     throw new CanonicalRuntimeUnavailableError("rust/host/services.js does not export createHostServices");
   }
 
+  const resources = { ...(options.resources || {}) };
+  if (!resources["gw.audio.supersonic"]) {
+    resources["gw.audio.supersonic"] = await loadSupersonicResource(root, options);
+  }
   const hostCalls = servicesModule.createHostServices({
-    capabilities: ["studio/eval"],
-    grantedCapabilities: ["studio/eval"]
+    capabilities: options.capabilities || ["studio/eval", "audio/playback"],
+    grantedCapabilities: options.grantedCapabilities || ["studio/eval"],
+    grantsForSession: options.grantsForSession,
+    supersonic: options.supersonic
   });
   const broker = brokerModule.createBrowserBroker({
     workerUrl,
     sharedWorkerUrl,
     moduleBytes,
-    hostCalls
+    hostCalls,
+    resources
   });
   const runtime = new CanonicalHaraRuntime({ broker, options });
   await runtime.initialise();
   return runtime;
+}
+
+async function loadSupersonicResource(root, options) {
+  const candidates = [
+    new URL("rust/studio/hal/supersonic.hal", root),
+    new URL("../audio/gw.audio.supersonic.hal", import.meta.url)
+  ];
+  for (const url of candidates) {
+    try {
+      const response = await fetch(url);
+      if (response.ok) return response.text();
+    } catch {
+      // Try the next source. The Playground ships a local compatibility copy.
+    }
+  }
+  options.onDiagnostic?.("Supersonic HAL resource is unavailable; audio projects cannot load");
+  return "";
 }
 
 export class CanonicalHaraRuntime {
