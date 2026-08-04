@@ -1,4 +1,6 @@
 import { runtime, state, store } from "../app/context.js";
+import { appendRepl, bootRuntime, saveCurrentFile } from "../app/actions.js";
+import { addProjectCapability } from "../workspace/capabilities.js";
 import { detectProjectConfiguration } from "../workspace/project.js";
 import { PlaygroundAudioHost, coerceControlValue } from "./host.js";
 
@@ -10,6 +12,7 @@ let observer = null;
 let scheduled = false;
 let workspaceMounted = false;
 let active = readSetting(OUTPUT_KEY, "preview") === AUDIO_TAB;
+let capabilityAction = { status: "idle", message: "" };
 
 const audio = new PlaygroundAudioHost({
   runtime,
@@ -94,18 +97,29 @@ function renderAudioView(view) {
     status: audio.state.status,
     error: audio.state.error,
     runtime: state.runtimeKind,
+    capabilityAction,
     snapshot
   });
   if (view.dataset.renderKey === key) return;
   view.dataset.renderKey = key;
 
   if (!audio.state.requested) {
+    const browserCopy = state.metadata.source === "github" ? "browser copy" : "browser project";
+    const enabling = capabilityAction.status === "enabling";
     view.innerHTML = `
       <div class="audio-empty-state">
         <span class="audio-empty-state__mark">♪</span>
         <p class="hara-kicker">CAPABILITY-GATED OUTPUT</p>
         <h2>Audio is available to declared projects.</h2>
-        <p>Add <code>:audio/playback</code> to <code>:project/capabilities</code>, then start a graph with <code>gw.audio.supersonic/start</code>.</p>
+        <p>Supersonic cannot play until <code>project.edn</code> requests <code>:audio/playback</code>.</p>
+        <div class="audio-capability-action">
+          <button id="audio-enable-capability-button" class="primary-mini" type="button" ${enabling ? "disabled" : ""}>
+            ${enabling ? "Enabling…" : `Enable in ${escapeHtml(browserCopy)}`}
+          </button>
+          <span>This edits only the persisted browser workspace, saves pending work, and reboots the kernel. Sound still requires a separate Play gesture.</span>
+        </div>
+        ${capabilityAction.message ? `<p class="audio-capability-message audio-capability-message--${escapeHtml(capabilityAction.status)}" role="status">${escapeHtml(capabilityAction.message)}</p>` : ""}
+        <p class="audio-capability-manual">Manual form: add <code>:audio/playback</code> to <code>:project/capabilities</code>, then start a graph with <code>gw.audio.supersonic/start</code>.</p>
       </div>`;
     return;
   }
@@ -179,6 +193,50 @@ function renderControl(node, control) {
   </label>`;
 }
 
+async function enableAudioCapability() {
+  if (capabilityAction.status === "enabling") return;
+  capabilityAction = { status: "enabling", message: "Saving the browser workspace…" };
+  scheduleMount();
+
+  try {
+    if (state.dirty) await saveCurrentFile(false);
+    const files = await store.files();
+    const project = detectProjectConfiguration(files);
+    if (!project.projectPath) throw new Error("No project.edn descriptor was found in this browser workspace.");
+    const source = await store.read(project.projectPath);
+    if (source == null) throw new Error(`Unable to read ${project.projectPath}.`);
+
+    const edit = addProjectCapability(source);
+    if (edit.changed) await store.write(project.projectPath, edit.source);
+    if (state.selectedPath === project.projectPath) {
+      state.content = edit.source;
+      state.dirty = false;
+    }
+
+    capabilityAction = {
+      status: "enabling",
+      message: edit.changed
+        ? `Added :audio/playback to ${project.projectPath}; rebooting the kernel…`
+        : `${project.projectPath} already requests :audio/playback; rebooting the kernel…`
+    };
+    scheduleMount();
+    await bootRuntime();
+    if (state.runtimeStatus !== "ready") {
+      throw new Error("The project was updated, but the kernel did not become ready. Check the REPL diagnostics.");
+    }
+    capabilityAction = {
+      status: "enabled",
+      message: "Audio playback is granted for this browser session. Start a Supersonic graph; Play remains user-authorized."
+    };
+    appendRepl("result", `Enabled :audio/playback in ${project.projectPath} · browser workspace only`);
+    scheduleMount();
+  } catch (error) {
+    capabilityAction = { status: "error", message: error?.message || String(error) };
+    appendRepl("error", `Unable to enable audio playback: ${capabilityAction.message}`);
+    scheduleMount();
+  }
+}
+
 async function handleClick(event) {
   const outputTab = event.target.closest(".output-tab[data-output-tab]");
   if (outputTab) {
@@ -190,6 +248,13 @@ async function handleClick(event) {
     } else {
       active = false;
     }
+    return;
+  }
+
+  const capability = event.target.closest("#audio-enable-capability-button");
+  if (capability) {
+    event.preventDefault();
+    await enableAudioCapability();
     return;
   }
 
