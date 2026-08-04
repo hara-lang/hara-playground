@@ -3,15 +3,24 @@ import assert from "node:assert/strict";
 import { FEATURED_PROJECTS, PLAYGROUND_NICETIES, projectDeepLink, repositoryLabel } from "../src/studio/projects.js";
 
 test("featured projects point at complete GitHub subprojects", () => {
-  assert.equal(FEATURED_PROJECTS.length, 3);
+  assert.equal(FEATURED_PROJECTS.length, 4);
   assert.ok(FEATURED_PROJECTS.every((project) => project.repository.owner === "hara-lang"));
   assert.ok(FEATURED_PROJECTS.every((project) => project.repository.repo === "hara-playground"));
   assert.ok(FEATURED_PROJECTS.every((project) => project.repository.path.startsWith("samples/")));
-  assert.equal(repositoryLabel(FEATURED_PROJECTS[0].repository), "hara-lang/hara-playground/samples/live-values");
+  const liveValues = FEATURED_PROJECTS.find((project) => project.id === "live-values");
+  assert.equal(repositoryLabel(liveValues.repository), "hara-lang/hara-playground/samples/live-values");
+});
+
+test("Supersonic is a featured audio project", () => {
+  const project = FEATURED_PROJECTS.find((candidate) => candidate.id === "supersonic");
+  assert.ok(project);
+  assert.equal(project.repository.path, "samples/supersonic-live");
+  assert.ok(project.capabilities.includes("Supersonic"));
+  assert.equal(project.primary, true);
 });
 
 test("project links carry branch and project path", () => {
-  const link = projectDeepLink(FEATURED_PROJECTS[1], "/");
+  const link = projectDeepLink(FEATURED_PROJECTS[2], "/");
   assert.match(link, /^\/\?/);
   assert.match(link, /repo=hara-lang%2Fhara-playground/);
   assert.match(link, /branch=main/);
