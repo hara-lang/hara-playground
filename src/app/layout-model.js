@@ -1,4 +1,4 @@
-export const MOBILE_SURFACES = Object.freeze(["files", "code", "preview", "repl", "learn"]);
+export const MOBILE_SURFACES = Object.freeze(["files", "code", "preview", "audio", "repl", "learn"]);
 
 export const DEFAULT_DESKTOP_LAYOUT = Object.freeze({
   projectWidth: 226,

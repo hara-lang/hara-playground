@@ -9,8 +9,9 @@ import {
 } from "../src/app/layout-model.js";
 
 test("mobile workspace surfaces are explicit and default to code", () => {
-  assert.deepEqual(MOBILE_SURFACES, ["files", "code", "preview", "repl", "learn"]);
+  assert.deepEqual(MOBILE_SURFACES, ["files", "code", "preview", "audio", "repl", "learn"]);
   assert.equal(normaliseMobileSurface("preview"), "preview");
+  assert.equal(normaliseMobileSurface("audio"), "audio");
   assert.equal(normaliseMobileSurface("missing"), "code");
 });
 

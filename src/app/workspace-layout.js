@@ -105,7 +105,7 @@ function bindDivider(grid, divider, side) {
   });
 
   divider.addEventListener("keydown", (event) => {
-    if (!['ArrowLeft', 'ArrowRight', 'Home'].includes(event.key)) return;
+    if (!["ArrowLeft", "ArrowRight", "Home"].includes(event.key)) return;
     event.preventDefault();
     if (event.key === "Home") {
       const reset = side === "project"
@@ -157,9 +157,11 @@ const DOCK_ITEMS = Object.freeze([
   { id: "files", label: "Files", icon: "folder" },
   { id: "code", label: "Code", icon: "code" },
   { id: "preview", label: "Canvas", icon: "eye" },
+  { id: "audio", label: "Audio", icon: "play" },
   { id: "repl", label: "REPL", icon: "terminal" },
   { id: "learn", label: "Learn", icon: "command" }
 ]);
+const OUTPUT_SURFACES = new Set(["preview", "audio", "repl"]);
 
 function mountMobileDock(shell) {
   if (shell.querySelector(".mobile-workspace-dock")) return;
@@ -175,12 +177,11 @@ function mountMobileDock(shell) {
 }
 
 function setOutputMode(shell, mode) {
-  if (mode !== "preview" && mode !== "repl") return;
-  state.outputTab = mode;
-  writeSetting(STUDIO_SETTING_KEYS.output || "hara-playground-output", mode);
-  shell.querySelectorAll(".output-tab").forEach((button) => button.classList.toggle("active", button.dataset.outputTab === mode));
-  shell.querySelector(".preview-view")?.classList.toggle("active", mode === "preview");
-  shell.querySelector(".repl-view")?.classList.toggle("active", mode === "repl");
+  if (!OUTPUT_SURFACES.has(mode)) return false;
+  const button = shell.querySelector(`.output-tab[data-output-tab="${mode}"]`);
+  if (!button) return false;
+  if (!button.classList.contains("active")) button.click();
+  return true;
 }
 
 function requestPreviewResize(shell) {
@@ -189,7 +190,7 @@ function requestPreviewResize(shell) {
   frame?.contentWindow?.postMessage({ type: "hara-host-resize" }, "*");
 }
 
-function activateMobileSurface(shell, value, { focus = false } = {}) {
+function activateMobileSurface(shell, value, { focus = false, syncOutput = true } = {}) {
   mobileSurface = normaliseMobileSurface(value, mobileSurface);
   writeSetting(MOBILE_SURFACE_KEY, mobileSurface);
   shell.dataset.mobileSurface = mobileSurface;
@@ -198,12 +199,13 @@ function activateMobileSurface(shell, value, { focus = false } = {}) {
     button.classList.toggle("active", active);
     button.setAttribute("aria-pressed", String(active));
   });
-  if (mobileSurface === "preview" || mobileSurface === "repl") setOutputMode(shell, mobileSurface);
+  if (syncOutput && OUTPUT_SURFACES.has(mobileSurface)) setOutputMode(shell, mobileSurface);
   if (focus) {
     const target = mobileSurface === "code" ? shell.querySelector("#editor")
       : mobileSurface === "repl" ? shell.querySelector("#repl-input")
-        : mobileSurface === "files" ? shell.querySelector(".tree-file.selected, .tree-file")
-          : null;
+        : mobileSurface === "audio" ? shell.querySelector("#audio-play-button, [data-audio-control]")
+          : mobileSurface === "files" ? shell.querySelector(".tree-file.selected, .tree-file")
+            : null;
     target?.focus({ preventScroll: true });
   }
   if (mobileSurface === "preview") requestAnimationFrame(() => requestPreviewResize(shell));
@@ -290,8 +292,7 @@ export function installWorkspaceLayout(root = document.querySelector("#app")) {
     const outputTab = event.target.closest(".output-tab[data-output-tab]");
     const shell = root.querySelector(".playground-shell");
     if (outputTab && shell && isMobileLayout()) {
-      mobileSurface = normaliseMobileSurface(outputTab.dataset.outputTab, mobileSurface);
-      writeSetting(MOBILE_SURFACE_KEY, mobileSurface);
+      activateMobileSurface(shell, outputTab.dataset.outputTab, { syncOutput: false });
     }
   }, true);
   globalThis.addEventListener?.("resize", scheduleEnhancement);

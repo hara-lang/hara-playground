@@ -10,11 +10,12 @@ test("the application installs the workspace layout controller", async () => {
   assert.match(main, /workspace-layout\.js/);
 });
 
-test("mobile exposes files, code, canvas, repl and learning surfaces", async () => {
+test("mobile exposes files, code, canvas, audio, repl and learning surfaces", async () => {
   const controller = await read("src/app/workspace-layout.js");
-  for (const marker of ["Files", "Code", "Canvas", "REPL", "Learn"]) {
+  for (const marker of ["Files", "Code", "Canvas", "Audio", "REPL", "Learn"]) {
     assert.ok(controller.includes(marker), `missing mobile surface ${marker}`);
   }
+  assert.match(controller, /OUTPUT_SURFACES/);
   assert.match(controller, /mobile-instarepl/);
   assert.match(controller, /setOutputMode/);
   assert.match(controller, /hara-host-resize/);
@@ -31,12 +32,16 @@ test("desktop workbench has accessible persistent splitters", async () => {
   assert.match(styles, /cursor: col-resize/);
 });
 
-test("the final CSS layer overrides the old mobile panel hiding rules", async () => {
+test("the final CSS layers expose all mobile output surfaces", async () => {
   const imports = await read("src/styles.css");
-  const styles = await read("src/styles/workspace-layout.css");
+  const workspaceStyles = await read("src/styles/workspace-layout.css");
+  const audioStyles = await read("src/styles/mobile-audio.css");
   assert.match(imports, /workspace-layout\.css/);
-  assert.match(styles, /data-mobile-surface="preview"/);
-  assert.match(styles, /data-mobile-surface="repl"/);
-  assert.match(styles, /\.output-panel/);
-  assert.match(styles, /\.instarepl-rail \{ display: none !important; \}/);
+  assert.match(imports, /workspace-layout\.css[\s\S]*mobile-audio\.css/);
+  assert.match(workspaceStyles, /data-mobile-surface="preview"/);
+  assert.match(workspaceStyles, /data-mobile-surface="repl"/);
+  assert.match(audioStyles, /data-mobile-surface="audio"/);
+  assert.match(audioStyles, /repeat\(6/);
+  assert.match(workspaceStyles, /\.output-panel/);
+  assert.match(workspaceStyles, /\.instarepl-rail \{ display: none !important; \}/);
 });

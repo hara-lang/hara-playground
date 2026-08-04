@@ -1,0 +1,20 @@
+/* Final mobile override for the dynamically mounted Supersonic output. */
+@media (max-width: 1000px) {
+  .playground-shell[data-mobile-surface="audio"] .output-panel {
+    display: grid !important;
+  }
+
+  .mobile-workspace-dock {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .output-panel .audio-view {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .mobile-workspace-dock span {
+    font-size: .46rem;
+  }
+}
