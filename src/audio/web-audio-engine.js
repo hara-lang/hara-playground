@@ -10,6 +10,8 @@ const DEFAULT_MODEL = Object.freeze({
 
 const LOOKAHEAD_SECONDS = 0.12;
 const SCHEDULER_INTERVAL_MS = 25;
+const MAX_STEPS_PER_TICK = 64;
+const CLOCK_RESUME_LEAD_SECONDS = 0.01;
 
 function defaultModel() {
   return { ...DEFAULT_MODEL, steps: [...DEFAULT_MODEL.steps], playing: false };
@@ -69,6 +71,47 @@ export function readPlaybackModel(graph, override = null) {
 }
 
 /**
+ * Recover a musical clock after the browser throttles timers in a hidden tab.
+ * The stale beats are skipped rather than scheduled in a burst on return.
+ */
+export function recoverSequencerClock({
+  nextStepTime,
+  stepIndex,
+  stepCount,
+  now,
+  stepDuration
+}) {
+  const duration = Number(stepDuration);
+  const count = Math.max(1, Math.trunc(Number(stepCount)) || 1);
+  const index = modulo(Math.trunc(Number(stepIndex)) || 0, count);
+  const currentTime = Number(now);
+  const nextTime = Number(nextStepTime);
+  if (!Number.isFinite(currentTime) || !Number.isFinite(duration) || duration <= 0) {
+    return { nextStepTime: nextTime, stepIndex: index, skipped: 0 };
+  }
+  if (!Number.isFinite(nextTime) || nextTime <= 0) {
+    return {
+      nextStepTime: currentTime + CLOCK_RESUME_LEAD_SECONDS,
+      stepIndex: index,
+      skipped: 0
+    };
+  }
+
+  const lateBy = currentTime - nextTime;
+  const recoveryThreshold = Math.max(LOOKAHEAD_SECONDS, duration * 2);
+  if (lateBy <= recoveryThreshold) {
+    return { nextStepTime: nextTime, stepIndex: index, skipped: 0 };
+  }
+
+  const skipped = Math.max(1, Math.ceil(lateBy / duration));
+  return {
+    nextStepTime: currentTime + CLOCK_RESUME_LEAD_SECONDS,
+    stepIndex: (index + skipped) % count,
+    skipped
+  };
+}
+
+/**
  * Small, deterministic Web Audio renderer for Supersonic sequence graphs.
  * AudioContext is never created until authorize() is called by a page gesture.
  */
@@ -90,14 +133,12 @@ export class SupersonicWebAudioEngine {
   async prepare(graph) {
     const previousGraph = this.graph;
     const previousModel = this.model;
-    const wasPlaying = this.playing;
     const nextModel = readPlaybackModel(graph);
     return {
       commit: async () => {
         this.graph = graph;
         this.model = nextModel;
         this.applyVolume();
-        if (wasPlaying) this.restartScheduler();
       },
       discard: async () => {
         this.graph = previousGraph;
@@ -121,7 +162,10 @@ export class SupersonicWebAudioEngine {
       else this.pause();
       return { pending: false };
     }
-    if (this.playing) this.restartScheduler();
+
+    // The active clock and step index are deliberately left intact. Notes
+    // already inside the short look-ahead window finish naturally; subsequent
+    // notes use the new tempo, sequence, root, gate, waveform, and volume.
     return { pending: false };
   }
 
@@ -191,15 +235,6 @@ export class SupersonicWebAudioEngine {
     if (!this.master.gain.setTargetAtTime) this.master.gain.value = this.model.volume;
   }
 
-  restartScheduler() {
-    if (!this.playing || !this.context) return;
-    this.stopScheduler({ reset: true });
-    this.playing = true;
-    this.nextStepTime = this.context.currentTime + 0.035;
-    this.schedule();
-    this.timer = setInterval(() => this.schedule(), SCHEDULER_INTERVAL_MS);
-  }
-
   stopScheduler({ reset }) {
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
@@ -214,8 +249,20 @@ export class SupersonicWebAudioEngine {
   schedule() {
     if (!this.playing || !this.context || !this.model.steps.length) return;
     const stepDuration = 60 / this.model.tempo / this.model.stepsPerBeat;
-    const horizon = this.context.currentTime + LOOKAHEAD_SECONDS;
-    while (this.nextStepTime < horizon) {
+    const now = this.context.currentTime;
+    const recovered = recoverSequencerClock({
+      nextStepTime: this.nextStepTime,
+      stepIndex: this.stepIndex,
+      stepCount: this.model.steps.length,
+      now,
+      stepDuration
+    });
+    this.nextStepTime = recovered.nextStepTime;
+    this.stepIndex = recovered.stepIndex;
+
+    const horizon = now + LOOKAHEAD_SECONDS;
+    let scheduled = 0;
+    while (this.nextStepTime < horizon && scheduled < MAX_STEPS_PER_TICK) {
       const step = this.model.steps[this.stepIndex % this.model.steps.length];
       if (step != null && Number.isFinite(step)) {
         this.scheduleNote(
@@ -226,6 +273,14 @@ export class SupersonicWebAudioEngine {
       }
       this.stepIndex = (this.stepIndex + 1) % this.model.steps.length;
       this.nextStepTime += stepDuration;
+      scheduled += 1;
+    }
+
+    // Defensive cap: malformed clocks must never monopolize the page thread.
+    if (this.nextStepTime < horizon) {
+      const remaining = Math.ceil((horizon - this.nextStepTime) / stepDuration);
+      this.stepIndex = (this.stepIndex + remaining) % this.model.steps.length;
+      this.nextStepTime += remaining * stepDuration;
     }
   }
 
@@ -250,4 +305,8 @@ export class SupersonicWebAudioEngine {
 function boundedNumber(value, min, max, fallback) {
   const number = Number(value);
   return Number.isFinite(number) ? Math.max(min, Math.min(max, number)) : fallback;
+}
+
+function modulo(value, divisor) {
+  return ((value % divisor) + divisor) % divisor;
 }
