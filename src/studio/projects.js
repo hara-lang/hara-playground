@@ -1,5 +1,23 @@
 export const FEATURED_PROJECTS = Object.freeze([
   Object.freeze({
+    id: "supersonic",
+    title: "Supersonic live coding",
+    eyebrow: "AUDIO · LIVE GRAPH",
+    description: "Start a declarative music graph, unlock browser audio with one gesture, then reshape tempo, notes and timbre form by form.",
+    repository: Object.freeze({
+      owner: "hara-lang",
+      repo: "hara-playground",
+      branch: "main",
+      path: "samples/supersonic-live"
+    }),
+    sourceUrl: "https://github.com/hara-lang/hara-playground/tree/main/samples/supersonic-live",
+    entry: "src/main.hal",
+    capabilities: Object.freeze(["Supersonic", "Web Audio", "Live controls"]),
+    action: "Open Supersonic",
+    primary: true,
+    field: "audio"
+  }),
+  Object.freeze({
     id: "live-values",
     title: "Live values",
     eyebrow: "STARTER · LEARN",
@@ -14,7 +32,6 @@ export const FEATURED_PROJECTS = Object.freeze([
     entry: "src/main.hal",
     capabilities: Object.freeze(["InstaREPL", "Kernel values", "HTA preview"]),
     action: "Open Live values",
-    primary: true,
     field: "evaluation"
   }),
   Object.freeze({
