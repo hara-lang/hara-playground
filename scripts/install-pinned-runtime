@@ -9,15 +9,19 @@ DOWNLOADED=0
 STAGE=""
 BACKUP=""
 LISTING=""
+VERBOSE_LISTING=""
 
 cleanup() {
   status=$?
+  set +e
   if [ -n "$STAGE" ] && [ -e "$STAGE" ]; then rm -rf "$STAGE"; fi
   if [ -n "$BACKUP" ] && [ -e "$BACKUP" ]; then
     if [ ! -e "$DEST" ]; then mv "$BACKUP" "$DEST"; else rm -rf "$BACKUP"; fi
   fi
   if [ -n "$LISTING" ] && [ -e "$LISTING" ]; then rm -f "$LISTING"; fi
+  if [ -n "$VERBOSE_LISTING" ] && [ -e "$VERBOSE_LISTING" ]; then rm -f "$VERBOSE_LISTING"; fi
   if [ "$DOWNLOADED" = 1 ] && [ -n "$ARCHIVE" ] && [ -e "$ARCHIVE" ]; then rm -f "$ARCHIVE"; fi
+  trap - EXIT
   exit "$status"
 }
 trap cleanup EXIT
@@ -56,18 +60,34 @@ PARENT=$(dirname "$DEST")
 mkdir -p "$PARENT"
 STAGE=$(mktemp -d "$PARENT/.hara-runtime-install.XXXXXX")
 LISTING=$(mktemp "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/hara-runtime-listing.XXXXXX")
+VERBOSE_LISTING=$(mktemp "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/hara-runtime-verbose.XXXXXX")
 
 tar -tzf "$ARCHIVE" > "$LISTING"
+tar -tvzf "$ARCHIVE" > "$VERBOSE_LISTING"
+[ -s "$LISTING" ] || { echo "runtime archive is empty" >&2; exit 1; }
+
 while IFS= read -r entry; do
   normalized=${entry#./}
   [ -z "$normalized" ] && continue
   case "$normalized" in
-    /*|..|../*|*/..|*/../*|*\\*)
+    /*|..|../*|*/..|*/../*|*/./*|*\\*)
       echo "runtime archive contains an unsafe path: $entry" >&2
       exit 1
       ;;
   esac
 done < "$LISTING"
+
+while IFS= read -r entry; do
+  [ -n "$entry" ] || continue
+  entry_type=${entry%"${entry#?}"}
+  case "$entry_type" in
+    -|d) ;;
+    *)
+      echo "runtime archive contains an unsupported entry type: $entry" >&2
+      exit 1
+      ;;
+  esac
+done < "$VERBOSE_LISTING"
 
 tar -xzf "$ARCHIVE" -C "$STAGE"
 UNSAFE_NODE=$(find "$STAGE" ! -type f ! -type d -print -quit)
