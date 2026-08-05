@@ -55,19 +55,34 @@ export function addProjectCapability(source, capability = AUDIO_PLAYBACK_CAPABIL
 }
 
 export function projectRequestsCapability(source, capability = AUDIO_PLAYBACK_CAPABILITY) {
+  const requested = readProjectCapabilities(source);
+  if (requested == null) return false;
   try {
-    const input = String(source ?? "");
-    const normalizedCapability = normalizeCapability(capability);
-    const document = scanProjectDescriptor(input);
-    requireCanonicalProject(input, document);
-    const capabilityEntry = document.entries.find((entry) =>
-      entry.key?.value === "project/capabilities");
-    if (!capabilityEntry) return false;
-    const collection = capabilityCollectionAt(input, document, capabilityEntry.value);
-    return directKeywords(document, collection)
-      .some((token) => token.value === normalizedCapability);
+    return requested.includes(normalizeCapability(capability));
   } catch {
     return false;
+  }
+}
+
+/**
+ * Returns null when no capability key exists, an empty array for an invalid or
+ * explicitly empty capability collection, and normalized direct keywords for a
+ * valid set/vector. Comments, strings and keyword values are never treated as
+ * map keys.
+ */
+export function readProjectCapabilities(source) {
+  const input = String(source ?? "");
+  try {
+    const document = scanProjectDescriptor(input);
+    const capabilityEntry = document.entries.find((entry) =>
+      entry.key?.value === "project/capabilities");
+    if (!capabilityEntry) return null;
+    const collection = capabilityCollectionAt(input, document, capabilityEntry.value);
+    return Object.freeze([...new Set(
+      directKeywords(document, collection).map((token) => token.value)
+    )]);
+  } catch {
+    return Object.freeze([]);
   }
 }
 
