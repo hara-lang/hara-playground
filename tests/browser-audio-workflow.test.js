@@ -10,6 +10,8 @@ test("browser audio CI is path-scoped, read-only and manually runnable", async (
   assert.match(workflow, /push:/);
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /src\/audio\/\*\*/);
+  assert.match(workflow, /samples\/supersonic-live\/\*\*/);
+  assert.match(workflow, /scripts\/verify-supersonic-project-open\.mjs/);
   assert.match(workflow, /contents: read/);
   assert.doesNotMatch(workflow, /contents: write/);
 });
@@ -21,14 +23,21 @@ test("the browser toolchain is pinned and does not alter package metadata", asyn
   assert.match(workflow, /--package-lock=false/);
   assert.match(workflow, /playwright install --with-deps chromium/);
   assert.match(workflow, /verify-browser-audio\.mjs/);
+  assert.match(workflow, /verify-supersonic-project-open\.mjs/);
   assert.doesNotMatch(workflow, /run-browser-audio-test\.mjs/);
 });
 
-test("the browser runner name does not match Node's default test patterns", async () => {
+test("browser runner names do not match Node's default test patterns", async () => {
   const workflow = await read(".github/workflows/browser-audio-ci.yml");
-  const path = workflow.match(/node (scripts\/[A-Za-z0-9_.-]+\.mjs)/)?.[1];
-  assert.equal(path, "scripts/verify-browser-audio.mjs");
-  assert.doesNotMatch(path, /(?:^|[\/_-])test(?:[._-]|$)|\.test\./i);
+  const paths = [...workflow.matchAll(/node (scripts\/[A-Za-z0-9_.-]+\.mjs)/g)]
+    .map((match) => match[1]);
+  assert.deepEqual(paths, [
+    "scripts/verify-browser-audio.mjs",
+    "scripts/verify-supersonic-project-open.mjs"
+  ]);
+  for (const path of paths) {
+    assert.doesNotMatch(path, /(?:^|[\/_-])test(?:[._-]|$)|\.test\./i);
+  }
 });
 
 test("the fixture prepares silently and unlocks audio only from a click", async () => {
@@ -61,10 +70,31 @@ test("the real-browser result covers clock continuity and authority revocation",
   assert.match(runner, /consoleErrors/);
 });
 
-test("the browser runner serves only normalized repository paths", async () => {
+test("the isolated browser runner serves only normalized repository paths", async () => {
   const runner = await read("scripts/verify-browser-audio.mjs");
   assert.match(runner, /decodeURIComponent/);
   assert.match(runner, /unsafe request path/);
   assert.match(runner, /request escaped repository root/);
   assert.match(runner, /x-content-type-options/);
+});
+
+test("the full Playground check opens the real sample and detects render-loop starvation", async () => {
+  const runner = await read("scripts/verify-supersonic-project-open.mjs");
+  for (const marker of [
+    "samples/supersonic-live",
+    "api.github.com",
+    "raw.githubusercontent.com",
+    "page.route",
+    "__haraQueuedMicrotasks",
+    "requestAnimationFrame",
+    "page.on(\"crash\"",
+    "#editor",
+    "[data-output-tab=\"audio\"]",
+    "audio/playback"
+  ]) {
+    assert.ok(runner.includes(marker), `full project runner is missing ${marker}`);
+  }
+  assert.match(runner, /url\.searchParams\.set\("path", sampleRoot\)/);
+  assert.match(runner, /heartbeat\.after - heartbeat\.before < 10/);
+  assert.match(runner, /finalMicrotasks - audioSurface\.queuedMicrotasks < 10/);
 });
