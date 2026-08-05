@@ -13,12 +13,12 @@ export function addProjectCapability(source, capability = AUDIO_PLAYBACK_CAPABIL
   const input = String(source ?? "");
   const normalizedCapability = normalizeCapability(capability);
   const document = scanProjectDescriptor(input);
-  requireCanonicalProject(document);
+  requireCanonicalProject(input, document);
 
-  const capabilityKey = document.keywords.find((token) =>
-    token.depth === 1 && token.value === "project/capabilities");
+  const capabilityEntry = document.entries.find((entry) =>
+    entry.key?.value === "project/capabilities");
 
-  if (!capabilityKey) {
+  if (!capabilityEntry) {
     const insertion = insertCapabilityEntry(input, document, normalizedCapability);
     return Object.freeze({
       source: insertion,
@@ -28,7 +28,7 @@ export function addProjectCapability(source, capability = AUDIO_PLAYBACK_CAPABIL
     });
   }
 
-  const collection = capabilityCollectionAfter(input, document, capabilityKey);
+  const collection = capabilityCollectionAt(input, document, capabilityEntry.value);
   const capabilities = directKeywords(document, collection)
     .map((token) => token.value);
   if (capabilities.includes(normalizedCapability)) {
@@ -56,13 +56,14 @@ export function addProjectCapability(source, capability = AUDIO_PLAYBACK_CAPABIL
 
 export function projectRequestsCapability(source, capability = AUDIO_PLAYBACK_CAPABILITY) {
   try {
+    const input = String(source ?? "");
     const normalizedCapability = normalizeCapability(capability);
-    const document = scanProjectDescriptor(String(source ?? ""));
-    requireCanonicalProject(document);
-    const capabilityKey = document.keywords.find((token) =>
-      token.depth === 1 && token.value === "project/capabilities");
-    if (!capabilityKey) return false;
-    const collection = capabilityCollectionAfter(String(source), document, capabilityKey);
+    const document = scanProjectDescriptor(input);
+    requireCanonicalProject(input, document);
+    const capabilityEntry = document.entries.find((entry) =>
+      entry.key?.value === "project/capabilities");
+    if (!capabilityEntry) return false;
+    const collection = capabilityCollectionAt(input, document, capabilityEntry.value);
     return directKeywords(document, collection)
       .some((token) => token.value === normalizedCapability);
   } catch {
@@ -78,22 +79,19 @@ function normalizeCapability(value) {
   return capability;
 }
 
-function requireCanonicalProject(document) {
-  const type = document.keywords.findIndex((token) =>
-    token.depth === 1 && token.value === "hara/type");
-  if (type < 0 || document.keywords[type + 1]?.depth !== 1
-      || document.keywords[type + 1]?.value !== "project") {
-    throw new Error("project/canonical-descriptor-required");
-  }
+function requireCanonicalProject(source, document) {
+  const type = document.entries.find((entry) => entry.key?.value === "hara/type");
+  const value = type ? source.slice(type.value.start, type.value.end).trim() : "";
+  if (value !== ":project") throw new Error("project/canonical-descriptor-required");
 }
 
-function capabilityCollectionAfter(source, document, key) {
-  const start = skipTrivia(source, key.end);
+function capabilityCollectionAt(source, document, form) {
+  const start = form.start;
   const open = source.startsWith("#{", start) ? "#{"
     : source[start] === "[" ? "[" : null;
   if (!open) throw new Error("project/capabilities-collection-required");
   const collection = document.collections.get(start);
-  if (!collection || collection.open !== open) {
+  if (!collection || collection.open !== open || collection.end + 1 !== form.end) {
     throw new Error("project/capabilities-collection-unbalanced");
   }
   return collection;
@@ -107,21 +105,15 @@ function directKeywords(document, collection) {
 function insertIntoCapabilityCollection(source, collection, keywords, capability) {
   const bodyStart = collection.start + collection.open.length;
   const body = source.slice(bodyStart, collection.end);
-  if (!body.trim()) {
-    return splice(source, collection.end, `:${capability}`);
-  }
-  if (!body.includes("\n")) {
-    return splice(source, collection.end, ` :${capability}`);
-  }
+  if (!body.trim()) return splice(source, collection.end, `:${capability}`);
+  if (!body.includes("\n")) return splice(source, collection.end, ` :${capability}`);
 
   const indent = keywords.length
     ? columnIndent(source, keywords.at(-1).start)
     : `${lineIndent(source, collection.start)}  `;
   const closingLine = lineStart(source, collection.end);
   const closeIsAlone = source.slice(closingLine, collection.end).trim() === "";
-  if (closeIsAlone) {
-    return splice(source, closingLine, `${indent}:${capability}\n`);
-  }
+  if (closeIsAlone) return splice(source, closingLine, `${indent}:${capability}\n`);
   return splice(source, collection.end, `\n${indent}:${capability}`);
 }
 
@@ -137,9 +129,9 @@ function insertCapabilityEntry(source, document, capability) {
     );
   }
 
-  const firstRootKeyword = document.keywords.find((token) => token.depth === 1);
-  const keyIndent = firstRootKeyword
-    ? columnIndent(source, firstRootKeyword.start)
+  const firstRootKey = document.entries.find((entry) => entry.key)?.key;
+  const keyIndent = firstRootKey
+    ? columnIndent(source, firstRootKey.start)
     : `${lineIndent(source, root.start)} `;
   const valueIndent = keyIndent;
   const memberIndent = `${keyIndent}  `;
@@ -227,7 +219,42 @@ function scanProjectDescriptor(source) {
   if (!triviaOnly(before) || !triviaOnly(after)) {
     throw new Error("project/single-top-level-map-required");
   }
-  return { root, collections, keywords };
+  const entries = scanRootEntries(source, root, collections);
+  return { root, collections, keywords, entries };
+}
+
+function scanRootEntries(source, root, collections) {
+  const entries = [];
+  let cursor = root.start + 1;
+  while (cursor < root.end) {
+    cursor = skipTrivia(source, cursor);
+    if (cursor >= root.end) break;
+    const keyForm = readForm(source, cursor, collections, root.end);
+    cursor = skipTrivia(source, keyForm.end);
+    if (cursor >= root.end) throw new Error("project/map-value-required");
+    const value = readForm(source, cursor, collections, root.end);
+    entries.push({ key: keywordForm(source, keyForm), value });
+    cursor = value.end;
+  }
+  return entries;
+}
+
+function readForm(source, start, collections, limit) {
+  if (source[start] === '"') return { start, end: skipString(source, start) };
+  const collection = collections.get(start);
+  if (collection) return { start, end: collection.end + 1 };
+
+  let end = start;
+  while (end < limit && !/[\s,\[\]{}()]/.test(source[end])) end += 1;
+  if (end === start) throw new Error(`project/form-required:${start}`);
+  return { start, end };
+}
+
+function keywordForm(source, form) {
+  if (source[form.start] !== ":") return null;
+  const value = source.slice(form.start + 1, form.end);
+  if (!value || ![...value].every((character) => KEYWORD_CHARACTER.test(character))) return null;
+  return { ...form, value };
 }
 
 function skipTrivia(source, offset) {
