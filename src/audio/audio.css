@@ -40,6 +40,40 @@
 .audio-empty-state > p:not(.hara-kicker) { max-width: 520px; margin: 0; color: var(--hara-muted); font-size: .78rem; line-height: 1.65; }
 .audio-empty-state code { color: var(--hara-text); font-family: var(--hara-font-mono); }
 .audio-warning { color: var(--hara-danger) !important; }
+.audio-capability-action {
+  max-width: 560px;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--hara-spectrum-cyan) 22%, var(--hara-line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--hara-spectrum-cyan) 5%, var(--hara-surface-solid));
+}
+.audio-capability-action > span,
+.audio-capability-manual {
+  color: var(--hara-faint) !important;
+  font-size: .62rem !important;
+  line-height: 1.55 !important;
+}
+.audio-capability-message {
+  max-width: 560px !important;
+  margin: 0 !important;
+  padding: 8px 10px;
+  border: 1px solid var(--hara-line);
+  border-radius: 8px;
+  font-family: var(--hara-font-mono);
+  font-size: .6rem !important;
+}
+.audio-capability-message--error {
+  border-color: color-mix(in srgb, var(--hara-danger) 32%, var(--hara-line));
+  color: var(--hara-danger) !important;
+}
+.audio-capability-message--enabling,
+.audio-capability-message--enabled { color: var(--hara-spectrum-cyan) !important; }
+.audio-capability-manual { margin-top: 2px !important; }
 
 .audio-console { min-height: 100%; padding: 22px; }
 .audio-console__header {
@@ -120,5 +154,6 @@
   .audio-console { padding: 14px; }
   .audio-console__header { display: grid; }
   .audio-transport > span { width: 100%; margin-left: 0; }
-  .audio-control { grid-template-columns: 1fr; gap: 8px; }
+  .audio-control,
+  .audio-capability-action { grid-template-columns: 1fr; gap: 8px; }
 }
