@@ -1,5 +1,10 @@
 import { runtime, state, store } from "../app/context.js";
 import { detectProjectConfiguration } from "../workspace/project.js";
+import {
+  AUDIO_OBSERVER_OPTIONS,
+  reconcileWithoutObservation,
+  setTextContentIfChanged
+} from "./dom-sync.js";
 import { PlaygroundAudioHost, coerceControlValue } from "./host.js";
 
 const OUTPUT_KEY = "hara-playground-output";
@@ -41,35 +46,39 @@ function scheduleMount() {
 
 function mount() {
   scheduled = false;
-  const panel = root?.querySelector(".output-panel");
-  if (!panel) {
-    if (workspaceMounted) void audio.pause().catch(() => {});
-    workspaceMounted = false;
-    return;
-  }
-  workspaceMounted = true;
+  if (!root || !observer) return;
 
-  const tabs = panel.querySelector(".output-tabs");
-  if (!tabs) return;
-  let button = tabs.querySelector('[data-output-tab="audio"]');
-  if (!button) {
-    button = document.createElement("button");
-    button.className = "output-tab audio-output-tab";
-    button.type = "button";
-    button.dataset.outputTab = AUDIO_TAB;
-    button.innerHTML = '<span aria-hidden="true">♪</span> Audio';
-    tabs.querySelector(".preview-mode")?.before(button);
-  }
+  reconcileWithoutObservation(observer, root, () => {
+    const panel = root.querySelector(".output-panel");
+    if (!panel) {
+      if (workspaceMounted) void audio.pause().catch(() => {});
+      workspaceMounted = false;
+      return;
+    }
+    workspaceMounted = true;
 
-  let view = panel.querySelector(".audio-view");
-  if (!view) {
-    view = document.createElement("section");
-    view.className = "audio-view";
-    view.setAttribute("aria-live", "polite");
-    panel.append(view);
-  }
-  renderAudioView(view);
-  applyOutputMode(panel);
+    const tabs = panel.querySelector(".output-tabs");
+    if (!tabs) return;
+    let button = tabs.querySelector('[data-output-tab="audio"]');
+    if (!button) {
+      button = document.createElement("button");
+      button.className = "output-tab audio-output-tab";
+      button.type = "button";
+      button.dataset.outputTab = AUDIO_TAB;
+      button.innerHTML = '<span aria-hidden="true">♪</span> Audio';
+      tabs.querySelector(".preview-mode")?.before(button);
+    }
+
+    let view = panel.querySelector(".audio-view");
+    if (!view) {
+      view = document.createElement("section");
+      view.className = "audio-view";
+      view.setAttribute("aria-live", "polite");
+      panel.append(view);
+    }
+    renderAudioView(view);
+    applyOutputMode(panel);
+  });
 }
 
 function applyOutputMode(panel) {
@@ -83,8 +92,10 @@ function applyOutputMode(panel) {
     panel.querySelector(".preview-view")?.classList.remove("active");
     panel.querySelector(".repl-view")?.classList.remove("active");
   }
-  const mode = panel.querySelector(".preview-mode");
-  if (mode) mode.textContent = active ? "audio/playback" : "kernel effects";
+  setTextContentIfChanged(
+    panel.querySelector(".preview-mode"),
+    active ? "audio/playback" : "kernel effects"
+  );
 }
 
 function renderAudioView(view) {
@@ -232,7 +243,7 @@ export function installAudioOutput(applicationRoot = document.querySelector("#ap
     return { capabilities: project.capabilities };
   });
   observer = new MutationObserver(scheduleMount);
-  observer.observe(root, { childList: true, subtree: true });
+  observer.observe(root, AUDIO_OBSERVER_OPTIONS);
   root.addEventListener("click", handleClick, true);
   root.addEventListener("change", handleChange);
   root.addEventListener("input", handleInput);
@@ -243,6 +254,9 @@ export function installAudioOutput(applicationRoot = document.querySelector("#ap
     root?.removeEventListener("click", handleClick, true);
     root?.removeEventListener("change", handleChange);
     root?.removeEventListener("input", handleInput);
+    root = null;
+    scheduled = false;
+    workspaceMounted = false;
     void audio.dispose();
   };
 }
