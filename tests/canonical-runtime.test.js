@@ -36,7 +36,8 @@ test("canonical adapter owns a persistent browser kernel", async () => {
 
 test("canonical adapter preloads browser HAL namespaces before project code", async () => {
   const broker = fakeBroker();
-  const supersonic = `(ns gw.audio.supersonic)
+  const supersonic = `(ns gw.audio.supersonic
+  (:config {:blank true}))
 (defn status [graph-id]
   @(Host/call "gw.audio.supersonic" "status" [graph-id]))
 `;
@@ -69,7 +70,7 @@ test("canonical adapter preloads browser HAL namespaces before project code", as
 
 test("canonical resource bootstrap repeats after a kernel reset", async () => {
   const broker = fakeBroker();
-  const source = "(ns gw.audio.supersonic)\n(def ready true)";
+  const source = "(ns gw.audio.supersonic\n  (:config {:blank true}))\n(def ready true)";
   const runtime = new CanonicalHaraRuntime({
     broker,
     bootstrapSources: [source]
@@ -79,7 +80,7 @@ test("canonical resource bootstrap repeats after a kernel reset", async () => {
   await runtime.reset();
 
   const bootstraps = broker.calls.filter((call) =>
-    call[0] === "eval" && call[2].includes("(ns gw.audio.supersonic)"));
+    call[0] === "eval" && call[2].includes("(ns gw.audio.supersonic"));
   assert.equal(bootstraps.length, 2);
   assert.equal(runtime.currentNamespace, "user");
 });
@@ -88,7 +89,7 @@ test("a failed canonical bootstrap closes the incomplete kernel", async () => {
   const broker = fakeBroker({ failSource: "gw.audio.supersonic" });
   const runtime = new CanonicalHaraRuntime({
     broker,
-    bootstrapSources: ["(ns gw.audio.supersonic)"]
+    bootstrapSources: ["(ns gw.audio.supersonic\n  (:config {:blank true}))"]
   });
 
   await assert.rejects(
@@ -98,7 +99,7 @@ test("a failed canonical bootstrap closes the incomplete kernel", async () => {
   );
   assert.deepEqual(broker.calls, [
     ["create", "STUDIO"],
-    ["eval", "STUDIO", "(ns gw.audio.supersonic)\n\n(ns user)"],
+    ["eval", "STUDIO", "(ns gw.audio.supersonic\n  (:config {:blank true}))\n\n(ns user)"],
     ["close", "STUDIO"]
   ]);
   assert.equal(runtime.started, false);
@@ -110,6 +111,7 @@ test("the local Supersonic HAL is bootstrap-safe and uses the v1 host contract",
     "utf8"
   );
   assert.equal(hasCanonicalSupersonicHostContract(source), true);
+  assert.match(source, /\(:config\s+\{[^}]*:blank\s+true[^}]*\}\)/s);
   assert.doesNotMatch(source, /\(:require|\[std\.foundation\.host/);
   for (const method of ["start", "update", "status", "stop"]) {
     assert.ok(
@@ -119,15 +121,26 @@ test("the local Supersonic HAL is bootstrap-safe and uses the v1 host contract",
   }
 });
 
-test("Foundation-dependent and one-string Supersonic resources are rejected", () => {
+test("Foundation-dependent, non-blank and one-string Supersonic resources are rejected", () => {
   const foundationDependent = `(ns gw.audio.supersonic
   (:require [std.foundation.host :as host]))
 (defn start [graph]
   @(host/call "gw.audio.supersonic" "start" graph))`;
-  const legacy = `(ns gw.audio.supersonic)
+  const nonBlank = `(ns gw.audio.supersonic)
+(defn start [graph]
+  @(Host/call "gw.audio.supersonic" "start" [graph]))
+(defn update [graph-id node parameter value]
+  @(Host/call "gw.audio.supersonic" "update" [graph-id node parameter value]))
+(defn status [graph-id]
+  @(Host/call "gw.audio.supersonic" "status" [graph-id]))
+(defn stop [graph-id]
+  @(Host/call "gw.audio.supersonic" "stop" [graph-id]))`;
+  const legacy = `(ns gw.audio.supersonic
+  (:config {:blank true}))
 (defn start [graph]
   @(Host/call "gw.audio.supersonic/start" [graph]))`;
   assert.equal(hasCanonicalSupersonicHostContract(foundationDependent), false);
+  assert.equal(hasCanonicalSupersonicHostContract(nonBlank), false);
   assert.equal(hasCanonicalSupersonicHostContract(legacy), false);
 });
 
