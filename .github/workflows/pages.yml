@@ -77,6 +77,11 @@ jobs:
           mkdir -p "$STAGE"
           tar -xzf "$ARCHIVE" -C "$STAGE"
 
+          # The checksum authenticates the transport archive. It is not part
+          # of the browser runtime and must not be copied into the public site.
+          find "$STAGE" -maxdepth 1 -type f \
+            -name 'hara-studio-runtime-*.tar.gz.sha256' -delete
+
           REQUIRED=(
             rust/hara.wasm
             rust/hta.js
