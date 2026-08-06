@@ -31,6 +31,21 @@ export const DEPLOYMENT_PROBES = Object.freeze([
       return null;
     }
   }),
+  textProbe(
+    "runtime/rust/packages/hta/index.js",
+    ["export function encodeHta", "export function decodeHta", "export class BrowserPromiseProvider"],
+    "deployed HTA index is incomplete"
+  ),
+  textProbe(
+    "runtime/rust/packages/hta/worker.js",
+    ['from "./index.js"', "hta_start", "self.addEventListener"],
+    "deployed HTA worker is incomplete"
+  ),
+  textProbe(
+    "runtime/rust/packages/hta/shared-worker.js",
+    ['from "./index.js"', "hta_start", "self.onconnect"],
+    "deployed HTA shared worker is incomplete"
+  ),
   Object.freeze({
     path: "runtime/rust/host/services.js",
     validate(bytes) {
@@ -159,6 +174,18 @@ async function fetchAsset({ base, path, commit, fetchImpl, requestTimeoutMs }) {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+function textProbe(path, requiredFragments, errorMessage) {
+  return Object.freeze({
+    path,
+    validate(bytes) {
+      const source = new TextDecoder().decode(bytes);
+      return requiredFragments.every((fragment) => source.includes(fragment))
+        ? null
+        : errorMessage;
+    }
+  });
 }
 
 function normalizeBaseUrl(value) {
