@@ -20,6 +20,10 @@ export function normaliseMobileSurface(value, fallback = "code") {
   return MOBILE_SURFACES.includes(value) ? value : fallback;
 }
 
+export function shouldAutoFocusMobileSurface(value) {
+  return normaliseMobileSurface(value) !== "code";
+}
+
 export function normaliseDesktopLayout(layout = {}, availableWidth = 1280) {
   const width = Math.max(760, Number(availableWidth) || 1280);
   const dividerSpace = 16;
