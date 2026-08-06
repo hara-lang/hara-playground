@@ -1,9 +1,10 @@
-(ns gw.audio.supersonic)
+(ns gw.audio.supersonic
+  (:config {:blank true}))
 
 ;; This browser compatibility namespace calls the built-in Host boundary
-;; directly. Depending on the larger Foundation wrapper here would make the
-;; first audio namespace require a separate bootstrap before a project can
-;; start its graph.
+;; directly. The explicit blank configuration prevents the first project boot
+;; from resolving Foundation defaults before the compatibility namespace has
+;; been installed in the canonical kernel.
 
 (defn start [graph]
   @(Host/call "gw.audio.supersonic" "start" [graph]))
