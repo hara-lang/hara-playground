@@ -136,30 +136,40 @@ try {
   }, null, 2));
   console.log("Verified the public Supersonic project: import, graph start, Play, live tempo edit, and Stop.");
 } catch (error) {
-  console.error(`Live Supersonic verification failed at ${target.href}`);
+  let playgroundState = null;
   if (page && !page.isClosed()) {
-    const playgroundState = await page.evaluate(() => {
+    playgroundState = await page.evaluate(() => {
       const text = (selector) => document.querySelector(selector)?.textContent?.trim() || "";
-      const entries = [...document.querySelectorAll(".repl-entry, .repl-row, .repl-line")]
+      const entries = [...document.querySelectorAll(
+        ".repl-entry, .repl-row, .repl-line, .diagnostic, .console-entry"
+      )]
         .map((element) => element.textContent?.trim() || "")
         .filter(Boolean)
-        .slice(-12);
+        .slice(-8)
+        .map((entry) => entry.slice(0, 500));
       const body = document.body?.innerText?.trim() || "";
       return {
         title: document.title,
-        runtime: text(".kernel-state"),
-        statusbar: text(".statusbar"),
-        audio: text(".audio-view"),
+        runtime: text(".kernel-state").slice(0, 500),
+        statusbar: text(".statusbar").slice(0, 500),
+        audio: text(".audio-view").slice(0, 1_000),
         replEntries: entries,
-        bodyTail: body.slice(-6_000)
+        bodyTail: body.slice(-1_500)
       };
     }).catch((stateError) => ({ captureError: stateError?.message || String(stateError) }));
-    console.error(`Playground state:\n${JSON.stringify(playgroundState, null, 2)}`);
   }
-  if (pageErrors.length) console.error(`Page errors:\n${pageErrors.join("\n")}`);
-  if (consoleErrors.length) console.error(`Console errors:\n${consoleErrors.join("\n")}`);
-  if (failedRequests.length) console.error(`Failed requests:\n${failedRequests.join("\n")}`);
-  throw error;
+
+  const failure = {
+    original: (error?.stack || error?.message || String(error)).slice(0, 1_500),
+    state: playgroundState,
+    pageErrors: pageErrors.slice(-6).map((entry) => entry.slice(0, 500)),
+    consoleErrors: consoleErrors.slice(-6).map((entry) => entry.slice(0, 500)),
+    failedRequests: failedRequests.slice(-6).map((entry) => entry.slice(0, 500)),
+    crashed
+  };
+  const marker = `CANONICAL_BOOT_STATE ${JSON.stringify(failure)}`;
+  console.error(marker);
+  throw new Error(marker);
 } finally {
   await browser?.close().catch(() => {});
 }
