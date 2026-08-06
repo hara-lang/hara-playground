@@ -23,6 +23,7 @@ function assertVerifiedSourceBuild(workflow) {
   assert.match(workflow, /targets:\s*wasm32-unknown-unknown/);
   assert.match(workflow, /scripts\/build-studio-runtime ci/);
   assert.match(workflow, /sha256sum -c/);
+  assert.match(workflow, /hara-studio-runtime-\*\.tar\.gz\.sha256/);
   assert.match(workflow, /rust\/hta-shared-worker\.js/);
   assert.match(workflow, /rust\/host\/services\.js/);
   assert.match(workflow, /rust\/studio\/supersonic\.js/);
