@@ -7,6 +7,7 @@ on:
       - .github/workflows/browser-audio-ci.yml
       - scripts/verify-browser-audio.mjs
       - scripts/verify-supersonic-project-open.mjs
+      - scripts/diagnose-live-supersonic.mjs
       - tests/browser/**
       - tests/browser-audio-workflow.test.js
       - samples/supersonic-live/**
@@ -59,3 +60,8 @@ jobs:
 
       - name: Open the complete Supersonic project
         run: node scripts/verify-supersonic-project-open.mjs
+
+      - name: Capture the public Supersonic state
+        env:
+          HARA_PLAYGROUND_URL: https://playground.hara-lang.org/
+        run: node scripts/diagnose-live-supersonic.mjs
