@@ -163,3 +163,30 @@ jobs:
 
       - name: Open the complete Supersonic project
         run: node scripts/verify-supersonic-project-open.mjs
+
+      - name: Play, live-edit and stop the source-built runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          SERVER_LOG="$RUNNER_TEMP/hara-playground-server.log"
+          PORT=4173 node scripts/dev-server.mjs >"$SERVER_LOG" 2>&1 &
+          SERVER_PID=$!
+          cleanup() {
+            kill "$SERVER_PID" 2>/dev/null || true
+            wait "$SERVER_PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          for _ in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:4173/ >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          if ! curl --fail --silent --show-error http://127.0.0.1:4173/ >/dev/null; then
+            cat "$SERVER_LOG" >&2
+            exit 1
+          fi
+
+          HARA_PLAYGROUND_URL=http://127.0.0.1:4173/ \
+            node scripts/verify-live-supersonic.mjs
