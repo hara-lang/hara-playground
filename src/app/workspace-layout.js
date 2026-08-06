@@ -4,7 +4,8 @@ import {
   DEFAULT_DESKTOP_LAYOUT,
   normaliseDesktopLayout,
   normaliseMobileSurface,
-  resizeDesktopLayout
+  resizeDesktopLayout,
+  shouldAutoFocusMobileSurface
 } from "./layout-model.js";
 
 const LAYOUT_KEY = "hara-playground-desktop-layout";
@@ -200,12 +201,11 @@ function activateMobileSurface(shell, value, { focus = false, syncOutput = true 
     button.setAttribute("aria-pressed", String(active));
   });
   if (syncOutput && OUTPUT_SURFACES.has(mobileSurface)) setOutputMode(shell, mobileSurface);
-  if (focus) {
-    const target = mobileSurface === "code" ? shell.querySelector("#editor")
-      : mobileSurface === "repl" ? shell.querySelector("#repl-input")
-        : mobileSurface === "audio" ? shell.querySelector("#audio-play-button, [data-audio-control]")
-          : mobileSurface === "files" ? shell.querySelector(".tree-file.selected, .tree-file")
-            : null;
+  if (focus && shouldAutoFocusMobileSurface(mobileSurface)) {
+    const target = mobileSurface === "repl" ? shell.querySelector("#repl-input")
+      : mobileSurface === "audio" ? shell.querySelector("#audio-play-button, [data-audio-control]")
+        : mobileSurface === "files" ? shell.querySelector(".tree-file.selected, .tree-file")
+          : null;
     target?.focus({ preventScroll: true });
   }
   if (mobileSurface === "preview") requestAnimationFrame(() => requestPreviewResize(shell));
