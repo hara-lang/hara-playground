@@ -1,14 +1,19 @@
-(ns gw.audio.supersonic
-  (:require [std.foundation.host :as host]))
+(ns gw.audio.supersonic)
+
+;; This browser compatibility namespace deliberately calls the built-in Host
+;; boundary directly. Requiring std.foundation.host here would make the first
+;; audio namespace depend on the larger Foundation bootstrap before a project
+;; can start its graph.
 
 (defn start [graph]
-  @(host/call "gw.audio.supersonic" "start" graph))
+  @(Host/call "gw.audio.supersonic" "start" [graph]))
 
 (defn update [graph-id node parameter value]
-  @(host/call "gw.audio.supersonic" "update" graph-id node parameter value))
+  @(Host/call "gw.audio.supersonic" "update"
+              [graph-id node parameter value]))
 
 (defn status [graph-id]
-  @(host/call "gw.audio.supersonic" "status" graph-id))
+  @(Host/call "gw.audio.supersonic" "status" [graph-id]))
 
 (defn stop [graph-id]
-  @(host/call "gw.audio.supersonic" "stop" graph-id))
+  @(Host/call "gw.audio.supersonic" "stop" [graph-id]))
