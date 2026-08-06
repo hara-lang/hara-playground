@@ -1,9 +1,9 @@
 (ns gw.audio.supersonic)
 
-;; This browser compatibility namespace deliberately calls the built-in Host
-;; boundary directly. Requiring std.foundation.host here would make the first
-;; audio namespace depend on the larger Foundation bootstrap before a project
-;; can start its graph.
+;; This browser compatibility namespace calls the built-in Host boundary
+;; directly. Depending on the larger Foundation wrapper here would make the
+;; first audio namespace require a separate bootstrap before a project can
+;; start its graph.
 
 (defn start [graph]
   @(Host/call "gw.audio.supersonic" "start" [graph]))
