@@ -4,6 +4,7 @@ import { chromium } from "playwright";
 
 const baseUrl = process.env.HARA_PLAYGROUND_URL || "https://playground.hara-lang.org/";
 const target = new URL(baseUrl);
+const REVISION_SELECTOR = ".audio-console__header h2 + p";
 target.searchParams.set("repo", "hara-lang/hara-playground");
 target.searchParams.set("branch", "main");
 target.searchParams.set("path", "samples/supersonic-live");
@@ -63,13 +64,13 @@ try {
     state: "visible",
     timeout: 30_000
   });
-  const graphBefore = await page.evaluate(() => ({
+  const graphBefore = await page.evaluate((revisionSelector) => ({
     heading: document.querySelector(".audio-console h2")?.textContent?.trim() || "",
     status: document.querySelector(".audio-status")?.textContent?.trim() || "",
-    revision: document.querySelector(".audio-console__header p")?.textContent?.trim() || "",
+    revision: document.querySelector(revisionSelector)?.textContent?.trim() || "",
     error: document.querySelector(".audio-error")?.textContent?.trim() || "",
     runtime: document.querySelector(".kernel-state")?.textContent?.trim() || ""
-  }));
+  }), REVISION_SELECTOR);
   assert.equal(graphBefore.heading, "Glass Signal", "the deployed sample did not publish its graph");
   assert.equal(graphBefore.error, "", graphBefore.error || "the Audio surface reported an error");
 
@@ -94,16 +95,16 @@ try {
     'input[data-audio-node="transport"][data-audio-parameter="tempo"]'
   );
   await tempo.waitFor({ state: "visible", timeout: 10_000 });
-  const revisionBefore = graphBefore.revision;
+  const revisionBeforeUpdate = (await page.locator(REVISION_SELECTOR).textContent())?.trim() || "";
   await tempo.evaluate((element) => {
     element.value = "138";
     element.dispatchEvent(new Event("input", { bubbles: true }));
     element.dispatchEvent(new Event("change", { bubbles: true }));
   });
-  await page.waitForFunction((previousRevision) => {
-    const current = document.querySelector(".audio-console__header p")?.textContent?.trim() || "";
+  await page.waitForFunction(({ selector, previousRevision }) => {
+    const current = document.querySelector(selector)?.textContent?.trim() || "";
     return current && current !== previousRevision;
-  }, revisionBefore, { timeout: 10_000 });
+  }, { selector: REVISION_SELECTOR, previousRevision: revisionBeforeUpdate }, { timeout: 10_000 });
   assert.equal(await tempo.inputValue(), "138");
   assert.equal(
     (await page.locator(".audio-status").textContent())?.trim().toLowerCase(),
@@ -126,6 +127,8 @@ try {
     graph: graphBefore.heading,
     initialStatus: graphBefore.status,
     runtime: graphBefore.runtime,
+    initialRevision: graphBefore.revision,
+    updateRevision: (await page.locator(REVISION_SELECTOR).textContent())?.trim(),
     tempo: await tempo.inputValue(),
     finalStatus: (await page.locator(".audio-status").textContent())?.trim(),
     failedRequests
