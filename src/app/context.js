@@ -1,3 +1,4 @@
+import { WebCapabilityRegistry } from "../runtime/capabilities.js";
 import { RuntimeClient } from "../runtime/client.js";
 import { DEFAULT_WORKSPACE, WorkspaceStore } from "../workspace/store.js";
 import { previewDocument } from "../ui/hta.js";
@@ -37,7 +38,11 @@ const initialTheme = readSetting(STUDIO_SETTING_KEYS.theme, readSetting("hara-st
 
 export const app = document.querySelector("#app");
 export const store = new WorkspaceStore();
-export const runtime = new RuntimeClient();
+export const capabilities = new WebCapabilityRegistry({ grants: ["studio/eval"] });
+export const runtime = new RuntimeClient(
+  new URL("../runtime/worker.js", import.meta.url),
+  { hostRegistry: capabilities }
+);
 
 export const state = {
   screen: "projects",
