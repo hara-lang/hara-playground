@@ -31,6 +31,9 @@ function assertVerifiedSourceBuild(workflow) {
   assert.match(workflow, /sha256sum -c/);
   assert.match(workflow, /hara-studio-runtime-\*\.tar\.gz\.sha256/);
   assert.match(workflow, /rust\/hta-shared-worker\.js/);
+  assert.match(workflow, /rust\/packages\/hta\/index\.js/);
+  assert.match(workflow, /rust\/packages\/hta\/worker\.js/);
+  assert.match(workflow, /rust\/packages\/hta\/shared-worker\.js/);
   assert.match(workflow, /rust\/host\/broker\.js/);
   assert.doesNotMatch(workflow, /rust\/host\/client\.js/);
   assert.match(workflow, /rust\/host\/services\.js/);
@@ -39,7 +42,7 @@ function assertVerifiedSourceBuild(workflow) {
 }
 
 test("Pages uses exact verified Hara and Hara UI source revisions", () => {
-  const hara = "5a81f6bb2146cc1f32baf1ab45370913d960d3c2";
+  const hara = "c3c345f0e0d18d499c39d82b8f4bcb98e4ebb4f6";
   const haraUi = "145a9acc728f71f9aa215868a22774ea07d466d4";
 
   assert.equal(pinnedRef(pages, "HARA_RUNTIME_SOURCE_REF"), hara);
@@ -57,7 +60,11 @@ test("the source-built runtime path is exercised with read-only pull-request per
   assert.doesNotMatch(runtimeCi, /pages:\s*write/);
   assert.doesNotMatch(runtimeCi, /id-token:\s*write/);
   assert.match(runtimeCi, /npm run build/);
+  assert.match(runtimeCi, /dist\/runtime\/rust\/packages\/hta\/index\.js/);
+  assert.match(runtimeCi, /dist\/runtime\/rust\/packages\/hta\/worker\.js/);
+  assert.match(runtimeCi, /dist\/runtime\/rust\/packages\/hta\/shared-worker\.js/);
   assert.match(runtimeCi, /dist\/runtime\/rust\/host\/broker\.js/);
+  assert.match(runtimeCi, /node --check dist\/runtime\/rust\/packages\/hta\/index\.js/);
   assert.match(runtimeCi, /node --check dist\/runtime\/rust\/host\/services\.js/);
   assert.match(runtimeCi, /node --check dist\/runtime\/rust\/studio\/supersonic\.js/);
   assert.match(runtimeCi, /gw\.audio\.supersonic\/start/);
@@ -70,11 +77,18 @@ test("the deployable Supersonic runtime is exercised in real Chromium", () => {
   assert.match(runtimeCi, /playwright install --with-deps chromium/);
   assert.match(runtimeCi, /node scripts\/verify-browser-audio\.mjs/);
   assert.match(runtimeCi, /node scripts\/verify-supersonic-project-open\.mjs/);
+  assert.match(runtimeCi, /PORT=4173 node scripts\/dev-server\.mjs/);
+  assert.match(runtimeCi, /HARA_PLAYGROUND_URL=http:\/\/127\.0\.0\.1:4173\//);
+  assert.match(runtimeCi, /node scripts\/verify-live-supersonic\.mjs/);
 });
 
-test("the production workflow publishes only after installing the complete runtime", () => {
+test("the production workflow verifies interaction after deployment", () => {
   assert.match(pages, /npm run build/);
   assert.match(pages, /actions\/upload-pages-artifact@v3/);
   assert.match(pages, /actions\/deploy-pages@v4/);
   assert.match(pages, /Verify public Supersonic deployment/);
+  assert.match(pages, /playwright@1\.53\.2/);
+  assert.match(pages, /playwright install --with-deps chromium/);
+  assert.match(pages, /node scripts\/verify-live-supersonic\.mjs/);
+  assert.match(pages, /HARA_PLAYGROUND_URL:\s*\$\{\{ needs\.deploy\.outputs\.page_url \}\}/);
 });

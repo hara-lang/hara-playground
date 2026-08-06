@@ -24,11 +24,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      # The published v0.1.0 Studio archive predates the SharedWorker and
-      # Supersonic payload required by the current Playground. Build the exact
-      # source revision already proven by Studio runtime archive CI until a
-      # complete immutable release can replace this temporary source pin.
-      HARA_RUNTIME_SOURCE_REF: 5a81f6bb2146cc1f32baf1ab45370913d960d3c2
+      # Merged hara-lang/hara#335. This exact revision packages the HTA browser
+      # module imported by hta.js, hta-worker.js and hta-shared-worker.js,
+      # together with the Supersonic provider and HAL namespace.
+      HARA_RUNTIME_SOURCE_REF: c3c345f0e0d18d499c39d82b8f4bcb98e4ebb4f6
       # This is the gitlink recorded by the Hara source pin. Check it out
       # explicitly over HTTPS instead of relying on Hara's SSH submodule URL.
       HARA_UI_SOURCE_REF: 145a9acc728f71f9aa215868a22774ea07d466d4
@@ -119,6 +118,9 @@ jobs:
             rust/hta.js
             rust/hta-worker.js
             rust/hta-shared-worker.js
+            rust/packages/hta/index.js
+            rust/packages/hta/worker.js
+            rust/packages/hta/shared-worker.js
             rust/host/broker.js
             rust/host/services.js
             rust/studio/supersonic.js
@@ -147,7 +149,7 @@ jobs:
     name: Verify public Supersonic deployment
     needs: deploy
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
@@ -160,3 +162,11 @@ jobs:
           HARA_PLAYGROUND_URL: ${{ needs.deploy.outputs.page_url }}
           HARA_PLAYGROUND_COMMIT: ${{ github.sha }}
         run: node scripts/verify-pages-deployment.mjs
+      - name: Install pinned browser smoke tooling
+        run: |
+          npm install --no-save --ignore-scripts --package-lock=false playwright@1.53.2
+          npx playwright install --with-deps chromium
+      - name: Exercise the public Supersonic project
+        env:
+          HARA_PLAYGROUND_URL: ${{ needs.deploy.outputs.page_url }}
+        run: node scripts/verify-live-supersonic.mjs

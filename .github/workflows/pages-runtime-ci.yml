@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/pages.yml
       - .github/workflows/pages-runtime-ci.yml
+      - scripts/verify-live-supersonic.mjs
       - tests/pages-workflow.test.js
   workflow_dispatch:
 
@@ -21,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      HARA_RUNTIME_SOURCE_REF: 5a81f6bb2146cc1f32baf1ab45370913d960d3c2
+      HARA_RUNTIME_SOURCE_REF: c3c345f0e0d18d499c39d82b8f4bcb98e4ebb4f6
       HARA_UI_SOURCE_REF: 145a9acc728f71f9aa215868a22774ea07d466d4
     steps:
       - uses: actions/checkout@v4
@@ -109,6 +110,9 @@ jobs:
             rust/hta.js
             rust/hta-worker.js
             rust/hta-shared-worker.js
+            rust/packages/hta/index.js
+            rust/packages/hta/worker.js
+            rust/packages/hta/shared-worker.js
             rust/host/broker.js
             rust/host/services.js
             rust/studio/supersonic.js
@@ -134,9 +138,15 @@ jobs:
           set -euo pipefail
           test -s dist/runtime/rust/hara.wasm
           test -f dist/runtime/rust/hta-shared-worker.js
+          test -f dist/runtime/rust/packages/hta/index.js
+          test -f dist/runtime/rust/packages/hta/worker.js
+          test -f dist/runtime/rust/packages/hta/shared-worker.js
           test -f dist/runtime/rust/host/broker.js
           test -f dist/runtime/rust/studio/supersonic.js
           test -f dist/runtime/rust/studio/hal/supersonic.hal
+          node --check dist/runtime/rust/packages/hta/index.js
+          node --check dist/runtime/rust/packages/hta/worker.js
+          node --check dist/runtime/rust/packages/hta/shared-worker.js
           node --check dist/runtime/rust/host/services.js
           node --check dist/runtime/rust/studio/supersonic.js
           grep -Fq 'gw.audio.supersonic/start' dist/runtime/rust/host/services.js
@@ -153,3 +163,30 @@ jobs:
 
       - name: Open the complete Supersonic project
         run: node scripts/verify-supersonic-project-open.mjs
+
+      - name: Play, live-edit and stop the source-built runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          SERVER_LOG="$RUNNER_TEMP/hara-playground-server.log"
+          PORT=4173 node scripts/dev-server.mjs >"$SERVER_LOG" 2>&1 &
+          SERVER_PID=$!
+          cleanup() {
+            kill "$SERVER_PID" 2>/dev/null || true
+            wait "$SERVER_PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          for _ in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:4173/ >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          if ! curl --fail --silent --show-error http://127.0.0.1:4173/ >/dev/null; then
+            cat "$SERVER_LOG" >&2
+            exit 1
+          fi
+
+          HARA_PLAYGROUND_URL=http://127.0.0.1:4173/ \
+            node scripts/verify-live-supersonic.mjs
