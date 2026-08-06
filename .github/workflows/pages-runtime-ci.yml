@@ -109,7 +109,7 @@ jobs:
             rust/hta.js
             rust/hta-worker.js
             rust/hta-shared-worker.js
-            rust/host/client.js
+            rust/host/broker.js
             rust/host/services.js
             rust/studio/supersonic.js
             rust/studio/hal/supersonic.hal
@@ -134,6 +134,7 @@ jobs:
           set -euo pipefail
           test -s dist/runtime/rust/hara.wasm
           test -f dist/runtime/rust/hta-shared-worker.js
+          test -f dist/runtime/rust/host/broker.js
           test -f dist/runtime/rust/studio/supersonic.js
           test -f dist/runtime/rust/studio/hal/supersonic.hal
           node --check dist/runtime/rust/host/services.js
