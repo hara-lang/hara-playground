@@ -106,5 +106,8 @@ jobs:
           test -f dist/runtime/rust/hta-shared-worker.js
           test -f dist/runtime/rust/studio/supersonic.js
           test -f dist/runtime/rust/studio/hal/supersonic.hal
-          grep -Fq '"gw.audio.supersonic/start"' dist/runtime/rust/host/services.js
+          node --check dist/runtime/rust/host/services.js
+          node --check dist/runtime/rust/studio/supersonic.js
+          grep -Fq 'gw.audio.supersonic/start' dist/runtime/rust/host/services.js
+          grep -Fq '(ns gw.audio.supersonic' dist/runtime/rust/studio/hal/supersonic.hal
           cmp src/audio/integration.js dist/src/audio/integration.js
