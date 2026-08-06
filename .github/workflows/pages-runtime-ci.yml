@@ -1,44 +1,34 @@
-name: Deploy Hara Playground
+name: Pages runtime source CI
 
 on:
-  push:
+  pull_request:
     branches: [main]
+    paths:
+      - .github/workflows/pages.yml
+      - .github/workflows/pages-runtime-ci.yml
+      - tests/pages-workflow.test.js
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: pages-runtime-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    outputs:
-      page_url: ${{ steps.deployment.outputs.page_url }}
+  runtime:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      # The published v0.1.0 Studio archive predates the SharedWorker and
-      # Supersonic payload required by the current Playground. Build the exact
-      # source revision already proven by Studio runtime archive CI until a
-      # complete immutable release can replace this temporary source pin.
       HARA_RUNTIME_SOURCE_REF: 5a81f6bb2146cc1f32baf1ab45370913d960d3c2
-      # This is the gitlink recorded by the Hara source pin. Check it out
-      # explicitly over HTTPS instead of relying on Hara's SSH submodule URL.
       HARA_UI_SOURCE_REF: 145a9acc728f71f9aa215868a22774ea07d466d4
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm run check
-      - run: npm test
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -135,28 +125,31 @@ jobs:
           mkdir -p runtime
           cp -a "$STAGE/." runtime/
 
-      - run: npm run build
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Build the complete static site
+        run: npm run build
 
-  smoke:
-    name: Verify public Supersonic deployment
-    needs: deploy
-    runs-on: ubuntu-latest
-    timeout-minutes: 8
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Match public assets to the deployed commit
-        env:
-          HARA_PLAYGROUND_URL: ${{ needs.deploy.outputs.page_url }}
-          HARA_PLAYGROUND_COMMIT: ${{ github.sha }}
-        run: node scripts/verify-pages-deployment.mjs
+      - name: Verify the deployable runtime and crash fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s dist/runtime/rust/hara.wasm
+          test -f dist/runtime/rust/hta-shared-worker.js
+          test -f dist/runtime/rust/host/broker.js
+          test -f dist/runtime/rust/studio/supersonic.js
+          test -f dist/runtime/rust/studio/hal/supersonic.hal
+          node --check dist/runtime/rust/host/services.js
+          node --check dist/runtime/rust/studio/supersonic.js
+          grep -Fq 'gw.audio.supersonic/start' dist/runtime/rust/host/services.js
+          grep -Fq '(ns gw.audio.supersonic' dist/runtime/rust/studio/hal/supersonic.hal
+          cmp src/audio/integration.js dist/src/audio/integration.js
+
+      - name: Install Chromium smoke dependency
+        run: |
+          npm install --no-save --ignore-scripts --package-lock=false playwright@1.53.2
+          npx playwright install --with-deps chromium
+
+      - name: Exercise the isolated Web Audio renderer
+        run: node scripts/verify-browser-audio.mjs
+
+      - name: Open the complete Supersonic project
+        run: node scripts/verify-supersonic-project-open.mjs
