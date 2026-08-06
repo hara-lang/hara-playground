@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   chromium:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       HARA_RUNTIME_SOURCE_REF: c3c345f0e0d18d499c39d82b8f4bcb98e4ebb4f6
