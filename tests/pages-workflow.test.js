@@ -77,6 +77,9 @@ test("the deployable Supersonic runtime is exercised in real Chromium", () => {
   assert.match(runtimeCi, /playwright install --with-deps chromium/);
   assert.match(runtimeCi, /node scripts\/verify-browser-audio\.mjs/);
   assert.match(runtimeCi, /node scripts\/verify-supersonic-project-open\.mjs/);
+  assert.match(runtimeCi, /PORT=4173 node scripts\/dev-server\.mjs/);
+  assert.match(runtimeCi, /HARA_PLAYGROUND_URL=http:\/\/127\.0\.0\.1:4173\//);
+  assert.match(runtimeCi, /node scripts\/verify-live-supersonic\.mjs/);
 });
 
 test("the production workflow verifies interaction after deployment", () => {
