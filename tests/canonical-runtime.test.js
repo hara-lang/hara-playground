@@ -1,9 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import {
   CanonicalHaraRuntime,
   CanonicalRuntimeUnavailableError,
-  detectNamespace
+  detectNamespace,
+  hasCanonicalSupersonicHostContract
 } from "../src/runtime/canonical.js";
 
 function fakeBroker({ failSource = null } = {}) {
@@ -100,6 +102,25 @@ test("a failed canonical bootstrap closes the incomplete kernel", async () => {
     ["close", "STUDIO"]
   ]);
   assert.equal(runtime.started, false);
+});
+
+test("the local Supersonic HAL uses the v1 service and method host contract", async () => {
+  const source = await readFile(
+    new URL("../src/audio/gw.audio.supersonic.hal", import.meta.url),
+    "utf8"
+  );
+  assert.equal(hasCanonicalSupersonicHostContract(source), true);
+  for (const method of ["start", "update", "status", "stop"]) {
+    assert.match(source, new RegExp(`host/call \\"gw\\.audio\\.supersonic\\" \\"${method}\\"`));
+  }
+});
+
+test("legacy one-string Supersonic host calls are rejected", () => {
+  const legacy = `(ns gw.audio.supersonic
+  (:require [std.foundation.host :as host]))
+(defn start [graph]
+  @(host/call "gw.audio.supersonic/start" graph))`;
+  assert.equal(hasCanonicalSupersonicHostContract(legacy), false);
 });
 
 test("canonical adapter respects namespace declarations and resets kernels", async () => {
