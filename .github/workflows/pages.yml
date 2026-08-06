@@ -22,6 +22,13 @@ jobs:
     outputs:
       page_url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # The published v0.1.0 Studio archive predates the SharedWorker and
+      # Supersonic payload required by the current Playground. Build the exact
+      # source revision already proven by Studio runtime archive CI until a
+      # complete immutable release can replace this temporary source pin.
+      HARA_RUNTIME_SOURCE_REF: 5a81f6bb2146cc1f32baf1ab45370913d960d3c2
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,8 +36,68 @@ jobs:
           node-version: 22
       - run: npm run check
       - run: npm test
-      - name: Install pinned Hara runtime
-        run: npm run runtime:download
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Check out verified Hara runtime source
+        uses: actions/checkout@v4
+        with:
+          repository: hara-lang/hara
+          ref: ${{ env.HARA_RUNTIME_SOURCE_REF }}
+          path: .hara-runtime-source
+          submodules: true
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Build and install verified Hara runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ACTUAL_REF=$(git -C .hara-runtime-source rev-parse HEAD)
+          if [ "$ACTUAL_REF" != "$HARA_RUNTIME_SOURCE_REF" ]; then
+            echo "Hara checkout resolved to $ACTUAL_REF, expected $HARA_RUNTIME_SOURCE_REF" >&2
+            exit 1
+          fi
+
+          OUT="$RUNNER_TEMP/hara-studio-runtime"
+          HARA_STUDIO_RUNTIME_OUT="$OUT" \
+            .hara-runtime-source/scripts/build-studio-runtime ci
+
+          ARCHIVE="$OUT/hara-studio-runtime-ci.tar.gz"
+          CHECKSUM="$ARCHIVE.sha256"
+          test -s "$ARCHIVE"
+          test -s "$CHECKSUM"
+          sha256sum -c "$CHECKSUM"
+
+          STAGE="$RUNNER_TEMP/hara-runtime-stage"
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE"
+          tar -xzf "$ARCHIVE" -C "$STAGE"
+
+          REQUIRED=(
+            rust/hara.wasm
+            rust/hta.js
+            rust/hta-worker.js
+            rust/hta-shared-worker.js
+            rust/host/client.js
+            rust/host/services.js
+            rust/studio/supersonic.js
+            rust/studio/hal/supersonic.hal
+          )
+          for path in "${REQUIRED[@]}"; do
+            if [ ! -f "$STAGE/$path" ]; then
+              echo "built runtime is missing required payload: $path" >&2
+              exit 1
+            fi
+          done
+
+          rm -rf runtime
+          mkdir -p runtime
+          cp -a "$STAGE/." runtime/
+
       - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
