@@ -7,6 +7,9 @@
     "rust/hta.js",
     "rust/hta-worker.js",
     "rust/hta-shared-worker.js",
+    "rust/packages/hta/index.js",
+    "rust/packages/hta/worker.js",
+    "rust/packages/hta/shared-worker.js",
     "rust/host/broker.js",
     "rust/host/services.js"
   ]
