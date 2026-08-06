@@ -10,6 +10,7 @@ target.searchParams.set("path", "samples/supersonic-live");
 target.searchParams.set("smoke", String(Date.now()));
 
 let browser = null;
+let page = null;
 const pageErrors = [];
 const consoleErrors = [];
 const failedRequests = [];
@@ -24,7 +25,7 @@ try {
     viewport: { width: 1440, height: 960 },
     reducedMotion: "reduce"
   });
-  const page = await context.newPage();
+  page = await context.newPage();
 
   page.on("crash", () => { crashed = true; });
   page.on("pageerror", (error) => pageErrors.push(error.stack || error.message));
@@ -136,6 +137,25 @@ try {
   console.log("Verified the public Supersonic project: import, graph start, Play, live tempo edit, and Stop.");
 } catch (error) {
   console.error(`Live Supersonic verification failed at ${target.href}`);
+  if (page && !page.isClosed()) {
+    const playgroundState = await page.evaluate(() => {
+      const text = (selector) => document.querySelector(selector)?.textContent?.trim() || "";
+      const entries = [...document.querySelectorAll(".repl-entry, .repl-row, .repl-line")]
+        .map((element) => element.textContent?.trim() || "")
+        .filter(Boolean)
+        .slice(-12);
+      const body = document.body?.innerText?.trim() || "";
+      return {
+        title: document.title,
+        runtime: text(".kernel-state"),
+        statusbar: text(".statusbar"),
+        audio: text(".audio-view"),
+        replEntries: entries,
+        bodyTail: body.slice(-6_000)
+      };
+    }).catch((stateError) => ({ captureError: stateError?.message || String(stateError) }));
+    console.error(`Playground state:\n${JSON.stringify(playgroundState, null, 2)}`);
+  }
   if (pageErrors.length) console.error(`Page errors:\n${pageErrors.join("\n")}`);
   if (consoleErrors.length) console.error(`Console errors:\n${consoleErrors.join("\n")}`);
   if (failedRequests.length) console.error(`Failed requests:\n${failedRequests.join("\n")}`);
