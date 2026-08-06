@@ -46,7 +46,10 @@ test("the source-built runtime path is exercised with read-only pull-request per
   assert.doesNotMatch(runtimeCi, /pages:\s*write/);
   assert.doesNotMatch(runtimeCi, /id-token:\s*write/);
   assert.match(runtimeCi, /npm run build/);
-  assert.match(runtimeCi, /dist\/runtime\/rust\/hta-shared-worker\.js/);
+  assert.match(runtimeCi, /node --check dist\/runtime\/rust\/host\/services\.js/);
+  assert.match(runtimeCi, /node --check dist\/runtime\/rust\/studio\/supersonic\.js/);
+  assert.match(runtimeCi, /gw\.audio\.supersonic\/start/);
+  assert.match(runtimeCi, /\(ns gw\.audio\.supersonic/);
   assert.match(runtimeCi, /cmp src\/audio\/integration\.js dist\/src\/audio\/integration\.js/);
 });
 
