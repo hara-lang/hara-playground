@@ -1,0 +1,105 @@
+name: Pages runtime source CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/pages.yml
+      - .github/workflows/pages-runtime-ci.yml
+      - tests/pages-workflow.test.js
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-runtime-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      HARA_RUNTIME_SOURCE_REF: 5a81f6bb2146cc1f32baf1ab45370913d960d3c2
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Check out verified Hara runtime source
+        uses: actions/checkout@v4
+        with:
+          repository: hara-lang/hara
+          ref: ${{ env.HARA_RUNTIME_SOURCE_REF }}
+          path: .hara-runtime-source
+          submodules: true
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Build and install verified Hara runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ACTUAL_REF=$(git -C .hara-runtime-source rev-parse HEAD)
+          if [ "$ACTUAL_REF" != "$HARA_RUNTIME_SOURCE_REF" ]; then
+            echo "Hara checkout resolved to $ACTUAL_REF, expected $HARA_RUNTIME_SOURCE_REF" >&2
+            exit 1
+          fi
+
+          OUT="$RUNNER_TEMP/hara-studio-runtime"
+          HARA_STUDIO_RUNTIME_OUT="$OUT" \
+            .hara-runtime-source/scripts/build-studio-runtime ci
+
+          ARCHIVE="$OUT/hara-studio-runtime-ci.tar.gz"
+          CHECKSUM="$ARCHIVE.sha256"
+          test -s "$ARCHIVE"
+          test -s "$CHECKSUM"
+          sha256sum -c "$CHECKSUM"
+
+          STAGE="$RUNNER_TEMP/hara-runtime-stage"
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE"
+          tar -xzf "$ARCHIVE" -C "$STAGE"
+
+          REQUIRED=(
+            rust/hara.wasm
+            rust/hta.js
+            rust/hta-worker.js
+            rust/hta-shared-worker.js
+            rust/host/client.js
+            rust/host/services.js
+            rust/studio/supersonic.js
+            rust/studio/hal/supersonic.hal
+          )
+          for path in "${REQUIRED[@]}"; do
+            if [ ! -f "$STAGE/$path" ]; then
+              echo "built runtime is missing required payload: $path" >&2
+              exit 1
+            fi
+          done
+
+          rm -rf runtime
+          mkdir -p runtime
+          cp -a "$STAGE/." runtime/
+
+      - name: Build the complete static site
+        run: npm run build
+
+      - name: Verify the deployable runtime and crash fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s dist/runtime/rust/hara.wasm
+          test -f dist/runtime/rust/hta-shared-worker.js
+          test -f dist/runtime/rust/studio/supersonic.js
+          test -f dist/runtime/rust/studio/hal/supersonic.hal
+          grep -Fq '"gw.audio.supersonic/start"' dist/runtime/rust/host/services.js
+          cmp src/audio/integration.js dist/src/audio/integration.js
