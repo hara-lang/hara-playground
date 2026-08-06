@@ -2,6 +2,8 @@ import { completionItems, collectSourceSymbols } from "../language/completion.js
 
 const DEFAULT_RUNTIME_ROOT = new URL("../../runtime/", import.meta.url);
 const KERNEL_NAME = "STUDIO";
+const SUPERSONIC_NAMESPACE = "gw.audio.supersonic";
+const SUPERSONIC_METHODS = Object.freeze(["start", "update", "status", "stop"]);
 
 export class CanonicalRuntimeUnavailableError extends Error {
   constructor(message, cause) {
@@ -50,11 +52,16 @@ export async function createCanonicalRuntime(options = {}) {
   }
 
   const resources = { ...(options.resources || {}) };
-  let supersonicSource = resources["gw.audio.supersonic"] || "";
+  let supersonicSource = resources[SUPERSONIC_NAMESPACE] || "";
+  if (supersonicSource && !hasCanonicalSupersonicHostContract(supersonicSource)) {
+    options.onDiagnostic?.("Ignoring a legacy Supersonic HAL resource with an incompatible host/call signature");
+    supersonicSource = "";
+  }
   if (!supersonicSource) {
     supersonicSource = await loadSupersonicResource(root, options);
-    if (supersonicSource) resources["gw.audio.supersonic"] = supersonicSource;
   }
+  if (supersonicSource) resources[SUPERSONIC_NAMESPACE] = supersonicSource;
+  else delete resources[SUPERSONIC_NAMESPACE];
 
   const hostCalls = servicesModule.createHostServices({
     capabilities: options.capabilities || ["studio/eval", "audio/playback"],
@@ -76,7 +83,7 @@ export async function createCanonicalRuntime(options = {}) {
   // exact same source into STUDIO gives project code a concrete namespace while
   // retaining the broker resource for future runtime implementations/sessions.
   const bootstrapSources = supersonicSource
-    ? [{ namespace: "gw.audio.supersonic", source: supersonicSource }]
+    ? [{ namespace: SUPERSONIC_NAMESPACE, source: supersonicSource }]
     : [];
   const runtime = new CanonicalHaraRuntime({ broker, options, bootstrapSources });
   await runtime.initialise();
@@ -84,20 +91,33 @@ export async function createCanonicalRuntime(options = {}) {
 }
 
 async function loadSupersonicResource(root, options) {
+  // The Playground copy is intentionally first: it is released with the shell
+  // and can bridge older Studio archives whose packaged HAL still used the
+  // pre-v1 one-string host/call convention.
   const candidates = [
-    new URL("rust/studio/hal/supersonic.hal", root),
-    new URL("../audio/gw.audio.supersonic.hal", import.meta.url)
+    new URL("../audio/gw.audio.supersonic.hal", import.meta.url),
+    new URL("rust/studio/hal/supersonic.hal", root)
   ];
   for (const url of candidates) {
     try {
       const response = await fetch(url);
-      if (response.ok) return response.text();
+      if (!response.ok) continue;
+      const source = await response.text();
+      if (hasCanonicalSupersonicHostContract(source)) return source;
+      options.onDiagnostic?.(`Ignoring incompatible Supersonic HAL resource at ${url}`);
     } catch {
       // Try the next source. The Playground ships a local compatibility copy.
     }
   }
   options.onDiagnostic?.("Supersonic HAL resource is unavailable; audio projects cannot load");
   return "";
+}
+
+export function hasCanonicalSupersonicHostContract(source) {
+  const text = String(source || "");
+  return text.includes(`(ns ${SUPERSONIC_NAMESPACE}`)
+    && SUPERSONIC_METHODS.every((method) =>
+      text.includes(`host/call "${SUPERSONIC_NAMESPACE}" "${method}"`));
 }
 
 export class CanonicalHaraRuntime {
