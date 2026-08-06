@@ -4,12 +4,14 @@ import { chromium } from "playwright";
 
 const baseUrl = process.env.HARA_PLAYGROUND_URL || "https://playground.hara-lang.org/";
 const target = new URL(baseUrl);
+const REVISION_SELECTOR = ".audio-console__header h2 + p";
 target.searchParams.set("repo", "hara-lang/hara-playground");
 target.searchParams.set("branch", "main");
 target.searchParams.set("path", "samples/supersonic-live");
 target.searchParams.set("smoke", String(Date.now()));
 
 let browser = null;
+let page = null;
 const pageErrors = [];
 const consoleErrors = [];
 const failedRequests = [];
@@ -24,7 +26,7 @@ try {
     viewport: { width: 1440, height: 960 },
     reducedMotion: "reduce"
   });
-  const page = await context.newPage();
+  page = await context.newPage();
 
   page.on("crash", () => { crashed = true; });
   page.on("pageerror", (error) => pageErrors.push(error.stack || error.message));
@@ -58,20 +60,17 @@ try {
   null,
   { timeout: 10_000 });
 
-  // A real Play button means the canonical runtime loaded the HAL namespace,
-  // evaluated the sample, crossed the worker/page host bridge, and published
-  // a graph snapshot. A merely mounted Audio tab is not sufficient.
   await page.waitForSelector("#audio-play-button", {
     state: "visible",
     timeout: 30_000
   });
-  const graphBefore = await page.evaluate(() => ({
+  const graphBefore = await page.evaluate((revisionSelector) => ({
     heading: document.querySelector(".audio-console h2")?.textContent?.trim() || "",
     status: document.querySelector(".audio-status")?.textContent?.trim() || "",
-    revision: document.querySelector(".audio-console__header p")?.textContent?.trim() || "",
+    revision: document.querySelector(revisionSelector)?.textContent?.trim() || "",
     error: document.querySelector(".audio-error")?.textContent?.trim() || "",
     runtime: document.querySelector(".kernel-state")?.textContent?.trim() || ""
-  }));
+  }), REVISION_SELECTOR);
   assert.equal(graphBefore.heading, "Glass Signal", "the deployed sample did not publish its graph");
   assert.equal(graphBefore.error, "", graphBefore.error || "the Audio surface reported an error");
 
@@ -81,7 +80,6 @@ try {
   null,
   { timeout: 15_000 });
 
-  // Prove that the page remains schedulable while audio is running.
   const heartbeat = await page.evaluate(() => new Promise((resolveHeartbeat) => {
     let frames = 0;
     const tick = () => {
@@ -97,16 +95,16 @@ try {
     'input[data-audio-node="transport"][data-audio-parameter="tempo"]'
   );
   await tempo.waitFor({ state: "visible", timeout: 10_000 });
-  const revisionBefore = graphBefore.revision;
+  const revisionBeforeUpdate = (await page.locator(REVISION_SELECTOR).textContent())?.trim() || "";
   await tempo.evaluate((element) => {
     element.value = "138";
     element.dispatchEvent(new Event("input", { bubbles: true }));
     element.dispatchEvent(new Event("change", { bubbles: true }));
   });
-  await page.waitForFunction((previousRevision) => {
-    const current = document.querySelector(".audio-console__header p")?.textContent?.trim() || "";
+  await page.waitForFunction(({ selector, previousRevision }) => {
+    const current = document.querySelector(selector)?.textContent?.trim() || "";
     return current && current !== previousRevision;
-  }, revisionBefore, { timeout: 10_000 });
+  }, { selector: REVISION_SELECTOR, previousRevision: revisionBeforeUpdate }, { timeout: 10_000 });
   assert.equal(await tempo.inputValue(), "138");
   assert.equal(
     (await page.locator(".audio-status").textContent())?.trim().toLowerCase(),
@@ -129,17 +127,53 @@ try {
     graph: graphBefore.heading,
     initialStatus: graphBefore.status,
     runtime: graphBefore.runtime,
+    initialRevision: graphBefore.revision,
+    updateRevision: (await page.locator(REVISION_SELECTOR).textContent())?.trim(),
     tempo: await tempo.inputValue(),
     finalStatus: (await page.locator(".audio-status").textContent())?.trim(),
     failedRequests
   }, null, 2));
   console.log("Verified the public Supersonic project: import, graph start, Play, live tempo edit, and Stop.");
 } catch (error) {
-  console.error(`Live Supersonic verification failed at ${target.href}`);
-  if (pageErrors.length) console.error(`Page errors:\n${pageErrors.join("\n")}`);
-  if (consoleErrors.length) console.error(`Console errors:\n${consoleErrors.join("\n")}`);
-  if (failedRequests.length) console.error(`Failed requests:\n${failedRequests.join("\n")}`);
-  throw error;
+  let playgroundState = null;
+  if (page && !page.isClosed()) {
+    playgroundState = await page.evaluate(() => {
+      const text = (selector) => document.querySelector(selector)?.textContent?.trim() || "";
+      const entries = [...document.querySelectorAll(
+        ".repl-entry, .repl-row, .repl-line, .diagnostic, .console-entry"
+      )]
+        .map((element) => element.textContent?.trim() || "")
+        .filter(Boolean)
+        .slice(-8)
+        .map((entry) => entry.slice(0, 500));
+      const body = document.body?.innerText?.trim() || "";
+      return {
+        title: document.title,
+        runtime: text(".kernel-state").slice(0, 500),
+        statusbar: text(".statusbar").slice(0, 500),
+        audio: text(".audio-view").slice(0, 1_000),
+        replEntries: entries,
+        bodyTail: body.slice(-1_500)
+      };
+    }).catch((stateError) => ({ captureError: stateError?.message || String(stateError) }));
+  }
+
+  const failure = {
+    original: (error?.stack || error?.message || String(error)).slice(0, 1_500),
+    state: playgroundState,
+    pageErrors: pageErrors.slice(-6).map((entry) => entry.slice(0, 500)),
+    consoleErrors: consoleErrors.slice(-6).map((entry) => entry.slice(0, 500)),
+    failedRequests: failedRequests.slice(-6).map((entry) => entry.slice(0, 500)),
+    crashed
+  };
+  const marker = `CANONICAL_BOOT_STATE ${JSON.stringify(failure)}`;
+  const annotation = marker
+    .replaceAll("%", "%25")
+    .replaceAll("\r", "%0D")
+    .replaceAll("\n", "%0A");
+  console.error(`::error title=Canonical Supersonic boot::${annotation}`);
+  console.error(marker);
+  throw new Error("Canonical Supersonic boot failed; see the check annotation.");
 } finally {
   await browser?.close().catch(() => {});
 }

@@ -44,6 +44,9 @@ const host = await createRuntimeHost({
   }
 });
 const runtime = host.runtime;
+const startupDiagnostics = Array.isArray(host.startupDiagnostics)
+  ? host.startupDiagnostics
+  : [];
 
 function maybeEmitPreview(value) {
   if (!isHtaTree(value)) return false;
@@ -69,11 +72,22 @@ function installGrants(capabilities = []) {
   );
 }
 
+function replayStartupDiagnostics() {
+  for (const text of startupDiagnostics) {
+    postMessage({ type: "diagnostic", id: activeRequestId, text });
+  }
+}
+
 async function handle(request) {
   activeRequestId = request.id || null;
   switch (request.type) {
     case "boot": {
       installGrants(request.capabilities);
+      replayStartupDiagnostics();
+      if (grantedCapabilities.has("audio/playback") && host.kind !== "canonical-wasm") {
+        const reason = startupDiagnostics[0] || "The canonical Hara runtime is unavailable";
+        throw new Error(`audio/playback requires canonical-wasm. ${reason}`);
+      }
       await runtime.reset();
       for (const file of request.files || []) {
         if (isHaraSource(file.path)) {

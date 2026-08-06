@@ -1,9 +1,11 @@
-(ns gw.audio.supersonic)
+(ns gw.audio.supersonic
+  (:config {:blank true})
+  (:refer-clojure :exclude [update]))
 
 ;; This browser compatibility namespace calls the built-in Host boundary
-;; directly. Depending on the larger Foundation wrapper here would make the
-;; first audio namespace require a separate bootstrap before a project can
-;; start its graph.
+;; directly. The explicit blank configuration prevents the first project boot
+;; from resolving Foundation defaults, while the ns omission reserves `update`
+;; for the Supersonic API.
 
 (defn start [graph]
   @(Host/call "gw.audio.supersonic" "start" [graph]))
