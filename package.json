@@ -5,10 +5,15 @@
   "type": "module",
   "description": "The browser-native Hara Playground and live Studio environment.",
   "scripts": {
+    "web:prepare": "node scripts/prepare-web-packages.mjs",
+    "predev": "npm run web:prepare",
     "dev": "node scripts/dev-server.mjs",
+    "pretest": "npm run web:prepare",
     "test": "node --test",
+    "precheck": "npm run web:prepare",
     "check": "node scripts/check.mjs",
     "runtime:install": "node scripts/install-runtime.mjs",
+    "prebuild": "npm run web:prepare",
     "build": "node scripts/build-site.mjs",
     "runtime:download": "bash scripts/install-pinned-runtime",
     "validate": "npm run check && npm test && npm run build"

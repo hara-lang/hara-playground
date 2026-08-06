@@ -1,0 +1,3 @@
+[submodule "vendor/hara-ui"]
+	path = vendor/hara-ui
+	url = https://github.com/hara-lang/hara-ui.git

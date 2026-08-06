@@ -23,6 +23,10 @@ await cp(resolve(root, "index.html"), resolve(output, "index.html"));
 await cp(resolve(root, "src"), resolve(output, "src"), { recursive: true });
 await copyIfPresent("public/og-hara-playground.jpg", "og-hara-playground.jpg");
 
+// Keep commit-pinned shared ESM modules at the same relative paths used by the
+// source adapters. Published npm packages can replace this checkout later.
+await copyIfPresent("vendor/hara-ui/packages", "vendor/hara-ui/packages");
+
 // Source examples make local builds useful. A downloaded canonical runtime may
 // then overlay this directory with the richer Starter/Game/Music catalog.
 await copyIfPresent("examples", "examples");
