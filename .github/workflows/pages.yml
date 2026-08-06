@@ -79,8 +79,24 @@ jobs:
           fi
 
           OUT="$RUNNER_TEMP/hara-studio-runtime"
+          BUILD_LOG="$RUNNER_TEMP/hara-studio-runtime-build.log"
+          set +e
           HARA_STUDIO_RUNTIME_OUT="$OUT" \
-            .hara-runtime-source/scripts/build-studio-runtime ci
+            .hara-runtime-source/scripts/build-studio-runtime ci 2>&1 | tee "$BUILD_LOG"
+          BUILD_STATUS=${PIPESTATUS[0]}
+          set -e
+          if [ "$BUILD_STATUS" -ne 0 ]; then
+            echo "::group::Hara Studio runtime failure tail"
+            tail -n 60 "$BUILD_LOG"
+            echo "::endgroup::"
+            while IFS= read -r line; do
+              escaped=${line//'%'/'%25'}
+              escaped=${escaped//$'\r'/'%0D'}
+              escaped=${escaped//$'\n'/'%0A'}
+              echo "::error title=Hara Studio runtime build failed::$escaped"
+            done < <(tail -n 16 "$BUILD_LOG")
+            exit "$BUILD_STATUS"
+          fi
 
           ARCHIVE="$OUT/hara-studio-runtime-ci.tar.gz"
           CHECKSUM="$ARCHIVE.sha256"
