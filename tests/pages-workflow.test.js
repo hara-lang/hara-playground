@@ -65,6 +65,13 @@ test("the source-built runtime path is exercised with read-only pull-request per
   assert.match(runtimeCi, /cmp src\/audio\/integration\.js dist\/src\/audio\/integration\.js/);
 });
 
+test("the deployable Supersonic runtime is exercised in real Chromium", () => {
+  assert.match(runtimeCi, /playwright@1\.53\.2/);
+  assert.match(runtimeCi, /playwright install --with-deps chromium/);
+  assert.match(runtimeCi, /node scripts\/verify-browser-audio\.mjs/);
+  assert.match(runtimeCi, /node scripts\/verify-supersonic-project-open\.mjs/);
+});
+
 test("the production workflow publishes only after installing the complete runtime", () => {
   assert.match(pages, /npm run build/);
   assert.match(pages, /actions\/upload-pages-artifact@v3/);
