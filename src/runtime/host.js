@@ -9,15 +9,22 @@ import { createCanonicalRuntime } from "./canonical.js";
 export async function createRuntimeHost(options = {}) {
   try {
     const runtime = await createCanonicalRuntime(options);
-    return { runtime, kind: "canonical-wasm" };
+    return { runtime, kind: "canonical-wasm", startupDiagnostics: [] };
   } catch (error) {
     const cause = deepestCause(error);
     const message = cause && cause !== error
       ? `${error.message || error}: ${cause.message || cause}`
       : error.message || String(error);
-    options.onDiagnostic?.(`Unable to initialise canonical Hara runtime: ${message}`);
-    options.onDiagnostic?.("Using the embedded HAL evaluator; install an official Studio runtime archive for full Hara semantics");
-    return { runtime: new HaraRuntime(options), kind: "embedded" };
+    const startupDiagnostics = [
+      `Unable to initialise canonical Hara runtime: ${message}`,
+      "Using the embedded HAL evaluator; install an official Studio runtime archive for full Hara semantics"
+    ];
+    for (const diagnostic of startupDiagnostics) options.onDiagnostic?.(diagnostic);
+    return {
+      runtime: new HaraRuntime(options),
+      kind: "embedded",
+      startupDiagnostics
+    };
   }
 }
 
