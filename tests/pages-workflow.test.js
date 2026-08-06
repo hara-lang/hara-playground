@@ -42,7 +42,7 @@ function assertVerifiedSourceBuild(workflow) {
 }
 
 test("Pages uses exact verified Hara and Hara UI source revisions", () => {
-  const hara = "b6c280d42650d97ba17d11dbeba388f075fa0568";
+  const hara = "c3c345f0e0d18d499c39d82b8f4bcb98e4ebb4f6";
   const haraUi = "145a9acc728f71f9aa215868a22774ea07d466d4";
 
   assert.equal(pinnedRef(pages, "HARA_RUNTIME_SOURCE_REF"), hara);
