@@ -11,15 +11,19 @@ const runtimeCi = await readFile(
   "utf8"
 );
 
-const sourceRef = (workflow) =>
-  workflow.match(/HARA_RUNTIME_SOURCE_REF:\s*([0-9a-f]{40})/)?.[1] ?? null;
+const pinnedRef = (workflow, name) =>
+  workflow.match(new RegExp(`${name}:\\s*([0-9a-f]{40})`))?.[1] ?? null;
 
 function assertVerifiedSourceBuild(workflow) {
   assert.match(workflow, /repository:\s*hara-lang\/hara/);
   assert.match(workflow, /ref:\s*\$\{\{\s*env\.HARA_RUNTIME_SOURCE_REF\s*\}\}/);
   assert.match(workflow, /path:\s*\.hara-runtime-source/);
-  assert.match(workflow, /submodules:\s*true/);
+  assert.match(workflow, /repository:\s*hara-lang\/hara-ui/);
+  assert.match(workflow, /ref:\s*\$\{\{\s*env\.HARA_UI_SOURCE_REF\s*\}\}/);
+  assert.match(workflow, /path:\s*\.hara-runtime-source\/website\/vendor\/hara-ui/);
+  assert.doesNotMatch(workflow, /submodules:\s*true/);
   assert.match(workflow, /persist-credentials:\s*false/);
+  assert.match(workflow, /ACTUAL_UI_REF=/);
   assert.match(workflow, /targets:\s*wasm32-unknown-unknown/);
   assert.match(workflow, /scripts\/build-studio-runtime ci/);
   assert.match(workflow, /sha256sum -c/);
@@ -30,11 +34,14 @@ function assertVerifiedSourceBuild(workflow) {
   assert.match(workflow, /rust\/studio\/hal\/supersonic\.hal/);
 }
 
-test("Pages uses an exact verified Hara source revision while the release archive is incomplete", () => {
-  const expected = "5a81f6bb2146cc1f32baf1ab45370913d960d3c2";
+test("Pages uses exact verified Hara and Hara UI source revisions", () => {
+  const hara = "5a81f6bb2146cc1f32baf1ab45370913d960d3c2";
+  const haraUi = "145a9acc728f71f9aa215868a22774ea07d466d4";
 
-  assert.equal(sourceRef(pages), expected);
-  assert.equal(sourceRef(runtimeCi), expected);
+  assert.equal(pinnedRef(pages, "HARA_RUNTIME_SOURCE_REF"), hara);
+  assert.equal(pinnedRef(runtimeCi, "HARA_RUNTIME_SOURCE_REF"), hara);
+  assert.equal(pinnedRef(pages, "HARA_UI_SOURCE_REF"), haraUi);
+  assert.equal(pinnedRef(runtimeCi, "HARA_UI_SOURCE_REF"), haraUi);
   assertVerifiedSourceBuild(pages);
   assertVerifiedSourceBuild(runtimeCi);
   assert.doesNotMatch(pages, /npm run runtime:download/);
