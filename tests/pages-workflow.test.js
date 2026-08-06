@@ -26,9 +26,13 @@ function assertVerifiedSourceBuild(workflow) {
   assert.match(workflow, /ACTUAL_UI_REF=/);
   assert.match(workflow, /targets:\s*wasm32-unknown-unknown/);
   assert.match(workflow, /scripts\/build-studio-runtime ci/);
+  assert.match(workflow, /PIPESTATUS\[0\]/);
+  assert.match(workflow, /Hara Studio runtime build failed/);
   assert.match(workflow, /sha256sum -c/);
   assert.match(workflow, /hara-studio-runtime-\*\.tar\.gz\.sha256/);
   assert.match(workflow, /rust\/hta-shared-worker\.js/);
+  assert.match(workflow, /rust\/host\/broker\.js/);
+  assert.doesNotMatch(workflow, /rust\/host\/client\.js/);
   assert.match(workflow, /rust\/host\/services\.js/);
   assert.match(workflow, /rust\/studio\/supersonic\.js/);
   assert.match(workflow, /rust\/studio\/hal\/supersonic\.hal/);
@@ -53,6 +57,7 @@ test("the source-built runtime path is exercised with read-only pull-request per
   assert.doesNotMatch(runtimeCi, /pages:\s*write/);
   assert.doesNotMatch(runtimeCi, /id-token:\s*write/);
   assert.match(runtimeCi, /npm run build/);
+  assert.match(runtimeCi, /dist\/runtime\/rust\/host\/broker\.js/);
   assert.match(runtimeCi, /node --check dist\/runtime\/rust\/host\/services\.js/);
   assert.match(runtimeCi, /node --check dist\/runtime\/rust\/studio\/supersonic\.js/);
   assert.match(runtimeCi, /gw\.audio\.supersonic\/start/);
