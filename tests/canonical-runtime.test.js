@@ -36,9 +36,9 @@ test("canonical adapter owns a persistent browser kernel", async () => {
 
 test("canonical adapter preloads browser HAL namespaces before project code", async () => {
   const broker = fakeBroker();
-  const supersonic = `(ns gw.audio.supersonic
-  (:require [std.foundation.host :as host]))
-(defn status [graph-id] graph-id)
+  const supersonic = `(ns gw.audio.supersonic)
+(defn status [graph-id]
+  @(Host/call "gw.audio.supersonic" "status" [graph-id]))
 `;
   const runtime = new CanonicalHaraRuntime({
     broker,
@@ -104,22 +104,27 @@ test("a failed canonical bootstrap closes the incomplete kernel", async () => {
   assert.equal(runtime.started, false);
 });
 
-test("the local Supersonic HAL uses the v1 service and method host contract", async () => {
+test("the local Supersonic HAL is bootstrap-safe and uses the v1 host contract", async () => {
   const source = await readFile(
     new URL("../src/audio/gw.audio.supersonic.hal", import.meta.url),
     "utf8"
   );
   assert.equal(hasCanonicalSupersonicHostContract(source), true);
+  assert.doesNotMatch(source, /:require|std\.foundation\.host/);
   for (const method of ["start", "update", "status", "stop"]) {
-    assert.match(source, new RegExp(`host/call \\"gw\\.audio\\.supersonic\\" \\"${method}\\"`));
+    assert.match(source, new RegExp(`Host/call \\"gw\\.audio\\.supersonic\\" \\"${method}\\"`));
   }
 });
 
-test("legacy one-string Supersonic host calls are rejected", () => {
-  const legacy = `(ns gw.audio.supersonic
+test("Foundation-dependent and one-string Supersonic resources are rejected", () => {
+  const foundationDependent = `(ns gw.audio.supersonic
   (:require [std.foundation.host :as host]))
 (defn start [graph]
-  @(host/call "gw.audio.supersonic/start" graph))`;
+  @(host/call "gw.audio.supersonic" "start" graph))`;
+  const legacy = `(ns gw.audio.supersonic)
+(defn start [graph]
+  @(Host/call "gw.audio.supersonic/start" [graph]))`;
+  assert.equal(hasCanonicalSupersonicHostContract(foundationDependent), false);
   assert.equal(hasCanonicalSupersonicHostContract(legacy), false);
 });
 

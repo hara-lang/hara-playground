@@ -54,7 +54,7 @@ export async function createCanonicalRuntime(options = {}) {
   const resources = { ...(options.resources || {}) };
   let supersonicSource = resources[SUPERSONIC_NAMESPACE] || "";
   if (supersonicSource && !hasCanonicalSupersonicHostContract(supersonicSource)) {
-    options.onDiagnostic?.("Ignoring a legacy Supersonic HAL resource with an incompatible host/call signature");
+    options.onDiagnostic?.("Ignoring a Supersonic HAL resource that is not safe for the minimal browser bootstrap");
     supersonicSource = "";
   }
   if (!supersonicSource) {
@@ -91,9 +91,9 @@ export async function createCanonicalRuntime(options = {}) {
 }
 
 async function loadSupersonicResource(root, options) {
-  // The Playground copy is intentionally first: it is released with the shell
-  // and can bridge older Studio archives whose packaged HAL still used the
-  // pre-v1 one-string host/call convention.
+  // The Playground copy is intentionally first. It calls the built-in Host
+  // boundary directly and therefore does not require Foundation namespaces to
+  // exist before the first browser project is evaluated.
   const candidates = [
     new URL("../audio/gw.audio.supersonic.hal", import.meta.url),
     new URL("rust/studio/hal/supersonic.hal", root)
@@ -104,7 +104,7 @@ async function loadSupersonicResource(root, options) {
       if (!response.ok) continue;
       const source = await response.text();
       if (hasCanonicalSupersonicHostContract(source)) return source;
-      options.onDiagnostic?.(`Ignoring incompatible Supersonic HAL resource at ${url}`);
+      options.onDiagnostic?.(`Ignoring non-bootstrap-safe Supersonic HAL resource at ${url}`);
     } catch {
       // Try the next source. The Playground ships a local compatibility copy.
     }
@@ -117,7 +117,7 @@ export function hasCanonicalSupersonicHostContract(source) {
   const text = String(source || "");
   return text.includes(`(ns ${SUPERSONIC_NAMESPACE}`)
     && SUPERSONIC_METHODS.every((method) =>
-      text.includes(`host/call "${SUPERSONIC_NAMESPACE}" "${method}"`));
+      text.includes(`Host/call "${SUPERSONIC_NAMESPACE}" "${method}"`));
 }
 
 export class CanonicalHaraRuntime {
