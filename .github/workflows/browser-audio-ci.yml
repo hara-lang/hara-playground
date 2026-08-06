@@ -15,6 +15,7 @@ on:
       - src/github/**
       - src/runtime/**
       - src/workspace/**
+      - vendor/hara-ui
   push:
     branches: [main]
     paths:
@@ -29,6 +30,7 @@ on:
       - src/github/**
       - src/runtime/**
       - src/workspace/**
+      - vendor/hara-ui
   workflow_dispatch:
 
 permissions:
@@ -44,6 +46,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - uses: actions/setup-node@v4
         with:
