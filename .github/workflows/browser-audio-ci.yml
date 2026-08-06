@@ -7,7 +7,6 @@ on:
       - .github/workflows/browser-audio-ci.yml
       - scripts/verify-browser-audio.mjs
       - scripts/verify-supersonic-project-open.mjs
-      - scripts/verify-live-supersonic.mjs
       - tests/browser/**
       - tests/browser-audio-workflow.test.js
       - samples/supersonic-live/**
@@ -22,7 +21,6 @@ on:
       - .github/workflows/browser-audio-ci.yml
       - scripts/verify-browser-audio.mjs
       - scripts/verify-supersonic-project-open.mjs
-      - scripts/verify-live-supersonic.mjs
       - tests/browser/**
       - tests/browser-audio-workflow.test.js
       - samples/supersonic-live/**
@@ -43,7 +41,7 @@ concurrency:
 jobs:
   chromium:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -61,8 +59,3 @@ jobs:
 
       - name: Open the complete Supersonic project
         run: node scripts/verify-supersonic-project-open.mjs
-
-      - name: Exercise the public Supersonic deployment
-        env:
-          HARA_PLAYGROUND_URL: https://playground.hara-lang.org/
-        run: node scripts/verify-live-supersonic.mjs
