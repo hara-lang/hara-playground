@@ -22,6 +22,7 @@ jobs:
     timeout-minutes: 30
     env:
       HARA_RUNTIME_SOURCE_REF: 5a81f6bb2146cc1f32baf1ab45370913d960d3c2
+      HARA_UI_SOURCE_REF: 145a9acc728f71f9aa215868a22774ea07d466d4
     steps:
       - uses: actions/checkout@v4
 
@@ -39,7 +40,15 @@ jobs:
           repository: hara-lang/hara
           ref: ${{ env.HARA_RUNTIME_SOURCE_REF }}
           path: .hara-runtime-source
-          submodules: true
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Check out the pinned Hara UI build input
+        uses: actions/checkout@v4
+        with:
+          repository: hara-lang/hara-ui
+          ref: ${{ env.HARA_UI_SOURCE_REF }}
+          path: .hara-runtime-source/website/vendor/hara-ui
           fetch-depth: 1
           persist-credentials: false
 
@@ -51,6 +60,11 @@ jobs:
           ACTUAL_REF=$(git -C .hara-runtime-source rev-parse HEAD)
           if [ "$ACTUAL_REF" != "$HARA_RUNTIME_SOURCE_REF" ]; then
             echo "Hara checkout resolved to $ACTUAL_REF, expected $HARA_RUNTIME_SOURCE_REF" >&2
+            exit 1
+          fi
+          ACTUAL_UI_REF=$(git -C .hara-runtime-source/website/vendor/hara-ui rev-parse HEAD)
+          if [ "$ACTUAL_UI_REF" != "$HARA_UI_SOURCE_REF" ]; then
+            echo "Hara UI checkout resolved to $ACTUAL_UI_REF, expected $HARA_UI_SOURCE_REF" >&2
             exit 1
           fi
 
