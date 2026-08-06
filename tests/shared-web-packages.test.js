@@ -35,5 +35,10 @@ test("repository commands prepare and publish the pinned package tree", async ()
   for (const lifecycle of ["predev", "pretest", "precheck", "prebuild"]) {
     assert.equal(packageJson.scripts[lifecycle], "npm run web:prepare");
   }
+  assert.equal(
+    packageJson.scripts.test,
+    "node --test tests/*.test.js",
+    "the Playground suite must not recursively discover tests inside vendor/hara-ui"
+  );
   assert.match(await read("scripts/build-site.mjs"), /vendor\/hara-ui\/packages/);
 });
