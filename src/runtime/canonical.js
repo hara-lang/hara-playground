@@ -4,6 +4,7 @@ const DEFAULT_RUNTIME_ROOT = new URL("../../runtime/", import.meta.url);
 const KERNEL_NAME = "STUDIO";
 const SUPERSONIC_NAMESPACE = "gw.audio.supersonic";
 const SUPERSONIC_METHODS = Object.freeze(["start", "update", "status", "stop"]);
+const BLANK_NAMESPACE_CONFIG = /\(:config\s+\{[^}]*:blank\s+true[^}]*\}\)/s;
 
 export class CanonicalRuntimeUnavailableError extends Error {
   constructor(message, cause) {
@@ -116,6 +117,7 @@ async function loadSupersonicResource(root, options) {
 export function hasCanonicalSupersonicHostContract(source) {
   const text = String(source || "");
   return text.includes(`(ns ${SUPERSONIC_NAMESPACE}`)
+    && BLANK_NAMESPACE_CONFIG.test(text)
     && SUPERSONIC_METHODS.every((method) =>
       text.includes(`Host/call "${SUPERSONIC_NAMESPACE}" "${method}"`));
 }
