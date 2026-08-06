@@ -9,7 +9,7 @@
     "predev": "npm run web:prepare",
     "dev": "node scripts/dev-server.mjs",
     "pretest": "npm run web:prepare",
-    "test": "node --test",
+    "test": "node --test tests/*.test.js",
     "precheck": "npm run web:prepare",
     "check": "node scripts/check.mjs",
     "runtime:install": "node scripts/install-runtime.mjs",
