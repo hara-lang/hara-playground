@@ -59,9 +59,6 @@ try {
   null,
   { timeout: 10_000 });
 
-  // A real Play button means the canonical runtime loaded the HAL namespace,
-  // evaluated the sample, crossed the worker/page host bridge, and published
-  // a graph snapshot. A merely mounted Audio tab is not sufficient.
   await page.waitForSelector("#audio-play-button", {
     state: "visible",
     timeout: 30_000
@@ -82,7 +79,6 @@ try {
   null,
   { timeout: 15_000 });
 
-  // Prove that the page remains schedulable while audio is running.
   const heartbeat = await page.evaluate(() => new Promise((resolveHeartbeat) => {
     let frames = 0;
     const tick = () => {
@@ -168,8 +164,13 @@ try {
     crashed
   };
   const marker = `CANONICAL_BOOT_STATE ${JSON.stringify(failure)}`;
+  const annotation = marker
+    .replaceAll("%", "%25")
+    .replaceAll("\r", "%0D")
+    .replaceAll("\n", "%0A");
+  console.error(`::error title=Canonical Supersonic boot::${annotation}`);
   console.error(marker);
-  throw new Error(marker);
+  throw new Error("Canonical Supersonic boot failed; see the check annotation.");
 } finally {
   await browser?.close().catch(() => {});
 }
