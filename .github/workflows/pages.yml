@@ -119,7 +119,7 @@ jobs:
             rust/hta.js
             rust/hta-worker.js
             rust/hta-shared-worker.js
-            rust/host/client.js
+            rust/host/broker.js
             rust/host/services.js
             rust/studio/supersonic.js
             rust/studio/hal/supersonic.hal
