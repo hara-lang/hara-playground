@@ -26,11 +26,30 @@ function lock(overrides = {}) {
   };
 }
 
-test("runtime locks default to the canonical adapter payload", () => {
+test("runtime locks default to the complete canonical adapter payload", () => {
   const normalized = normalizeRuntimeLock(lock());
   assert.equal(normalized.version, "0.1.2");
   assert.equal(normalized.sha256, checksum);
   assert.deepEqual(normalized.required, DEFAULT_RUNTIME_REQUIRED);
+  for (const path of [
+    "rust/hta.js",
+    "rust/hta-worker.js",
+    "rust/hta-shared-worker.js",
+    "rust/packages/hta/index.js",
+    "rust/packages/hta/worker.js",
+    "rust/packages/hta/shared-worker.js"
+  ]) {
+    assert.ok(DEFAULT_RUNTIME_REQUIRED.includes(path), `missing canonical HTA payload ${path}`);
+  }
+});
+
+test("the repository pin records every canonical adapter requirement", async () => {
+  const pinned = normalizeRuntimeLock(JSON.parse(
+    await readFile(join(repository, "runtime.lock.json"), "utf8")
+  ));
+  for (const path of DEFAULT_RUNTIME_REQUIRED) {
+    assert.ok(pinned.required.includes(path), `runtime.lock.json omits ${path}`);
+  }
 });
 
 test("Supersonic-complete locks can require the packaged provider and namespace", () => {
