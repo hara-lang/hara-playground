@@ -142,3 +142,14 @@ jobs:
           grep -Fq 'gw.audio.supersonic/start' dist/runtime/rust/host/services.js
           grep -Fq '(ns gw.audio.supersonic' dist/runtime/rust/studio/hal/supersonic.hal
           cmp src/audio/integration.js dist/src/audio/integration.js
+
+      - name: Install Chromium smoke dependency
+        run: |
+          npm install --no-save --ignore-scripts --package-lock=false playwright@1.53.2
+          npx playwright install --with-deps chromium
+
+      - name: Exercise the isolated Web Audio renderer
+        run: node scripts/verify-browser-audio.mjs
+
+      - name: Open the complete Supersonic project
+        run: node scripts/verify-supersonic-project-open.mjs
