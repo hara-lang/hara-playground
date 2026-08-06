@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/pages.yml
       - .github/workflows/pages-runtime-ci.yml
+      - scripts/verify-live-supersonic.mjs
       - tests/pages-workflow.test.js
   workflow_dispatch:
 
@@ -21,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      HARA_RUNTIME_SOURCE_REF: 5a81f6bb2146cc1f32baf1ab45370913d960d3c2
+      HARA_RUNTIME_SOURCE_REF: b6c280d42650d97ba17d11dbeba388f075fa0568
       HARA_UI_SOURCE_REF: 145a9acc728f71f9aa215868a22774ea07d466d4
     steps:
       - uses: actions/checkout@v4
@@ -109,6 +110,9 @@ jobs:
             rust/hta.js
             rust/hta-worker.js
             rust/hta-shared-worker.js
+            rust/packages/hta/index.js
+            rust/packages/hta/worker.js
+            rust/packages/hta/shared-worker.js
             rust/host/broker.js
             rust/host/services.js
             rust/studio/supersonic.js
@@ -134,9 +138,15 @@ jobs:
           set -euo pipefail
           test -s dist/runtime/rust/hara.wasm
           test -f dist/runtime/rust/hta-shared-worker.js
+          test -f dist/runtime/rust/packages/hta/index.js
+          test -f dist/runtime/rust/packages/hta/worker.js
+          test -f dist/runtime/rust/packages/hta/shared-worker.js
           test -f dist/runtime/rust/host/broker.js
           test -f dist/runtime/rust/studio/supersonic.js
           test -f dist/runtime/rust/studio/hal/supersonic.hal
+          node --check dist/runtime/rust/packages/hta/index.js
+          node --check dist/runtime/rust/packages/hta/worker.js
+          node --check dist/runtime/rust/packages/hta/shared-worker.js
           node --check dist/runtime/rust/host/services.js
           node --check dist/runtime/rust/studio/supersonic.js
           grep -Fq 'gw.audio.supersonic/start' dist/runtime/rust/host/services.js
