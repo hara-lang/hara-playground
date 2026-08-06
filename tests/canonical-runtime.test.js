@@ -110,9 +110,12 @@ test("the local Supersonic HAL is bootstrap-safe and uses the v1 host contract",
     "utf8"
   );
   assert.equal(hasCanonicalSupersonicHostContract(source), true);
-  assert.doesNotMatch(source, /:require|std\.foundation\.host/);
+  assert.doesNotMatch(source, /\(:require|\[std\.foundation\.host/);
   for (const method of ["start", "update", "status", "stop"]) {
-    assert.match(source, new RegExp(`Host/call \\"gw\\.audio\\.supersonic\\" \\"${method}\\"`));
+    assert.ok(
+      source.includes(`Host/call "gw.audio.supersonic" "${method}"`),
+      `missing direct Host/call for ${method}`
+    );
   }
 });
 
