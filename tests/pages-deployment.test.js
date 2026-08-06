@@ -30,7 +30,7 @@ async function fixture(files) {
   return root;
 }
 
-test("the deployment contract covers the Audio bridge, mobile output and featured project catalog", () => {
+test("the deployment contract covers Audio, HTA and the featured project catalog", () => {
   for (const path of [
     "src/main.js",
     "src/audio/integration.js",
@@ -44,8 +44,15 @@ test("the deployment contract covers the Audio bridge, mobile output and feature
   ]) {
     assert.ok(EXACT_DEPLOYMENT_PATHS.includes(path), `missing exact deployment asset ${path}`);
   }
-  assert.ok(DEPLOYMENT_PROBES.some((probe) => probe.path === "runtime/rust/hara.wasm"));
-  assert.ok(DEPLOYMENT_PROBES.some((probe) => probe.path === "runtime/rust/host/services.js"));
+  for (const path of [
+    "runtime/rust/hara.wasm",
+    "runtime/rust/packages/hta/index.js",
+    "runtime/rust/packages/hta/worker.js",
+    "runtime/rust/packages/hta/shared-worker.js",
+    "runtime/rust/host/services.js"
+  ]) {
+    assert.ok(DEPLOYMENT_PROBES.some((probe) => probe.path === path), `missing runtime probe ${path}`);
+  }
 });
 
 test("exact public assets are compared with the repository and carry a commit cache buster", async (t) => {
@@ -128,5 +135,47 @@ test("the runtime host-service probe requires the Supersonic operation", async (
       fetchImpl: async () => response("export function createHostServices() {}\n")
     }),
     /do not expose gw\.audio\.supersonic\/start/
+  );
+});
+
+test("the HTA probes reject a missing or incomplete relative module graph", async () => {
+  const probes = DEPLOYMENT_PROBES.filter((probe) => probe.path.includes("/packages/hta/"));
+  const valid = new Map([
+    ["runtime/rust/packages/hta/index.js", "export function encodeHta() {} export function decodeHta() {} export class BrowserPromiseProvider {}"],
+    ["runtime/rust/packages/hta/worker.js", 'import { encodeHta } from "./index.js"; self.addEventListener("message", () => hta_start);'],
+    ["runtime/rust/packages/hta/shared-worker.js", 'import { encodeHta } from "./index.js"; self.onconnect = () => hta_start;']
+  ]);
+
+  await assert.rejects(
+    verifyPagesDeployment({
+      baseUrl: "https://example.test/",
+      commit: "missing-hta-index",
+      repositoryRoot: ".",
+      exactPaths: [],
+      probes,
+      attempts: 1,
+      fetchImpl: async (url) => {
+        const path = new URL(url).pathname.slice(1);
+        if (path.endsWith("packages/hta/index.js")) return response("not found", 404);
+        return response(valid.get(path) || "");
+      }
+    }),
+    /runtime\/rust\/packages\/hta\/index\.js: HTTP 404/
+  );
+
+  await assert.rejects(
+    verifyPagesDeployment({
+      baseUrl: "https://example.test/",
+      commit: "broken-hta-worker",
+      repositoryRoot: ".",
+      exactPaths: [],
+      probes,
+      attempts: 1,
+      fetchImpl: async (url) => {
+        const path = new URL(url).pathname.slice(1);
+        return response(path.endsWith("packages/hta/worker.js") ? "export {};" : valid.get(path) || "");
+      }
+    }),
+    /runtime\/rust\/packages\/hta\/worker\.js: deployed HTA worker is incomplete/
   );
 });
