@@ -1,0 +1,74 @@
+name: Repair Hodos value inspector migration rewriter
+
+on:
+  push:
+    branches: [agent/hodos-value-inspector]
+    paths: [.github/workflows/repair-hodos-value-inspector-apply.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/hodos-value-inspector
+          fetch-depth: 0
+
+      - name: Normalize multiline source rewrites
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          workflow = Path('.github/workflows/apply-hodos-value-inspector.yml')
+          source = workflow.read_text(encoding='utf-8')
+          old = '''          def replace_once(source, old, new, label):
+              count = source.count(old)
+              if count != 1:
+                  raise SystemExit(f"{label}: expected one match, found {count}")
+              return source.replace(old, new, 1)
+          '''
+          new = '''          def normalized_block(value):
+              lines = value.strip("\\n").splitlines()
+              if len(lines) < 2:
+                  return value.strip("\\n")
+              first_indent = len(lines[0]) - len(lines[0].lstrip(" "))
+              continuation = [line for line in lines[1:] if line.strip()]
+              minimum = min(
+                  (len(line) - len(line.lstrip(" ")) for line in continuation),
+                  default=first_indent,
+              )
+              excess = max(0, minimum - first_indent)
+              if excess:
+                  lines = [lines[0]] + [
+                      line[excess:] if line.startswith(" " * excess) else line
+                      for line in lines[1:]
+                  ]
+              return "\\n".join(lines)
+
+          def replace_once(source, old, new, label):
+              old = normalized_block(old)
+              new = normalized_block(new)
+              count = source.count(old)
+              if count != 1:
+                  raise SystemExit(f"{label}: expected one match, found {count}")
+              return source.replace(old, new, 1)
+          '''
+          if source.count(old) != 1:
+              raise SystemExit('replace_once helper did not match exactly once')
+          source = source.replace(old, new, 1)
+          source = source.replace("    if: github.actor != 'github-actions[bot]'\n", '', 1)
+          workflow.write_text(source, encoding='utf-8')
+          Path('.github/workflows/repair-hodos-value-inspector-apply.yml').unlink()
+          PY
+
+      - name: Commit repaired rewriter
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Repair Hodos value inspector migration rewriter"
+          git push origin HEAD:agent/hodos-value-inspector
