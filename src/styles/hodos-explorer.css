@@ -1,0 +1,35 @@
+button.tree-folder-label.explorer-folder-button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+button.tree-folder-label.explorer-folder-button:hover {
+  color: var(--hara-text);
+  background: var(--hara-surface-raised);
+}
+.explorer-branch { min-width: 0; }
+.explorer-entry-marker {
+  width: 14px;
+  flex: 0 0 14px;
+  display: inline-grid;
+  place-items: center;
+  color: var(--hara-faint);
+  font-family: var(--hara-font-mono);
+  font-size: .55rem;
+}
+.explorer-entry-marker.modified { color: var(--hara-spectrum-violet); }
+.explorer-empty {
+  padding: 18px 12px;
+  color: var(--hara-faint);
+  font-family: var(--hara-font-mono);
+  font-size: .56rem;
+  line-height: 1.5;
+  text-align: center;
+}
+.project-panel[data-area-type="hodos.dev/explorer"] .file-tree {
+  min-height: 88px;
+}

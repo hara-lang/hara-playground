@@ -10,7 +10,7 @@ import {
   toolsetById
 } from "../studio/catalog.js";
 import { FEATURED_PROJECTS, PLAYGROUND_NICETIES, projectDeepLink, repositoryLabel } from "../studio/projects.js";
-import { icon, haraMark, escapeHtml, fileName, fileLanguage, groupFiles, renderTree, renderRepl } from "./view-helpers.js";
+import { icon, haraMark, escapeHtml, fileName, fileLanguage, renderRepl } from "./view-helpers.js";
 
 const EDITOR_LINE_HEIGHT = 22;
 const EDITOR_PADDING_TOP = 18;
@@ -305,7 +305,7 @@ function renderWorkbench() {
       <aside class="project-panel hara-surface">
         <header class="panel-heading"><span>${icon("folder")} Project</span><div><button id="new-file-button" class="mini-button" title="New file">${icon("plus")}</button><button id="delete-file-button" class="mini-button" title="Delete selected file">${icon("trash")}</button></div></header>
         <div class="project-path"><strong>${escapeHtml(state.workspace)}</strong><span>${escapeHtml(state.metadata.path || "project root")}</span></div>
-        <nav class="file-tree">${renderTree(groupFiles(state.files))}</nav>
+        <nav class="file-tree" aria-label="Workspace files"></nav>
         <div class="activity-selector"><label>Activity<select id="activity-select">${renderActivityOptions()}</select></label></div>
         ${renderActivityPanel(activity)}
       </aside>

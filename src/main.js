@@ -6,6 +6,7 @@ import { render } from "./app/view.js";
 import { installWorkspaceLayout } from "./app/workspace-layout.js";
 import { installAudioOutput } from "./audio/integration.js";
 import { disposeHodosEditor, mountHodosEditor } from "./hodos/editor.js";
+import { disposeHodosExplorer, mountHodosExplorer } from "./hodos/explorer.js";
 import { disposeHodosPreview, mountHodosPreview } from "./hodos/preview.js";
 import { disposeHodosProblems, mountHodosProblems } from "./hodos/problems.js";
 import { disposeHodosRepl, mountHodosRepl } from "./hodos/repl.js";
@@ -13,11 +14,13 @@ import { disposeHodosValueInspector, mountHodosValueInspector } from "./hodos/va
 
 function renderPlayground() {
   disposeHodosEditor();
+  disposeHodosExplorer();
   disposeHodosPreview();
   disposeHodosProblems();
   disposeHodosRepl();
   disposeHodosValueInspector();
   render(bindEvents);
+  mountHodosExplorer(state);
   mountHodosEditor({
     selectedPath: state.selectedPath,
     source: state.content,
