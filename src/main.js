@@ -3,7 +3,11 @@ import { setRenderer, state } from "./app/context.js";
 import { importRepository, loadExamples, prepareProjectHome } from "./app/actions.js";
 import { bindEvents, setupRuntimeEvents } from "./app/events.js";
 import { render } from "./app/view.js";
-import { installWorkspaceLayout } from "./app/workspace-layout.js";
+import { mountWorkspaceAssist } from "./app/workspace-assist.js";
+import {
+  disposeHodosWorkspaceShell,
+  mountHodosWorkspaceShell,
+} from "./hodos/workspace-shell.js";
 import { installAudioOutput } from "./audio/integration.js";
 import { disposeHodosCatalog, mountHodosCatalog } from "./hodos/catalog.js";
 import { disposeHodosEditor, mountHodosEditor } from "./hodos/editor.js";
@@ -14,6 +18,7 @@ import { disposeHodosRepl, mountHodosRepl } from "./hodos/repl.js";
 import { disposeHodosValueInspector, mountHodosValueInspector } from "./hodos/value-inspector.js";
 
 function renderPlayground() {
+  disposeHodosWorkspaceShell();
   disposeHodosCatalog();
   disposeHodosEditor();
   disposeHodosExplorer();
@@ -39,6 +44,8 @@ function renderPlayground() {
   mountHodosProblems(state);
   mountHodosRepl(state);
   mountHodosValueInspector(state);
+  mountHodosWorkspaceShell(state);
+  mountWorkspaceAssist();
 
   const footer = document.querySelector(".lobby-footer");
   if (!footer || footer.querySelector("[data-greenways-open-source]")) return;
@@ -51,7 +58,6 @@ function renderPlayground() {
 
 setRenderer(renderPlayground);
 setupRuntimeEvents();
-installWorkspaceLayout();
 installAudioOutput();
 
 async function start() {

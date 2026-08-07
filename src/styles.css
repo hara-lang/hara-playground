@@ -3,6 +3,7 @@
 @import url("./styles/editor.css");
 @import url("./audio/audio.css");
 @import url("./styles/responsive.css");
+@import url("../vendor/hodos/packages/workspace-ui/src/shell.css");
 @import url("./styles/workspace-layout.css");
 @import url("./styles/mobile-audio.css");
 @import url("./styles/hodos-preview.css");

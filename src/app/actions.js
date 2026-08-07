@@ -26,6 +26,12 @@ import {
   resetProblemsState,
   setProblemsStatus,
 } from "../hodos/problems-state.js";
+import {
+  WORKSPACE_MANIFEST_PATH,
+  keyName,
+  loadWorkspaceManifest,
+  selectWorkspaceArea as selectWorkspaceAreaView,
+} from "../workspace/manifest.js";
 
 function recordActionProblem(error, context = {}) {
   state.problems = appendProblemState(state.problems, problemFromError(error, {
@@ -45,6 +51,79 @@ function writeSetting(key, value) {
 
 function resetActivityRun() {
   state.activityRun = { status: "idle", checks: [], message: "" };
+}
+
+function loadingWorkspaceShell() {
+  state.workspaceShell = {
+    workspaceId: state.workspace,
+    status: "loading",
+    source: "fallback",
+    view: null,
+    error: "",
+    surfaceId: state.workspaceShell?.surfaceId ?? null,
+  };
+}
+
+export async function reloadWorkspaceManifest({ shouldRender = false } = {}) {
+  const workspaceId = state.workspace;
+  loadingWorkspaceShell();
+  try {
+    const result = await loadWorkspaceManifest({
+      store,
+      runtime,
+      namespace: state.namespace,
+    });
+    if (state.workspace !== workspaceId) return false;
+    if (result.status === "missing") {
+      state.workspaceShell = {
+        ...state.workspaceShell,
+        workspaceId,
+        status: "fallback",
+        source: "fallback",
+        view: null,
+        error: "",
+      };
+    } else {
+      state.namespace = result.namespace || state.namespace;
+      state.workspaceShell = {
+        ...state.workspaceShell,
+        workspaceId,
+        status: "ready",
+        source: WORKSPACE_MANIFEST_PATH,
+        view: result.view,
+        error: "",
+      };
+    }
+    if (shouldRender) render();
+    return true;
+  } catch (error) {
+    if (state.workspace !== workspaceId) return false;
+    state.workspaceShell = {
+      ...state.workspaceShell,
+      workspaceId,
+      status: "error",
+      source: WORKSPACE_MANIFEST_PATH,
+      view: null,
+      error: error.message,
+    };
+    recordActionProblem(error, {
+      source: "workspace",
+      phase: "manifest",
+      path: WORKSPACE_MANIFEST_PATH,
+    });
+    appendRepl("error", `Workspace manifest fallback · ${error.message}`);
+    if (shouldRender) render();
+    return false;
+  }
+}
+
+export function selectWorkspaceShellArea(areaId, surfaceId = null) {
+  state.workspaceShell.surfaceId = surfaceId || state.workspaceShell.surfaceId;
+  const view = state.workspaceShell.view;
+  const hasArea = Array.isArray(view?.["workspace/areas"])
+    && view["workspace/areas"].some((area) => keyName(area?.["area/id"] ?? area?.id) === areaId);
+  if (hasArea) state.workspaceShell.view = selectWorkspaceAreaView(view, areaId, surfaceId);
+  return true;
 }
 
 export function resetCompletion() {
@@ -180,6 +259,9 @@ export async function saveCurrentFile(showMessage = true) {
   clearTimeout(getSaveTimer());
   await store.write(state.selectedPath, state.content);
   state.dirty = false;
+  if (state.selectedPath === WORKSPACE_MANIFEST_PATH && state.runtimeStatus === "ready") {
+    await reloadWorkspaceManifest({ shouldRender: false });
+  }
   const saveStatus = document.querySelector(".statusbar span:first-child");
   if (saveStatus) saveStatus.textContent = "Workspace saved";
   document.querySelector(".dirty-dot")?.remove();
@@ -191,6 +273,7 @@ export async function saveCurrentFile(showMessage = true) {
 
 export async function bootRuntime() {
   state.runtimeStatus = "booting";
+  loadingWorkspaceShell();
   resetInstantEvaluation();
   resetValueInspector();
   state.problems = resetProblemsState(state.problems, { status: "collecting" });
@@ -203,6 +286,7 @@ export async function bootRuntime() {
     state.namespace = result.namespace;
     state.runtimeKind = result.runtimeKind || state.runtimeKind;
     state.runtimeStatus = "ready";
+    await reloadWorkspaceManifest({ shouldRender: false });
     state.problems = setProblemsStatus(
       state.problems,
       state.problems.entries.length ? "ready" : "idle",
@@ -210,6 +294,14 @@ export async function bootRuntime() {
     appendRepl("result", `Hara kernel ready · ${sourceFiles.length} source files loaded · ${files.length} workspace files`);
   } catch (error) {
     state.runtimeStatus = "error";
+    state.workspaceShell = {
+      ...state.workspaceShell,
+      workspaceId: state.workspace,
+      status: "error",
+      source: "fallback",
+      view: null,
+      error: error.message,
+    };
     recordActionProblem(error, { source: "runtime", phase: "boot" });
     appendRepl("error", error.message);
   }

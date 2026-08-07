@@ -2,6 +2,7 @@ import { app, state } from "./context.js";
 import { isHaraSource } from "../workspace/project.js";
 import { highlightHara } from "../editor/lisp.js";
 import { updateHodosRepl } from "../hodos/repl.js";
+import { syncWorkspaceAssist } from "./workspace-assist.js";
 import { FEATURED_PROJECTS, PLAYGROUND_NICETIES, projectDeepLink, repositoryLabel } from "../studio/projects.js";
 import { icon, haraMark, escapeHtml, fileName, fileLanguage, renderRepl } from "./view-helpers.js";
 
@@ -328,6 +329,7 @@ export function updateCompletionOnly() {
 }
 
 export function updateInstaReplOnly() {
+  queueMicrotask(syncWorkspaceAssist);
   const rail = document.querySelector("#instarepl-rail");
   if (rail) {
     rail.classList.toggle("enabled", state.instarepl.enabled);
