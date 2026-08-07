@@ -7,12 +7,14 @@ import { installWorkspaceLayout } from "./app/workspace-layout.js";
 import { installAudioOutput } from "./audio/integration.js";
 import { disposeHodosEditor, mountHodosEditor } from "./hodos/editor.js";
 import { disposeHodosPreview, mountHodosPreview } from "./hodos/preview.js";
+import { disposeHodosProblems, mountHodosProblems } from "./hodos/problems.js";
 import { disposeHodosRepl, mountHodosRepl } from "./hodos/repl.js";
 import { disposeHodosValueInspector, mountHodosValueInspector } from "./hodos/value-inspector.js";
 
 function renderPlayground() {
   disposeHodosEditor();
   disposeHodosPreview();
+  disposeHodosProblems();
   disposeHodosRepl();
   disposeHodosValueInspector();
   render(bindEvents);
@@ -28,6 +30,7 @@ function renderPlayground() {
     instaRepl: state.instarepl.enabled,
   });
   mountHodosPreview({ document: state.preview, theme: state.theme });
+  mountHodosProblems(state);
   mountHodosRepl(state);
   mountHodosValueInspector(state);
 

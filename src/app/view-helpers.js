@@ -80,6 +80,7 @@ export function renderRepl() {
     if (entry.kind === "input") return `<div class="repl-line input"><span class="prompt">${escapeHtml(entry.namespace)}=&gt;</span><span>${escapeHtml(entry.text)}</span></div>`;
     if (entry.kind === "error") return `<div class="repl-line error"><span class="output-marker">!</span><span>${escapeHtml(entry.text)}</span></div>`;
     if (entry.kind === "stdout") return `<div class="repl-line stdout"><span class="output-marker">│</span><span>${escapeHtml(entry.text)}</span></div>`;
+    if (entry.kind === "diagnostic") return `<div class="repl-line diagnostic"><span class="output-marker">·</span><span>${escapeHtml(entry.text)}</span></div>`;
     return `<div class="repl-line result"><span class="output-marker">→</span><span>${escapeHtml(entry.text)}</span></div>`;
   }).join("");
 }

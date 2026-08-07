@@ -14,6 +14,19 @@ import {
 import { isHaraSource } from "../workspace/project.js";
 import { editorWorkspacePatch } from "../hodos/editor-events.js";
 import { replWorkspacePatch } from "../hodos/repl-events.js";
+import { problemsWorkspacePatch } from "../hodos/problems-events.js";
+import {
+  appendProblemState,
+  clearProblemsState,
+  filterProblemsState,
+  formatProblemForClipboard,
+  problemById,
+  problemFromDiagnostic,
+  problemFromError,
+  problemSelectionOffsets,
+  selectProblemState,
+} from "../hodos/problems-state.js";
+import { updateHodosProblems } from "../hodos/problems.js";
 import { valueInspectorWorkspacePatch } from "../hodos/value-inspector-events.js";
 import {
   formatInspectableValue,
@@ -555,7 +568,66 @@ async function applyValueInspectorWorkspacePatch(patch) {
   }
 }
 
-function reportWorkspaceEventError(error) {
+
+    function recordRuntimeProblem(problem) {
+      state.problems = appendProblemState(state.problems, problem);
+      updateHodosProblems(state);
+    }
+
+    async function applyProblemsWorkspacePatch(patch) {
+      if (patch.kind === "close") {
+        state.outputTab = "repl";
+        writeSetting(STUDIO_SETTING_KEYS.output, "repl");
+        render();
+        return;
+      }
+      if (patch.kind === "clear") {
+        state.problems = clearProblemsState(state.problems);
+        updateHodosProblems(state);
+        return;
+      }
+      if (patch.kind === "filter") {
+        state.problems = filterProblemsState(state.problems, patch);
+        updateHodosProblems(state);
+        return;
+      }
+      if (patch.kind === "select") {
+        state.problems = selectProblemState(state.problems, patch.problemId);
+        updateHodosProblems(state);
+        return;
+      }
+
+      const problem = problemById(state.problems, patch.problemId);
+      if (!problem) throw new Error(`Problem is no longer available: ${patch.problemId}`);
+      state.problems = selectProblemState(state.problems, patch.problemId);
+
+      if (patch.kind === "copy") {
+        if (!globalThis.navigator?.clipboard?.writeText) {
+          throw new Error("Clipboard access is unavailable in this browser context");
+        }
+        await globalThis.navigator.clipboard.writeText(formatProblemForClipboard(problem));
+        updateHodosProblems(state);
+        return;
+      }
+
+      if (patch.kind === "open-source") {
+        if (!problem.path) throw new Error("This problem has no source path");
+        if (!state.files.includes(problem.path)) {
+          throw new Error(`Problem source is outside the current workspace: ${problem.path}`);
+        }
+        await selectFile(problem.path, false);
+        const selection = problemSelectionOffsets(problem, state.content);
+        if (selection) {
+          state.editor.selectionStart = selection.start;
+          state.editor.selectionEnd = selection.end;
+          state.editor.cursor = selection.end;
+        }
+        render();
+        queueMicrotask(() => document.querySelector("#editor")?.focus());
+      }
+    }
+
+    function reportWorkspaceEventError(error) {
   appendRepl("error", `Workspace event rejected: ${error.message}`);
   updateReplOnly();
 }
@@ -575,6 +647,11 @@ function handleHodosWorkspaceEvent(event) {
     const valuePatch = valueInspectorWorkspacePatch(event.detail);
     if (valuePatch) {
       void applyValueInspectorWorkspacePatch(valuePatch).catch(reportWorkspaceEventError);
+      return;
+    }
+    const problemsPatch = problemsWorkspacePatch(event.detail);
+    if (problemsPatch) {
+      void applyProblemsWorkspacePatch(problemsPatch).catch(reportWorkspaceEventError);
     }
   } catch (error) {
     reportWorkspaceEventError(error);
@@ -778,11 +855,26 @@ export function setupRuntimeEvents() {
     updateHodosPreview({ document: state.preview, theme: state.theme });
   });
   runtime.addEventListener("diagnostic", (event) => {
-    appendRepl("stdout", event.detail.text);
+    const problem = problemFromDiagnostic(event.detail, {
+      source: "runtime",
+      namespace: state.namespace,
+      requestId: event.detail?.id,
+      runtimeKind: state.runtimeKind,
+    });
+    recordRuntimeProblem(problem);
+    appendRepl("diagnostic", problem.message, state.namespace, {
+      requestId: problem.requestId,
+    });
     updateReplOnly();
   });
   runtime.addEventListener("runtime-error", (event) => {
     state.runtimeStatus = "error";
+    recordRuntimeProblem(problemFromError(event.detail, {
+      source: "runtime",
+      phase: "worker",
+      namespace: state.namespace,
+      runtimeKind: state.runtimeKind,
+    }));
     appendRepl("error", event.detail?.message || String(event.detail));
     render();
   });

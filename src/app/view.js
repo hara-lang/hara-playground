@@ -249,12 +249,18 @@ function renderEditor(toolset) {
 
 function renderOutputPanel() {
   const valueAvailable = Boolean(state.valueInspector?.valueId);
-  const mode = state.outputTab === "value" ? "retained kernel value" : "kernel effects";
+  const problemCount = state.problems?.entries?.length || 0;
+  const mode = state.outputTab === "value"
+    ? "retained kernel value"
+    : state.outputTab === "problems"
+      ? "runtime and source diagnostics"
+      : "kernel effects";
   return `<aside class="output-panel hara-surface">
     <header class="output-tabs">
       <button class="output-tab ${state.outputTab === "preview" ? "active" : ""}" data-output-tab="preview">${icon("eye")} Preview</button>
       <button class="output-tab ${state.outputTab === "repl" ? "active" : ""}" data-output-tab="repl">${icon("terminal")} REPL</button>
       <button class="output-tab ${state.outputTab === "value" ? "active" : ""}" data-output-tab="value" ${valueAvailable ? "" : "disabled"}>${icon("list")} Value</button>
+      <button class="output-tab ${state.outputTab === "problems" ? "active" : ""}" data-output-tab="problems">${icon("check")} Problems${problemCount ? ` <span class="output-tab-count">${problemCount}</span>` : ""}</button>
       <span class="preview-mode">${mode}</span>
     </header>
     <section class="preview-view ${state.outputTab === "preview" ? "active" : ""}"><iframe id="preview" title="Hara preview" sandbox="" referrerpolicy="no-referrer"></iframe></section>
@@ -265,6 +271,9 @@ function renderOutputPanel() {
     </section>
     <section class="value-view ${state.outputTab === "value" ? "active" : ""}" aria-label="Retained value inspector">
       <div class="value-inspector-placeholder">Select <strong>Inspect</strong> beside a retained REPL result.</div>
+    </section>
+    <section class="problems-view ${state.outputTab === "problems" ? "active" : ""}" aria-label="Runtime and source problems">
+      <div class="problems-placeholder">Runtime and source diagnostics appear here.</div>
     </section>
   </aside>`;
 }
