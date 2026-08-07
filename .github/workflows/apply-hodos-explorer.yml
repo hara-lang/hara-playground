@@ -1,0 +1,66 @@
+name: Apply Hodos Explorer consumer migration
+
+on:
+  push:
+    branches: [agent/hodos-explorer]
+    paths: [.github/workflows/apply-hodos-explorer.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/hodos-explorer
+          submodules: recursive
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate the migration program
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path('.github/scripts/apply-hodos-explorer.py').read_text(encoding='utf-8')
+          compile(source, '.github/scripts/apply-hodos-explorer.py', 'exec')
+          PY
+
+      - name: Pin the merged Hodos Explorer boundary
+        run: |
+          git -C vendor/hodos fetch origin 45d176cd1241c5de2fa0e70b9ce135345e8f2a3a
+          git -C vendor/hodos checkout 45d176cd1241c5de2fa0e70b9ce135345e8f2a3a
+
+      - name: Apply the Playground consumer slice
+        run: python3 .github/scripts/apply-hodos-explorer.py
+
+      - name: Validate changed JavaScript
+        run: |
+          node --check src/hodos/explorer-state.js
+          node --check src/hodos/explorer-events.js
+          node --check src/hodos/explorer.js
+          node --check src/app/context.js
+          node --check src/app/events.js
+          node --check src/app/view.js
+          node --check src/main.js
+          node --check tests/hodos-explorer-state.test.js
+          node --check tests/hodos-explorer-events.test.js
+          node --check tests/hodos-explorer-authority.test.js
+
+      - name: Run the complete Playground gates
+        run: |
+          npm test
+          npm run check
+          npm run build
+
+      - name: Commit the validated consumer migration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Mount workspace files through Hodos Dev"
+          git push origin HEAD:agent/hodos-explorer
