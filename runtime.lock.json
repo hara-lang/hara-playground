@@ -1,7 +1,7 @@
 {
   "version": "0.1.4",
   "url": "https://github.com/hara-lang/hara/releases/download/v0.1.4/hara-studio-runtime-0.1.4.tar.gz",
-  "sha256": "dfa0dbd43b185e69ba2967bc4289f94311097507f69ba93a35e57156574828a0",
+  "sha256": "dfa0db00ac455ad720cc50fc6a972e466e0c32a3b3fbe283197f084abf8945be",
   "required": [
     "rust/hara.wasm",
     "rust/hta.js",
