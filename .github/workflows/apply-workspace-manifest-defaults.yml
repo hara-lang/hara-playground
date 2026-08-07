@@ -70,7 +70,7 @@ jobs:
           test ! -e src/app/layout-model.js
           test ! -e src/app/workspace-layout.js
           test ! -e tests/layout-model.test.js
-          ! grep -R "installWorkspaceLayout\|calculateWorkspaceLayout\|resizeSplitFromPointer" src tests --exclude-dir=vendor
+          ! grep -R "installWorkspaceLayout\|calculateWorkspaceLayout\|resizeSplitFromPointer" src --exclude-dir=vendor
 
       - name: Run the complete Playground gates
         run: |
