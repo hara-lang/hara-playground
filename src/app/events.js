@@ -12,6 +12,8 @@ import {
   store
 } from "./context.js";
 import { isHaraSource } from "../workspace/project.js";
+import { editorWorkspacePatch } from "../hodos/editor-events.js";
+import { updateHodosPreview } from "../hodos/preview.js";
 import { previewDocument } from "../ui/hta.js";
 import { instantCandidateChanged, instantFormAtCursor } from "../editor/instarepl.js";
 import {
@@ -80,14 +82,6 @@ function toggleTheme() {
   render();
 }
 
-function syncEditorState(editor, { highlight = true } = {}) {
-  if (!editor) return;
-  state.editor.selectionStart = editor.selectionStart;
-  state.editor.selectionEnd = editor.selectionEnd;
-  state.editor.cursor = editor.selectionEnd;
-  if (highlight) updateEditorHighlight();
-}
-
 function syncEditorScroll(editor) {
   const rail = document.querySelector("#line-rail");
   if (rail) rail.scrollTop = editor.scrollTop;
@@ -123,12 +117,11 @@ function applyEditorEdit(editor, edit, message, { completion = true } = {}) {
   const changed = edit.source !== editor.value;
   editor.value = edit.source;
   editor.setSelectionRange(edit.selectionStart, edit.selectionEnd);
-  syncEditorState(editor, { highlight: false });
   if (changed) {
     suppressCompletionOnce = !completion;
     editor.dispatchEvent(new Event("input", { bubbles: true }));
   } else {
-    updateEditorHighlight();
+    editor.dispatchEvent(new Event("select", { bubbles: true }));
     resetCompletion();
     updateCompletionOnly();
   }
@@ -400,6 +393,42 @@ function handlePareditKey(event, editor) {
   return false;
 }
 
+function applyEditorWorkspaceSelection(selection, { highlight = true } = {}) {
+  state.editor.selectionStart = selection.start;
+  state.editor.selectionEnd = selection.end;
+  state.editor.cursor = selection.end;
+  if (highlight) updateEditorHighlight();
+}
+
+function handleHodosWorkspaceEvent(event) {
+  let patch;
+  try {
+    patch = editorWorkspacePatch(event.detail, state.content);
+  } catch (error) {
+    appendRepl("error", `Editor event rejected: ${error.message}`);
+    updateReplOnly();
+    return;
+  }
+  if (!patch) return;
+
+  const editor = document.querySelector("#editor");
+  if (patch.kind === "change") {
+    state.content = patch.source;
+    state.dirty = true;
+    applyEditorWorkspaceSelection(patch.selection, { highlight: false });
+    updateEditorOnly();
+    clearTimeout(getSaveTimer());
+    setSaveTimer(setTimeout(() => saveCurrentFile(false), 900));
+    scheduleInstantEvaluation(editor);
+    scheduleCompletion(editor);
+    return;
+  }
+
+  applyEditorWorkspaceSelection(patch.selection);
+  scheduleInstantEvaluation(editor, { delay: 160 });
+  if (!state.editor.completion.open) scheduleCompletion(editor, { delay: 100 });
+}
+
 function bindProjectLobbyEvents() {
   document.querySelector("#home-theme-button")?.addEventListener("click", toggleTheme);
   document.querySelector("#home-repo-form")?.addEventListener("submit", (event) => {
@@ -417,35 +446,7 @@ function bindProjectLobbyEvents() {
 function bindEditorEvents(editor) {
   if (!editor) return;
 
-  editor.addEventListener("input", () => {
-    state.content = editor.value;
-    state.dirty = true;
-    syncEditorState(editor, { highlight: false });
-    updateEditorOnly();
-    clearTimeout(getSaveTimer());
-    setSaveTimer(setTimeout(() => saveCurrentFile(false), 900));
-    scheduleInstantEvaluation(editor);
-    scheduleCompletion(editor);
-  });
-
   editor.addEventListener("scroll", () => syncEditorScroll(editor));
-  editor.addEventListener("click", () => {
-    syncEditorState(editor);
-    scheduleInstantEvaluation(editor, { delay: 160 });
-    scheduleCompletion(editor, { delay: 100 });
-  });
-  editor.addEventListener("select", () => {
-    syncEditorState(editor);
-    scheduleInstantEvaluation(editor, { delay: 160 });
-    scheduleCompletion(editor, { delay: 100 });
-  });
-  editor.addEventListener("keyup", (event) => {
-    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End", "PageUp", "PageDown"].includes(event.key)) {
-      syncEditorState(editor);
-      scheduleInstantEvaluation(editor, { delay: 160 });
-      if (!state.editor.completion.open) scheduleCompletion(editor, { delay: 100 });
-    }
-  });
 
   editor.addEventListener("keydown", (event) => {
     if (state.editor.completion.open) {
@@ -544,7 +545,6 @@ function bindEditorEvents(editor) {
     if (item) acceptCompletion(editor, Number(item.dataset.completionIndex));
   });
 
-  syncEditorState(editor);
   syncEditorScroll(editor);
 }
 
@@ -642,14 +642,14 @@ export function bindEvents() {
 }
 
 export function setupRuntimeEvents() {
+  document.addEventListener("hodos:workspace-event", handleHodosWorkspaceEvent);
   runtime.addEventListener("stdout", (event) => {
     appendRepl("stdout", event.detail.text);
     updateReplOnly();
   });
   runtime.addEventListener("effect", (event) => {
     state.preview = previewDocument(event.detail.effect);
-    const preview = document.querySelector("#preview");
-    if (preview) preview.srcdoc = state.preview;
+    updateHodosPreview({ document: state.preview, theme: state.theme });
   });
   runtime.addEventListener("diagnostic", (event) => {
     appendRepl("stdout", event.detail.text);
