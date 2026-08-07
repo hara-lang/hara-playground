@@ -10,12 +10,13 @@ function sourceValue(value, label) {
   return value;
 }
 
-/**
- * Validate and normalize the Hodos REPL event projected into Playground.
- *
- * Hodos owns the visible REPL component and semantic events. Playground owns
- * history policy and invokes the injected Hara runtime service.
- */
+function identifierValue(value, label) {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new TypeError(`${label} requires a non-empty string`);
+  }
+  return value.trim();
+}
+
 export function replWorkspacePatch(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   if (value["component/id"] !== HODOS_REPL_COMPONENT_ID) return null;
@@ -27,6 +28,12 @@ export function replWorkspacePatch(value) {
   }
   if (type === "repl/submit") {
     return Object.freeze({ kind: "submit", source: sourceValue(value.source, "Hodos REPL submit") });
+  }
+  if (type === "repl/inspect") {
+    return Object.freeze({
+      kind: "inspect",
+      valueId: identifierValue(value.valueId, "Hodos REPL inspect"),
+    });
   }
   if (type === "repl/clear") return Object.freeze({ kind: "clear" });
   if (type === "repl/cancel") return Object.freeze({ kind: "cancel" });

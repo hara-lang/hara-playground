@@ -248,17 +248,23 @@ function renderEditor(toolset) {
 }
 
 function renderOutputPanel() {
+  const valueAvailable = Boolean(state.valueInspector?.valueId);
+  const mode = state.outputTab === "value" ? "retained kernel value" : "kernel effects";
   return `<aside class="output-panel hara-surface">
     <header class="output-tabs">
       <button class="output-tab ${state.outputTab === "preview" ? "active" : ""}" data-output-tab="preview">${icon("eye")} Preview</button>
       <button class="output-tab ${state.outputTab === "repl" ? "active" : ""}" data-output-tab="repl">${icon("terminal")} REPL</button>
-      <span class="preview-mode">kernel effects</span>
+      <button class="output-tab ${state.outputTab === "value" ? "active" : ""}" data-output-tab="value" ${valueAvailable ? "" : "disabled"}>${icon("list")} Value</button>
+      <span class="preview-mode">${mode}</span>
     </header>
     <section class="preview-view ${state.outputTab === "preview" ? "active" : ""}"><iframe id="preview" title="Hara preview" sandbox="" referrerpolicy="no-referrer"></iframe></section>
     <section class="repl-view ${state.outputTab === "repl" ? "active" : ""}">
       <div class="repl-toolbar"><span>${escapeHtml(state.namespace)} namespace</span><button id="clear-repl-button" class="text-button">Clear</button></div>
       <div id="repl-output" class="repl-output">${renderRepl()}</div>
       <form id="repl-form" class="repl-form"><span>${escapeHtml(state.namespace)}=&gt;</span><input id="repl-input" aria-label="REPL input" autocomplete="off" spellcheck="false" placeholder="(+ 1 2)" ${state.runtimeStatus !== "ready" ? "disabled" : ""}></form>
+    </section>
+    <section class="value-view ${state.outputTab === "value" ? "active" : ""}" aria-label="Retained value inspector">
+      <div class="value-inspector-placeholder">Select <strong>Inspect</strong> beside a retained REPL result.</div>
     </section>
   </aside>`;
 }

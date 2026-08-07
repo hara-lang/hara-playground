@@ -70,6 +70,30 @@ export function resetInstantEvaluation() {
   };
 }
 
+
+export function resetValueInspector() {
+  const request = Number(state.valueInspector?.request || 0) + 1;
+  state.valueInspector = {
+    request,
+    valueId: null,
+    requestId: null,
+    status: "idle",
+    display: "",
+    value: null,
+    valueType: null,
+    namespace: null,
+    source: null,
+    path: [],
+    expanded: [[]],
+    metadata: {},
+    error: ""
+  };
+  if (state.outputTab === "value") {
+    state.outputTab = "repl";
+    writeSetting(STUDIO_SETTING_KEYS.output, "repl");
+  }
+}
+
 export async function prepareProjectHome() {
   let paths = await store.list();
   if (!paths.length) {
@@ -154,6 +178,7 @@ export async function saveCurrentFile(showMessage = true) {
 export async function bootRuntime() {
   state.runtimeStatus = "booting";
   resetInstantEvaluation();
+  resetValueInspector();
   render();
   try {
     const files = await store.files();
@@ -171,8 +196,12 @@ export async function bootRuntime() {
   render();
 }
 
-export function appendRepl(kind, text, namespace = state.namespace) {
-  state.repl.push({ kind, text: String(text).replace(/\n$/, ""), namespace });
+export function appendRepl(kind, text, namespace = state.namespace, metadata = {}) {
+  const entry = { kind, text: String(text).replace(/\n$/, ""), namespace };
+  for (const key of ["valueId", "requestId", "source"]) {
+    if (typeof metadata?.[key] === "string" && metadata[key]) entry[key] = metadata[key];
+  }
+  state.repl.push(entry);
   if (state.repl.length > 300) state.repl.splice(0, state.repl.length - 300);
 }
 
@@ -185,7 +214,11 @@ export async function evaluate(source, { echo = true } = {}) {
     const result = await runtime.eval(source, namespace);
     state.namespace = result.namespace;
     if (echo) {
-      appendRepl("result", result.display);
+      appendRepl("result", result.display, result.namespace || state.namespace, {
+        valueId: result.valueId,
+        requestId: result.requestId,
+        source
+      });
       render();
     }
     return result;
@@ -243,7 +276,7 @@ export function selectActivity(activityId) {
 }
 
 export function selectOutputTab(tab) {
-  if (tab !== "preview" && tab !== "repl") return false;
+  if (!["preview", "repl", "value"].includes(tab)) return false;
   state.outputTab = tab;
   writeSetting(STUDIO_SETTING_KEYS.output, tab);
   render();
@@ -376,7 +409,11 @@ export async function runCurrentFile() {
   try {
     const result = await runtime.loadFile(state.selectedPath, state.content, state.namespace);
     state.namespace = result.namespace;
-    appendRepl("result", `${result.display} · loaded ${state.selectedPath}`);
+    appendRepl("result", `${result.display} · loaded ${state.selectedPath}`, result.namespace || state.namespace, {
+      valueId: result.valueId,
+      requestId: result.requestId,
+      source: state.content
+    });
   } catch (error) {
     appendRepl("error", error.message);
   }
