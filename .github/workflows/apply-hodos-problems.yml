@@ -26,13 +26,30 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+
           path = Path('.github/scripts/apply-hodos-problems.py')
           source = path.read_text(encoding='utf-8')
+
+          lines = source.splitlines()
+          matches = [
+              index for index, line in enumerate(lines)
+              if 'assert.doesNotMatch(events' in line
+              and 'appendRepl' in line
+              and 'stdout' in line
+          ]
+          if len(matches) != 1:
+              raise SystemExit(f'diagnostic assertion matches: {len(matches)}')
+          index = matches[0]
+          indent = lines[index][:len(lines[index]) - len(lines[index].lstrip())]
+          lines[index] = indent + 'assert.match(events, /runtime\\.addEventListener\\("stdout"/);'
+          source = '\n'.join(lines) + '\n'
+
           old = "    ''']\n    source = replace_once(source, insertion_anchor"
           new = "    '''\n    source = replace_once(source, insertion_anchor"
           if source.count(old) != 1:
               raise SystemExit('Problems policy terminator did not match exactly once')
-          path.write_text(source.replace(old, new, 1), encoding='utf-8')
+          source = source.replace(old, new, 1)
+          path.write_text(source, encoding='utf-8')
           PY
           python3 -m py_compile .github/scripts/apply-hodos-problems.py
 
