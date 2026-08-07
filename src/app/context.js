@@ -70,6 +70,14 @@ valueInspector: {
   error: ""
 },
   problems: createProblemsState(),
+  workspaceShell: {
+    workspaceId: null,
+    status: "idle",
+    source: "fallback",
+    view: null,
+    error: "",
+    surfaceId: null
+  },
   explorer: createExplorerState(),
   importBusy: false, importProgress: "", examples: [], exampleBusy: false,
   theme: initialTheme === "light" ? "light" : "dark",

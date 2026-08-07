@@ -81,15 +81,28 @@ try {
     document.querySelector("#editor")?.value.includes("playground/supersonic-live"),
   null,
   { timeout: 15_000 });
+  await page.waitForFunction(() => {
+    const shell = document.querySelector(".workbench-grid");
+    return shell?.dataset.workspaceId === "playground-supersonic-live"
+      && shell?.dataset.workspaceManifestStatus === "ready";
+  }, null, { timeout: 15_000 });
 
   const mounted = await page.evaluate(() => ({
     editorLength: document.querySelector("#editor")?.value.length || 0,
     hasAudioTab: Boolean(document.querySelector('[data-output-tab="audio"]')),
     queuedMicrotasks: globalThis.__haraQueuedMicrotasks,
-    runtimeStatus: document.querySelector(".kernel-state")?.textContent || ""
+    runtimeStatus: document.querySelector(".kernel-state")?.textContent || "",
+    workspaceId: document.querySelector(".workbench-grid")?.dataset.workspaceId || "",
+    workspaceMode: document.querySelector(".workbench-grid")?.dataset.workspaceMode || "",
+    manifestStatus: document.querySelector(".workbench-grid")?.dataset.workspaceManifestStatus || "",
+    manifestSource: document.querySelector(".workbench-grid")?.dataset.workspaceManifestSource || ""
   }));
   assert.ok(mounted.editorLength > 2_000, "the complete Supersonic source did not open");
   assert.equal(mounted.hasAudioTab, true, "the Audio output was not mounted");
+  assert.equal(mounted.workspaceId, "playground-supersonic-live");
+  assert.ok(["desktop", "compact"].includes(mounted.workspaceMode));
+  assert.equal(mounted.manifestStatus, "ready");
+  assert.equal(mounted.manifestSource, "workspace.edn");
 
   // The previous implementation continually observed its own preview-mode
   // textContent replacement. A timer or animation frame could never run once

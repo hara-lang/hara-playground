@@ -4,7 +4,7 @@
     display: grid !important;
   }
 
-  .mobile-workspace-dock {
+  .hodos-workspace-dock {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
@@ -14,7 +14,7 @@
 }
 
 @media (max-width: 420px) {
-  .mobile-workspace-dock span {
+  .hodos-workspace-dock .mobile-dock-label {
     font-size: .46rem;
   }
 }

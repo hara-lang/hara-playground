@@ -13,6 +13,11 @@ import {
 } from "./context.js";
 import { isHaraSource } from "../workspace/project.js";
 import { catalogWorkspacePatch } from "../hodos/catalog-events.js";
+import { workspaceShellPatch } from "../hodos/workspace-shell-events.js";
+import {
+  currentHodosWorkspaceDescriptor,
+  updateHodosWorkspaceShell,
+} from "../hodos/workspace-shell.js";
 import { editorWorkspacePatch } from "../hodos/editor-events.js";
 import { explorerWorkspacePatch } from "../hodos/explorer-events.js";
 import {
@@ -87,6 +92,7 @@ import {
   saveCurrentFile,
   selectActivity,
   selectFile,
+  selectWorkspaceShellArea,
   selectOutputTab,
   selectToolset,
   showProjectHome
@@ -452,6 +458,11 @@ function applyEditorWorkspacePatch(patch) {
 }
 
 
+async function applyWorkspaceShellPatch(patch) {
+  selectWorkspaceShellArea(patch.areaId, patch.surfaceId);
+  updateHodosWorkspaceShell(state);
+}
+
 async function applyCatalogWorkspacePatch(patch) {
   if (patch.kind === "select-toolset") {
     if (!selectToolset(patch.toolsetId)) {
@@ -744,6 +755,11 @@ async function applyValueInspectorWorkspacePatch(patch) {
 
 function handleHodosWorkspaceEvent(event) {
   try {
+    const shellPatch = workspaceShellPatch(event.detail, currentHodosWorkspaceDescriptor());
+    if (shellPatch) {
+      void applyWorkspaceShellPatch(shellPatch).catch(reportWorkspaceEventError);
+      return;
+    }
     const catalogPatch = catalogWorkspacePatch(event.detail);
     if (catalogPatch) {
       void applyCatalogWorkspacePatch(catalogPatch).catch(reportWorkspaceEventError);
