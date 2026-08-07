@@ -33,17 +33,30 @@ jobs:
       - name: Apply manifest and legacy-layout cleanup
         run: python3 .github/scripts/apply-workspace-manifest-defaults.py
 
-      - name: Align the generated cross-language test literal
+      - name: Align generated cross-language test literals
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          path = Path('tests/default-workspace-manifest.test.js')
-          source = path.read_text(encoding='utf-8')
+
+          default_path = Path('tests/default-workspace-manifest.test.js')
+          default_source = default_path.read_text(encoding='utf-8')
           old = '    ":document/path "src/app/core.hal"",\n'
           new = '    \'\\:document/path "src/app/core.hal"\',\n'.replace('\\:', ':')
-          if source.count(old) != 1:
+          if default_source.count(old) != 1:
               raise SystemExit('default Workspace manifest marker did not match exactly once')
-          path.write_text(source.replace(old, new, 1), encoding='utf-8')
+          default_path.write_text(default_source.replace(old, new, 1), encoding='utf-8')
+
+          samples_path = Path('tests/sample-projects.test.js')
+          lines = samples_path.read_text(encoding='utf-8').splitlines()
+          matches = [index for index, line in enumerate(lines)
+                     if 'assert.match(workspace, new RegExp(project.entry.replace' in line]
+          if len(matches) != 1:
+              raise SystemExit(f'sample entry assertion matched {len(matches)} lines')
+          lines[matches[0]] = (
+              '    assert.ok(workspace.includes(project.entry), '
+              '`${project.id} workspace.edn does not name ${project.entry}`);'
+          )
+          samples_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
           PY
 
       - name: Validate changed JavaScript
