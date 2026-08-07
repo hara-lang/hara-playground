@@ -24,8 +24,10 @@ await cp(resolve(root, "src"), resolve(output, "src"), { recursive: true });
 await copyIfPresent("public/og-hara-playground.jpg", "og-hara-playground.jpg");
 
 // Keep commit-pinned shared ESM modules at the same relative paths used by the
-// source adapters. Published npm packages can replace this checkout later.
+// source adapters and import map. Published npm packages can replace these
+// checkouts later without changing the Workspace component contracts.
 await copyIfPresent("vendor/hara-ui/packages", "vendor/hara-ui/packages");
+await copyIfPresent("vendor/hodos/packages", "vendor/hodos/packages");
 
 // Source examples make local builds useful. A downloaded canonical runtime may
 // then overlay this directory with the richer Starter/Game/Music catalog.
