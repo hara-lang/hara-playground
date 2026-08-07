@@ -5,11 +5,24 @@ import { bindEvents, setupRuntimeEvents } from "./app/events.js";
 import { render } from "./app/view.js";
 import { installWorkspaceLayout } from "./app/workspace-layout.js";
 import { installAudioOutput } from "./audio/integration.js";
+import { disposeHodosEditor, mountHodosEditor } from "./hodos/editor.js";
 import { disposeHodosPreview, mountHodosPreview } from "./hodos/preview.js";
 
 function renderPlayground() {
+  disposeHodosEditor();
   disposeHodosPreview();
   render(bindEvents);
+  mountHodosEditor({
+    selectedPath: state.selectedPath,
+    source: state.content,
+    namespace: state.namespace,
+    selectionStart: state.editor.selectionStart,
+    selectionEnd: state.editor.selectionEnd,
+    completion: state.editor.completion,
+    paredit: state.editor.paredit,
+    rainbow: state.editor.rainbow,
+    instaRepl: state.instarepl.enabled,
+  });
   mountHodosPreview({ document: state.preview, theme: state.theme });
 
   const footer = document.querySelector(".lobby-footer");
