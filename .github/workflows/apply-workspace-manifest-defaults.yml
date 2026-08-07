@@ -35,17 +35,35 @@ jobs:
 
       - name: Align generated cross-language test literals
         run: |
+          cat > tests/default-workspace-manifest.test.js <<'EOF'
+          import assert from "node:assert/strict";
+          import test from "node:test";
+          import { defaultProject } from "../src/workspace/default-project.js";
+
+          const entry = Array.isArray(defaultProject)
+            ? defaultProject.find((file) => file.path === "workspace.edn")
+            : null;
+          const manifest = entry?.content;
+
+          test("the local scratch project carries the neutral Hara Workspace manifest", () => {
+            assert.equal(typeof manifest, "string");
+            assert.match(manifest, /:hara\/type\s+:workspace/);
+            assert.match(manifest, /:workspace\/id\s+:hara-studio-hello/);
+            assert.match(manifest, /:workspace\/layout/);
+            assert.match(manifest, /:layout\/type\s+:split/);
+            assert.match(manifest, /:workspace\/areas/);
+            assert.match(manifest, /:area\/id\s+"area\/editor"/);
+            assert.match(manifest, /:area\/id\s+"area\/output"/);
+            assert.match(manifest, /:document\/path\s+"src\/app\/core\.hal"/);
+          });
+
+          test("the neutral default leaves the Playground project host to product projection", () => {
+            assert.doesNotMatch(manifest, /:area\/id\s+(?::area\/project|"area\/project")/);
+          });
+          EOF
+
           python3 - <<'PY'
           from pathlib import Path
-
-          default_path = Path('tests/default-workspace-manifest.test.js')
-          default_source = default_path.read_text(encoding='utf-8')
-          old = '    ":document/path "src/app/core.hal"",\n'
-          new = '    \'\\:document/path "src/app/core.hal"\',\n'.replace('\\:', ':')
-          if default_source.count(old) != 1:
-              raise SystemExit('default Workspace manifest marker did not match exactly once')
-          default_path.write_text(default_source.replace(old, new, 1), encoding='utf-8')
-
           samples_path = Path('tests/sample-projects.test.js')
           lines = samples_path.read_text(encoding='utf-8').splitlines()
           matches = [index for index, line in enumerate(lines)
