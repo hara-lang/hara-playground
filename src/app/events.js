@@ -13,6 +13,14 @@ import {
 } from "./context.js";
 import { isHaraSource } from "../workspace/project.js";
 import { editorWorkspacePatch } from "../hodos/editor-events.js";
+import { explorerWorkspacePatch } from "../hodos/explorer-events.js";
+import {
+  filterExplorerState,
+  normalizeExplorerPath,
+  projectExplorerEntries,
+  toggleExplorerDirectory,
+} from "../hodos/explorer-state.js";
+import { updateHodosExplorer } from "../hodos/explorer.js";
 import { replWorkspacePatch } from "../hodos/repl-events.js";
 import { problemsWorkspacePatch } from "../hodos/problems-events.js";
 import {
@@ -442,7 +450,65 @@ function applyEditorWorkspacePatch(patch) {
   if (!state.editor.completion.open) scheduleCompletion(editor, { delay: 100 });
 }
 
-function inspectorEntry(valueId) {
+
+    async function applyExplorerWorkspacePatch(patch) {
+      if (patch.kind === "select") {
+        await selectFile(patch.path);
+        return;
+      }
+      if (patch.kind === "toggle") {
+        const entries = projectExplorerEntries(state.files, {
+          selectedPath: state.selectedPath,
+          dirty: state.dirty,
+        });
+        state.explorer = toggleExplorerDirectory(state.explorer, patch.path, entries);
+        updateHodosExplorer(state);
+        return;
+      }
+      if (patch.kind === "filter") {
+        state.explorer = filterExplorerState(state.explorer, patch.query);
+        updateHodosExplorer(state);
+        return;
+      }
+      if (patch.kind === "refresh") {
+        await refreshFiles(state.selectedPath);
+        return;
+      }
+      if (patch.kind === "create") {
+        if (patch.entryKind !== "file") {
+          throw new Error("Empty directories are not represented by the current Workspace store");
+        }
+        const requested = patch.path ?? prompt("New workspace file", "src/app/new-file.hal");
+        if (!requested) return;
+        const path = normalizeExplorerPath(requested, "New workspace file");
+        if (state.files.includes(path)) throw new Error(`${path} already exists`);
+        await store.write(path, isHaraSource(path) ? `(ns app.new-file)\n\n` : "");
+        await refreshFiles(path);
+        return;
+      }
+      if (patch.kind === "delete") {
+        if (!state.files.includes(patch.path)) throw new Error(`Workspace file is not present: ${patch.path}`);
+        if (!confirm(`Delete ${patch.path} from this browser workspace?`)) return;
+        await store.remove(patch.path);
+        if (state.selectedPath === patch.path) state.selectedPath = null;
+        await refreshFiles();
+        return;
+      }
+      if (patch.kind === "rename") {
+        if (!state.files.includes(patch.path)) throw new Error(`Workspace file is not present: ${patch.path}`);
+        if (state.files.includes(patch.newPath)) throw new Error(`${patch.newPath} already exists`);
+        const content = state.selectedPath === patch.path && state.dirty
+          ? state.content
+          : await store.read(patch.path);
+        if (content == null) throw new Error(`Unable to read ${patch.path}`);
+        await store.write(patch.newPath, content);
+        await store.remove(patch.path);
+        if (state.selectedPath === patch.path) state.selectedPath = patch.newPath;
+        await refreshFiles(patch.newPath);
+      }
+    }
+
+    function inspectorEntry(valueId) {
   return [...state.repl].reverse().find((entry) => entry.valueId === valueId) || null;
 }
 
@@ -639,6 +705,11 @@ function handleHodosWorkspaceEvent(event) {
       applyEditorWorkspacePatch(editorPatch);
       return;
     }
+    const explorerPatch = explorerWorkspacePatch(event.detail);
+    if (explorerPatch) {
+      void applyExplorerWorkspacePatch(explorerPatch).catch(reportWorkspaceEventError);
+      return;
+    }
     const replPatch = replWorkspacePatch(event.detail);
     if (replPatch) {
       void applyReplWorkspacePatch(replPatch).catch(reportWorkspaceEventError);
@@ -778,7 +849,6 @@ function bindEditorEvents(editor) {
 }
 
 function bindWorkbenchEvents() {
-  document.querySelectorAll(".tree-file").forEach((button) => button.addEventListener("click", () => selectFile(button.dataset.path)));
   const editor = document.querySelector("#editor");
   bindEditorEvents(editor);
 
@@ -819,24 +889,6 @@ function bindWorkbenchEvents() {
     await runtime.reset();
     await bootRuntime();
   });
-  document.querySelector("#new-file-button")?.addEventListener("click", async () => {
-    const path = prompt("New workspace file", "src/app/new-file.hal");
-    if (!path) return;
-    if (state.files.includes(path)) {
-      appendRepl("error", `${path} already exists`);
-      render();
-      return;
-    }
-    await store.write(path, isHaraSource(path) ? `(ns app.new-file)\n\n` : "");
-    await refreshFiles(path);
-  });
-  document.querySelector("#delete-file-button")?.addEventListener("click", async () => {
-    if (!state.selectedPath || !confirm(`Delete ${state.selectedPath} from this browser workspace?`)) return;
-    await store.remove(state.selectedPath);
-    state.selectedPath = null;
-    await refreshFiles();
-  });
-
 }
 
 export function bindEvents() {

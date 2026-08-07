@@ -3,6 +3,7 @@ import { RuntimeClient } from "../runtime/client.js";
 import { DEFAULT_WORKSPACE, WorkspaceStore } from "../workspace/store.js";
 import { previewDocument } from "../ui/hta.js";
 import { createProblemsState } from "../hodos/problems-state.js";
+import { createExplorerState } from "../hodos/explorer-state.js";
 import {
   DEFAULT_ACTIVITY_ID,
   DEFAULT_TOOLSET_ID,
@@ -69,6 +70,7 @@ valueInspector: {
   error: ""
 },
   problems: createProblemsState(),
+  explorer: createExplorerState(),
   importBusy: false, importProgress: "", examples: [], exampleBusy: false,
   theme: initialTheme === "light" ? "light" : "dark",
   home: { error: "", resume: null },
