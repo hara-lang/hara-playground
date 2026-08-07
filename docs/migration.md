@@ -17,3 +17,13 @@ Experimental canvas, WebGL, audio, publishing and structural-editing code from
 the old shell remains available on the archive branch. It should be ported into
 capability-focused modules instead of copied into the new application bundle as
 a second competing runtime host.
+
+
+## Workspace shell migration
+
+The fixed three-panel layout controller and its parallel geometry model were
+removed after the Hodos recursive shell passed the complete Chromium/Supersonic
+workflow. `workspace.edn` is now the normal local and sample-project entrypoint:
+Hara evaluates it, Playground applies product policy, and Hodos owns visible
+layout mechanics. Historical fixed-layout code remains available through Git
+rather than as an inactive competing implementation on `main`.

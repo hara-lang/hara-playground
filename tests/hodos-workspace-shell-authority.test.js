@@ -9,15 +9,16 @@ const shell = fs.readFileSync(new URL("../src/hodos/workspace-shell.js", import.
 const manifest = fs.readFileSync(new URL("../src/workspace/manifest.js", import.meta.url), "utf8");
 const styles = fs.readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 
-test("the active Playground shell mounts through Hodos rather than the fixed controller", () => {
+test("the active Playground shell mounts through Hodos without a competing controller", () => {
   assert.match(main, /mountHodosWorkspaceShell/);
   assert.match(main, /disposeHodosWorkspaceShell/);
   assert.doesNotMatch(main, /installWorkspaceLayout/);
-  assert.doesNotMatch(main, /workspace-layout\.js/);
   assert.match(shell, /createWorkspaceShellHost/);
   assert.match(shell, /resolveAreaRoot/);
   assert.match(shell, /workspaceShell:/);
   assert.match(styles, /vendor\/hodos\/packages\/workspace-ui\/src\/shell\.css/);
+  assert.equal(fs.existsSync(new URL("../src/app/workspace-layout.js", import.meta.url)), false);
+  assert.equal(fs.existsSync(new URL("../src/app/layout-model.js", import.meta.url)), false);
 });
 
 test("workspace.edn is evaluated through the Hara runtime and remains application policy", () => {

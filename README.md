@@ -23,11 +23,13 @@ new user into an empty IDE. It provides:
   model, and Supersonic audio live coding; and
 - a local scratch project using the same project and kernel model.
 
-After a project opens, the workbench presents a project tree, structural Hara
-editor, kernel status, toolsets and activities, Preview, REPL, and a
-capability-gated Audio output. The interface uses the Hara precision-material
-visual language: quiet neutral surfaces, one kernel-depth field, and cyan → blue
-→ violet reserved for state, focus, and structural depth.
+After a project opens, Hara evaluates its `workspace.edn`, Playground maps the
+manifest into its installed project/editor/output authorities, and Hodos renders
+the recursive responsive shell. The workbench presents a project tree,
+structural Hara editor, kernel status, toolsets and activities, Preview, REPL,
+and a capability-gated Audio output. The interface uses the Hara
+precision-material visual language: quiet neutral surfaces, one kernel-depth
+field, and cyan → blue → violet reserved for state, focus, and structural depth.
 
 ## Lisp editor
 
@@ -105,7 +107,9 @@ supported browser renderer, capability boundary, and authoring workflow.
 - Per-workspace audio state, graph overlay isolation, and authorization
   revocation on kernel boot.
 - Sandboxed HTA preview with restrictive Content Security Policy.
-- Responsive desktop/mobile layouts and one-press light/dark switching.
+- Hara-evaluated `workspace.edn` projected through the recursive Hodos shell.
+- Accessible desktop splitters, compact product surfaces, and one-press
+  light/dark switching.
 - Unit tests, syntax checks, CI, and GitHub Pages deployment.
 - Zero runtime npm dependencies.
 
@@ -202,6 +206,12 @@ An audio project opts in explicitly:
 The workbench ignores capabilities it does not recognize, and the worker grants
 only capabilities supported by the current host.
 
+`workspace.edn` is evaluated as Hara data rather than parsed by a second browser
+implementation. It declares visible areas, recursive split geometry, documents,
+selection and descriptive customizations. See
+[Workspace manifests](docs/workspace-manifest.md) for the canonical shape and
+the Hara/Playground/Hodos authority boundary.
+
 ## Open a GitHub project
 
 Paste any of these into the project browser:
@@ -252,6 +262,7 @@ hara-playground/
 ## Design documents
 
 - [Architecture](docs/architecture.md)
+- [Workspace manifests](docs/workspace-manifest.md)
 - [Runtime adapter](docs/runtime-adapter.md)
 - [Worker protocol](docs/worker-protocol.md)
 - [Security model](docs/security.md)
