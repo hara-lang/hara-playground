@@ -1,6 +1,7 @@
 import { app, state } from "./context.js";
 import { isHaraSource } from "../workspace/project.js";
 import { highlightHara } from "../editor/lisp.js";
+import { updateHodosRepl } from "../hodos/repl.js";
 import {
   ACTIVITIES,
   TOOLSETS,
@@ -381,6 +382,7 @@ export function updateInstaReplOnly() {
 }
 
 export function updateReplOnly() {
+  if (updateHodosRepl(state)) return;
   const output = document.querySelector("#repl-output");
   if (!output) return;
   output.innerHTML = renderRepl();

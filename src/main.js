@@ -7,10 +7,12 @@ import { installWorkspaceLayout } from "./app/workspace-layout.js";
 import { installAudioOutput } from "./audio/integration.js";
 import { disposeHodosEditor, mountHodosEditor } from "./hodos/editor.js";
 import { disposeHodosPreview, mountHodosPreview } from "./hodos/preview.js";
+import { disposeHodosRepl, mountHodosRepl } from "./hodos/repl.js";
 
 function renderPlayground() {
   disposeHodosEditor();
   disposeHodosPreview();
+  disposeHodosRepl();
   render(bindEvents);
   mountHodosEditor({
     selectedPath: state.selectedPath,
@@ -24,6 +26,7 @@ function renderPlayground() {
     instaRepl: state.instarepl.enabled,
   });
   mountHodosPreview({ document: state.preview, theme: state.theme });
+  mountHodosRepl(state);
 
   const footer = document.querySelector(".lobby-footer");
   if (!footer || footer.querySelector("[data-greenways-open-source]")) return;
