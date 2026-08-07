@@ -6,6 +6,13 @@ import {
   setTextContentIfChanged
 } from "../src/audio/dom-sync.js";
 
+test("Audio observes only application-shell child replacement", () => {
+  assert.deepEqual(AUDIO_OBSERVER_OPTIONS, {
+    childList: true,
+    subtree: false
+  });
+});
+
 test("Audio reconciliation disconnects before writing and reconnects afterward", () => {
   const calls = [];
   const observer = {

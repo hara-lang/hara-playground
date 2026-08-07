@@ -5,32 +5,44 @@ on:
     branches: [main]
     paths:
       - .github/workflows/browser-audio-ci.yml
+      - index.html
+      - scripts/build-site.mjs
+      - scripts/prepare-web-packages.mjs
       - scripts/verify-browser-audio.mjs
       - scripts/verify-supersonic-project-open.mjs
       - tests/browser/**
       - tests/browser-audio-workflow.test.js
       - samples/supersonic-live/**
+      - src/main.js
+      - src/hodos/**
       - src/app/**
       - src/audio/**
       - src/github/**
       - src/runtime/**
       - src/workspace/**
       - vendor/hara-ui
+      - vendor/hodos
   push:
     branches: [main]
     paths:
       - .github/workflows/browser-audio-ci.yml
+      - index.html
+      - scripts/build-site.mjs
+      - scripts/prepare-web-packages.mjs
       - scripts/verify-browser-audio.mjs
       - scripts/verify-supersonic-project-open.mjs
       - tests/browser/**
       - tests/browser-audio-workflow.test.js
       - samples/supersonic-live/**
+      - src/main.js
+      - src/hodos/**
       - src/app/**
       - src/audio/**
       - src/github/**
       - src/runtime/**
       - src/workspace/**
       - vendor/hara-ui
+      - vendor/hodos
   workflow_dispatch:
 
 permissions:
