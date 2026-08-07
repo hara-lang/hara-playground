@@ -1,0 +1,66 @@
+name: Apply Hodos 2D Document consumer migration
+
+on:
+  push:
+    branches: [agent/hodos-2d-document-consumer]
+    paths: [.github/workflows/apply-hodos-document-consumer.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/hodos-2d-document-consumer
+          submodules: recursive
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate the migration program
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path('.github/scripts/apply-hodos-document-consumer.py').read_text(encoding='utf-8')
+          compile(source, '.github/scripts/apply-hodos-document-consumer.py', 'exec')
+          PY
+
+      - name: Pin the merged Hodos 2D document host
+        run: |
+          git -C vendor/hodos fetch origin b5e427061d92e015cd3882b03b1d6438630fa466
+          git -C vendor/hodos checkout b5e427061d92e015cd3882b03b1d6438630fa466
+
+      - name: Apply the manifest-native Hodos Document consumer
+        run: python3 .github/scripts/apply-hodos-document-consumer.py
+
+      - name: Validate changed JavaScript
+        run: |
+          node --check src/hodos/document-events.js
+          node --check src/hodos/document-state.js
+          node --check src/hodos/workspace-shell.js
+          node --check src/hodos/workspace-shell-state.js
+          node --check src/app/events.js
+          node --check src/studio/projects.js
+          node --check scripts/verify-hodos-document-project-open.mjs
+          node --check tests/hodos-document-events.test.js
+          node --check tests/hodos-document-state.test.js
+          node --check tests/hodos-document-consumer.test.js
+
+      - name: Run the complete Playground gates
+        run: |
+          npm test
+          npm run check
+          npm run build
+
+      - name: Commit the validated consumer migration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Mount manifest-native documents through Hodos 2D"
+          git push origin HEAD:agent/hodos-2d-document-consumer
