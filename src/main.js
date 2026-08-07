@@ -8,11 +8,13 @@ import { installAudioOutput } from "./audio/integration.js";
 import { disposeHodosEditor, mountHodosEditor } from "./hodos/editor.js";
 import { disposeHodosPreview, mountHodosPreview } from "./hodos/preview.js";
 import { disposeHodosRepl, mountHodosRepl } from "./hodos/repl.js";
+import { disposeHodosValueInspector, mountHodosValueInspector } from "./hodos/value-inspector.js";
 
 function renderPlayground() {
   disposeHodosEditor();
   disposeHodosPreview();
   disposeHodosRepl();
+  disposeHodosValueInspector();
   render(bindEvents);
   mountHodosEditor({
     selectedPath: state.selectedPath,
@@ -27,6 +29,7 @@ function renderPlayground() {
   });
   mountHodosPreview({ document: state.preview, theme: state.theme });
   mountHodosRepl(state);
+  mountHodosValueInspector(state);
 
   const footer = document.querySelector(".lobby-footer");
   if (!footer || footer.querySelector("[data-greenways-open-source]")) return;

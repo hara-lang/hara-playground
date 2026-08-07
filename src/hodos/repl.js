@@ -24,7 +24,13 @@ function statusValue(value) {
   return "idle";
 }
 
-function entryNode(entry, namespace) {
+function send(dispatch, event) {
+  void Promise.resolve(dispatch(event)).catch((error) => {
+    console.error("[hara playground hodos repl]", error);
+  });
+}
+
+function entryNode(entry, namespace, dispatch, signal) {
   const line = document.createElement("div");
   line.className = `repl-line ${entry.kind}`;
   if (entry.kind === "input") {
@@ -36,19 +42,29 @@ function entryNode(entry, namespace) {
     line.append(prompt, text);
     return line;
   }
+
   const marker = document.createElement("span");
   marker.className = "output-marker";
   marker.textContent = MARKERS[entry.kind] ?? "→";
   const text = document.createElement("span");
   text.textContent = entry.text;
   line.append(marker, text);
-  return line;
-}
 
-function send(dispatch, event) {
-  void Promise.resolve(dispatch(event)).catch((error) => {
-    console.error("[hara playground hodos repl]", error);
-  });
+  if (entry.kind === "result" && entry.valueId) {
+    line.classList.add("has-value");
+    line.dataset.valueId = entry.valueId;
+    const inspect = document.createElement("button");
+    inspect.type = "button";
+    inspect.className = "value-inspect-button";
+    inspect.textContent = "Inspect";
+    inspect.title = "Inspect retained kernel value";
+    inspect.addEventListener("click", () => send(dispatch, {
+      "event/type": "repl/inspect",
+      valueId: entry.valueId,
+    }), { signal });
+    line.append(inspect);
+  }
+  return line;
 }
 
 export function createPlaygroundReplHost({ container, dispatch }) {
@@ -88,14 +104,13 @@ export function createPlaygroundReplHost({ container, dispatch }) {
       });
       return;
     }
-    if (event.key === "Escape") {
-      send(dispatch, { "event/type": "repl/cancel" });
-    }
+    if (event.key === "Escape") send(dispatch, { "event/type": "repl/cancel" });
   }, { signal });
 
   return {
     update(model) {
-      output.replaceChildren(...model.entries.map((entry) => entryNode(entry, model.namespace)));
+      output.replaceChildren(...model.entries.map((entry) =>
+        entryNode(entry, model.namespace, dispatch, signal)));
       output.scrollTop = output.scrollHeight;
       if (toolbarNamespace) toolbarNamespace.textContent = `${model.namespace} namespace`;
       if (prompt) prompt.textContent = `${model.namespace}=>`;
@@ -122,6 +137,8 @@ export function replAreaFromPlayground(state) {
       kind: entry.kind === "diagnostic" ? "diagnostic" : entry.kind,
       text: String(entry.text ?? ""),
       namespace: entry.namespace || null,
+      requestId: entry.requestId || null,
+      valueId: entry.valueId || null,
     })),
     input: state.replInput || "",
     history: state.history,

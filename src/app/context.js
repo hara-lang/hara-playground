@@ -35,6 +35,7 @@ const initialActivity = storedActivity?.toolsetId === initialToolsetId
   ? storedActivity
   : activitiesForToolset(initialToolsetId)[0] || activityById(DEFAULT_ACTIVITY_ID);
 const initialTheme = readSetting(STUDIO_SETTING_KEYS.theme, readSetting("hara-studio-theme", "dark"));
+const initialOutput = readSetting(STUDIO_SETTING_KEYS.output, "preview");
 
 export const app = document.querySelector("#app");
 export const store = new WorkspaceStore();
@@ -50,10 +51,26 @@ export const state = {
   runtimeStatus: "idle", runtimeKind: "detecting", workspace: store.workspace,
   metadata: store.metadata, repl: [], replInput: "", history: [], historyIndex: 0,
   preview: previewDocument({ type: "html", html: '<main class="preview-shell"><article class="card"><span class="eyebrow">HARA KERNEL</span><h1>Open a project</h1><p>The preview is produced by values and effects from the browser kernel.</p></article></main>' }),
+
+valueInspector: {
+  request: 0,
+  valueId: null,
+  requestId: null,
+  status: "idle",
+  display: "",
+  value: null,
+  valueType: null,
+  namespace: null,
+  source: null,
+  path: [],
+  expanded: [[]],
+  metadata: {},
+  error: ""
+},
   importBusy: false, importProgress: "", examples: [], exampleBusy: false,
   theme: initialTheme === "light" ? "light" : "dark",
   home: { error: "", resume: null },
-  outputTab: readSetting(STUDIO_SETTING_KEYS.output, "preview") === "repl" ? "repl" : "preview",
+  outputTab: ["preview", "repl", "value"].includes(initialOutput) ? initialOutput : "preview",
   toolsetId: initialToolsetId,
   activityId: initialActivity?.id || DEFAULT_ACTIVITY_ID,
   activityRun: { status: "idle", checks: [], message: "" },

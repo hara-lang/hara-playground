@@ -14,6 +14,14 @@ import {
 import { isHaraSource } from "../workspace/project.js";
 import { editorWorkspacePatch } from "../hodos/editor-events.js";
 import { replWorkspacePatch } from "../hodos/repl-events.js";
+import { valueInspectorWorkspacePatch } from "../hodos/value-inspector-events.js";
+import {
+  formatInspectableValue,
+  inspectableType,
+  projectInspectableValue,
+  valueAtPath,
+} from "../hodos/value-projector.js";
+import { updateHodosValueInspector } from "../hodos/value-inspector.js";
 import { updateHodosPreview } from "../hodos/preview.js";
 import { previewDocument } from "../ui/hta.js";
 import { instantCandidateChanged, instantFormAtCursor } from "../editor/instarepl.js";
@@ -51,6 +59,7 @@ import {
   refreshFiles,
   resetCompletion,
   resetInstantEvaluation,
+  resetValueInspector,
   resumeWorkspace,
   runCurrentFile,
   saveCurrentFile,
@@ -420,6 +429,56 @@ function applyEditorWorkspacePatch(patch) {
   if (!state.editor.completion.open) scheduleCompletion(editor, { delay: 100 });
 }
 
+function inspectorEntry(valueId) {
+  return [...state.repl].reverse().find((entry) => entry.valueId === valueId) || null;
+}
+
+async function inspectRetainedValue(valueId) {
+  const entry = inspectorEntry(valueId);
+  const request = Number(state.valueInspector?.request || 0) + 1;
+  const sameValue = state.valueInspector?.valueId === valueId;
+  state.valueInspector = {
+    request,
+    valueId,
+    requestId: entry?.requestId || null,
+    status: "loading",
+    display: entry?.text || "",
+    value: sameValue ? state.valueInspector.value : null,
+    valueType: sameValue ? state.valueInspector.valueType : null,
+    namespace: entry?.namespace || state.namespace,
+    source: entry?.source || null,
+    path: sameValue ? state.valueInspector.path : [],
+    expanded: sameValue ? state.valueInspector.expanded : [[]],
+    metadata: { origin: "repl", retained: true },
+    error: ""
+  };
+  state.outputTab = "value";
+  writeSetting(STUDIO_SETTING_KEYS.output, "value");
+  render();
+
+  try {
+    const inspected = await runtime.inspect(valueId);
+    if (request !== state.valueInspector.request) return;
+    state.valueInspector = {
+      ...state.valueInspector,
+      valueId: inspected.valueId || valueId,
+      status: "ready",
+      display: String(inspected.display ?? entry?.text ?? ""),
+      value: projectInspectableValue(inspected.value),
+      valueType: inspectableType(inspected.value),
+      error: ""
+    };
+  } catch (error) {
+    if (request !== state.valueInspector.request) return;
+    state.valueInspector = {
+      ...state.valueInspector,
+      status: "error",
+      error: error.message,
+    };
+  }
+  updateHodosValueInspector(state);
+}
+
 async function applyReplWorkspacePatch(patch) {
   if (patch.kind === "input") {
     state.replInput = patch.source;
@@ -444,6 +503,10 @@ async function applyReplWorkspacePatch(patch) {
     runtime.cancel?.();
     return;
   }
+  if (patch.kind === "inspect") {
+    await inspectRetainedValue(patch.valueId);
+    return;
+  }
   if (patch.kind !== "submit" || !patch.source.trim()) return;
 
   state.replInput = "";
@@ -451,6 +514,50 @@ async function applyReplWorkspacePatch(patch) {
   state.historyIndex = state.history.length;
   updateReplOnly();
   await evaluate(patch.source);
+}
+
+async function applyValueInspectorWorkspacePatch(patch) {
+  if (patch.kind === "close") {
+    resetValueInspector();
+    render();
+    return;
+  }
+  if (patch.kind === "refresh") {
+    if (state.valueInspector.valueId) await inspectRetainedValue(state.valueInspector.valueId);
+    return;
+  }
+  if (patch.kind === "select") {
+    state.valueInspector.path = patch.path;
+    updateHodosValueInspector(state);
+    return;
+  }
+  if (patch.kind === "toggle") {
+    const key = JSON.stringify(patch.path);
+    const expanded = state.valueInspector.expanded || [];
+    state.valueInspector.expanded = expanded.some((path) => JSON.stringify(path) === key)
+      ? expanded.filter((path) => JSON.stringify(path) !== key)
+      : [...expanded, patch.path];
+    updateHodosValueInspector(state);
+    return;
+  }
+  if (patch.kind === "copy") {
+    const selected = valueAtPath(state.valueInspector.value, patch.path);
+    const text = formatInspectableValue(selected);
+    if (!globalThis.navigator?.clipboard?.writeText) {
+      throw new Error("Clipboard access is unavailable in this browser context");
+    }
+    await globalThis.navigator.clipboard.writeText(text);
+    state.valueInspector.metadata = {
+      ...state.valueInspector.metadata,
+      copied: true,
+    };
+    updateHodosValueInspector(state);
+  }
+}
+
+function reportWorkspaceEventError(error) {
+  appendRepl("error", `Workspace event rejected: ${error.message}`);
+  updateReplOnly();
 }
 
 function handleHodosWorkspaceEvent(event) {
@@ -461,10 +568,16 @@ function handleHodosWorkspaceEvent(event) {
       return;
     }
     const replPatch = replWorkspacePatch(event.detail);
-    if (replPatch) void applyReplWorkspacePatch(replPatch);
+    if (replPatch) {
+      void applyReplWorkspacePatch(replPatch).catch(reportWorkspaceEventError);
+      return;
+    }
+    const valuePatch = valueInspectorWorkspacePatch(event.detail);
+    if (valuePatch) {
+      void applyValueInspectorWorkspacePatch(valuePatch).catch(reportWorkspaceEventError);
+    }
   } catch (error) {
-    appendRepl("error", `Workspace event rejected: ${error.message}`);
-    updateReplOnly();
+    reportWorkspaceEventError(error);
   }
 }
 

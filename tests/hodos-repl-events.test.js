@@ -31,6 +31,23 @@ test("Hodos REPL projects clear, history and cancel commands", () => {
   assert.deepEqual(replWorkspacePatch({ ...base, "event/type": "repl/cancel" }), { kind: "cancel" });
 });
 
+
+test("Hodos REPL projects retained-value inspection", () => {
+  assert.deepEqual(replWorkspacePatch({
+    ...base,
+    "event/type": "repl/inspect",
+    valueId: "value-1",
+  }), {
+    kind: "inspect",
+    valueId: "value-1",
+  });
+  assert.throws(() => replWorkspacePatch({
+    ...base,
+    "event/type": "repl/inspect",
+    valueId: "",
+  }), /non-empty string/);
+});
+
 test("unrelated REPL components, areas and events are ignored", () => {
   assert.equal(replWorkspacePatch({ ...base, "component/id": "hodos.dev/editor", "event/type": "repl/clear" }), null);
   assert.equal(replWorkspacePatch({ ...base, "area/id": "repl/other", "event/type": "repl/clear" }), null);
