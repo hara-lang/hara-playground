@@ -1,0 +1,61 @@
+name: Apply Workspace manifest defaults
+
+on:
+  push:
+    branches: [agent/workspace-manifest-defaults]
+    paths: [.github/workflows/apply-workspace-manifest-defaults.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/workspace-manifest-defaults
+          submodules: recursive
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate the cleanup program
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path('.github/scripts/apply-workspace-manifest-defaults.py').read_text(encoding='utf-8')
+          compile(source, '.github/scripts/apply-workspace-manifest-defaults.py', 'exec')
+          PY
+
+      - name: Apply manifest and legacy-layout cleanup
+        run: python3 .github/scripts/apply-workspace-manifest-defaults.py
+
+      - name: Validate changed JavaScript
+        run: |
+          node --check tests/default-workspace-manifest.test.js
+          node --check tests/hodos-workspace-shell-authority.test.js
+          node --check tests/sample-projects.test.js
+
+      - name: Prove the legacy layout path is absent
+        run: |
+          test ! -e src/app/layout-model.js
+          test ! -e src/app/workspace-layout.js
+          test ! -e tests/layout-model.test.js
+          ! grep -R "installWorkspaceLayout\|calculateWorkspaceLayout\|resizeSplitFromPointer" src tests --exclude-dir=vendor
+
+      - name: Run the complete Playground gates
+        run: |
+          npm test
+          npm run check
+          npm run build
+
+      - name: Commit the validated cleanup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Make workspace.edn the canonical Playground shell"
+          git push origin HEAD:agent/workspace-manifest-defaults
