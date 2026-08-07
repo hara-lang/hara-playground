@@ -6,7 +6,10 @@ on:
     paths:
       - .github/workflows/browser-audio-ci.yml
       - index.html
+      - runtime.lock.json
       - scripts/build-site.mjs
+      - scripts/install-pinned-runtime
+      - scripts/runtime-lock.mjs
       - scripts/prepare-web-packages.mjs
       - scripts/verify-browser-audio.mjs
       - scripts/verify-supersonic-project-open.mjs
@@ -27,7 +30,10 @@ on:
     paths:
       - .github/workflows/browser-audio-ci.yml
       - index.html
+      - runtime.lock.json
       - scripts/build-site.mjs
+      - scripts/install-pinned-runtime
+      - scripts/runtime-lock.mjs
       - scripts/prepare-web-packages.mjs
       - scripts/verify-browser-audio.mjs
       - scripts/verify-supersonic-project-open.mjs
@@ -69,6 +75,9 @@ jobs:
         run: |
           npm install --no-save --ignore-scripts --package-lock=false playwright@1.53.2
           npx playwright install --with-deps chromium
+
+      - name: Install the checksum-verified Hara Studio runtime
+        run: npm run runtime:download
 
       - name: Exercise the isolated Web Audio engine
         run: node scripts/verify-browser-audio.mjs
