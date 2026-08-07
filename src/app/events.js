@@ -13,6 +13,7 @@ import {
 } from "./context.js";
 import { isHaraSource } from "../workspace/project.js";
 import { editorWorkspacePatch } from "../hodos/editor-events.js";
+import { replWorkspacePatch } from "../hodos/repl-events.js";
 import { updateHodosPreview } from "../hodos/preview.js";
 import { previewDocument } from "../ui/hta.js";
 import { instantCandidateChanged, instantFormAtCursor } from "../editor/instarepl.js";
@@ -400,17 +401,7 @@ function applyEditorWorkspaceSelection(selection, { highlight = true } = {}) {
   if (highlight) updateEditorHighlight();
 }
 
-function handleHodosWorkspaceEvent(event) {
-  let patch;
-  try {
-    patch = editorWorkspacePatch(event.detail, state.content);
-  } catch (error) {
-    appendRepl("error", `Editor event rejected: ${error.message}`);
-    updateReplOnly();
-    return;
-  }
-  if (!patch) return;
-
+function applyEditorWorkspacePatch(patch) {
   const editor = document.querySelector("#editor");
   if (patch.kind === "change") {
     state.content = patch.source;
@@ -427,6 +418,54 @@ function handleHodosWorkspaceEvent(event) {
   applyEditorWorkspaceSelection(patch.selection);
   scheduleInstantEvaluation(editor, { delay: 160 });
   if (!state.editor.completion.open) scheduleCompletion(editor, { delay: 100 });
+}
+
+async function applyReplWorkspacePatch(patch) {
+  if (patch.kind === "input") {
+    state.replInput = patch.source;
+    return;
+  }
+  if (patch.kind === "clear") {
+    state.repl = [];
+    updateReplOnly();
+    return;
+  }
+  if (patch.kind === "history") {
+    state.historyIndex = Math.max(0, Math.min(
+      state.history.length,
+      state.historyIndex + patch.direction,
+    ));
+    state.replInput = state.history[state.historyIndex] || "";
+    updateReplOnly();
+    queueMicrotask(() => document.querySelector("#repl-input")?.focus());
+    return;
+  }
+  if (patch.kind === "cancel") {
+    runtime.cancel?.();
+    return;
+  }
+  if (patch.kind !== "submit" || !patch.source.trim()) return;
+
+  state.replInput = "";
+  state.history.push(patch.source);
+  state.historyIndex = state.history.length;
+  updateReplOnly();
+  await evaluate(patch.source);
+}
+
+function handleHodosWorkspaceEvent(event) {
+  try {
+    const editorPatch = editorWorkspacePatch(event.detail, state.content);
+    if (editorPatch) {
+      applyEditorWorkspacePatch(editorPatch);
+      return;
+    }
+    const replPatch = replWorkspacePatch(event.detail);
+    if (replPatch) void applyReplWorkspacePatch(replPatch);
+  } catch (error) {
+    appendRepl("error", `Workspace event rejected: ${error.message}`);
+    updateReplOnly();
+  }
 }
 
 function bindProjectLobbyEvents() {
@@ -607,33 +646,7 @@ function bindWorkbenchEvents() {
     state.selectedPath = null;
     await refreshFiles();
   });
-  document.querySelector("#clear-repl-button")?.addEventListener("click", () => {
-    state.repl = [];
-    updateReplOnly();
-  });
 
-  const replForm = document.querySelector("#repl-form");
-  const replInput = document.querySelector("#repl-input");
-  replForm?.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const source = replInput.value;
-    if (!source.trim()) return;
-    state.history.push(source);
-    state.historyIndex = state.history.length;
-    replInput.value = "";
-    evaluate(source);
-  });
-  replInput?.addEventListener("keydown", (event) => {
-    if (event.key === "ArrowUp") {
-      event.preventDefault();
-      state.historyIndex = Math.max(0, state.historyIndex - 1);
-      replInput.value = state.history[state.historyIndex] || "";
-    } else if (event.key === "ArrowDown") {
-      event.preventDefault();
-      state.historyIndex = Math.min(state.history.length, state.historyIndex + 1);
-      replInput.value = state.history[state.historyIndex] || "";
-    }
-  });
 }
 
 export function bindEvents() {

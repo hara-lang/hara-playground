@@ -48,7 +48,7 @@ export const state = {
   screen: "projects",
   files: [], selectedPath: null, content: "", dirty: false, namespace: "user",
   runtimeStatus: "idle", runtimeKind: "detecting", workspace: store.workspace,
-  metadata: store.metadata, repl: [], history: [], historyIndex: 0,
+  metadata: store.metadata, repl: [], replInput: "", history: [], historyIndex: 0,
   preview: previewDocument({ type: "html", html: '<main class="preview-shell"><article class="card"><span class="eyebrow">HARA KERNEL</span><h1>Open a project</h1><p>The preview is produced by values and effects from the browser kernel.</p></article></main>' }),
   importBusy: false, importProgress: "", examples: [], exampleBusy: false,
   theme: initialTheme === "light" ? "light" : "dark",
