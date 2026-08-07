@@ -55,8 +55,10 @@ try {
   const context = await browser.newContext();
   const page = await context.newPage();
   const pageErrors = [];
+  const pageConsole = [];
   let crashed = false;
   page.on("pageerror", (error) => pageErrors.push(error.stack || error.message));
+  page.on("console", (message) => pageConsole.push(`${message.type()}: ${message.text()}`));
   page.on("crash", () => { crashed = true; });
 
   await page.addInitScript(() => {
@@ -81,11 +83,33 @@ try {
     document.querySelector("#editor")?.value.includes("playground/supersonic-live"),
   null,
   { timeout: 15_000 });
-  await page.waitForFunction(() => {
-    const shell = document.querySelector(".workbench-grid");
-    return shell?.dataset.workspaceId === "playground-supersonic-live"
-      && shell?.dataset.workspaceManifestStatus === "ready";
-  }, null, { timeout: 15_000 });
+  try {
+    await page.waitForFunction(() => {
+      const shell = document.querySelector(".workbench-grid");
+      return shell?.dataset.workspaceId === "playground-supersonic-live"
+        && shell?.dataset.workspaceManifestStatus === "ready";
+    }, null, { timeout: 15_000 });
+  } catch (error) {
+    const diagnostic = await page.evaluate(() => {
+      const shell = document.querySelector(".workbench-grid");
+      return {
+        shell: shell ? { ...shell.dataset } : null,
+        htmlScreen: document.documentElement.dataset.screen || "",
+        runtimePill: document.querySelector(".runtime-pill")?.textContent || "",
+        repl: document.querySelector("#repl-output")?.textContent || "",
+        problems: document.querySelector(".problems-view")?.textContent || "",
+        outputTab: document.querySelector(".output-tab.active")?.dataset.outputTab || "",
+        editorPath: document.querySelector(".editor-meta span")?.textContent || ""
+      };
+    });
+    console.error("Supersonic Workspace shell diagnostic:", JSON.stringify({
+      diagnostic,
+      pageErrors,
+      pageConsole: pageConsole.slice(-40),
+      crashed
+    }, null, 2));
+    throw error;
+  }
 
   const mounted = await page.evaluate(() => ({
     editorLength: document.querySelector("#editor")?.value.length || 0,
