@@ -9,6 +9,14 @@ registerHodosDevUi(registry, { createPreviewHost });
 
 let areaHost = null;
 
+function previewArea(sourceDocument, theme) {
+  return createPreviewArea({
+    id: "preview/main",
+    document: sourceDocument ?? "",
+    theme,
+  });
+}
+
 function previewContainer() {
   const frame = globalThis.document?.querySelector("iframe#preview");
   if (!frame) return null;
@@ -40,10 +48,12 @@ export function mountHodosPreview({ document: sourceDocument, theme = "system" }
       }));
     },
   });
-  areaHost.open(createPreviewArea({
-    id: "preview/main",
-    document: sourceDocument ?? "",
-    theme,
-  }));
+  areaHost.open(previewArea(sourceDocument, theme));
+  return true;
+}
+
+export function updateHodosPreview({ document: sourceDocument, theme = "system" } = {}) {
+  if (!areaHost) return mountHodosPreview({ document: sourceDocument, theme });
+  areaHost.update(previewArea(sourceDocument, theme));
   return true;
 }
