@@ -30,7 +30,10 @@
     globalThis.HaraIdentity?.refresh?.().catch?.(() => {});
   }
 
-  const observer = new MutationObserver(() => queueMicrotask(mountIdentity));
+  // Keep shell remounting synchronous with MutationObserver delivery. The
+  // Playground audio engine uses microtasks for reconciliation and must not be
+  // perturbed by unrelated account-shell scheduling.
+  const observer = new MutationObserver(mountIdentity);
   observer.observe(app, { childList: true });
 
   const client = document.createElement("script");
