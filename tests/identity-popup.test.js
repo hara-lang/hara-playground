@@ -17,14 +17,15 @@ test("opts Playground into the shared popup Identity client", () => {
   assert.doesNotMatch(loader, /client_secret|access_token|HARA_GITHUB_OAUTH_CLIENT_SECRET/);
 });
 
-test("remounts the account control in both dynamic Playground headers", () => {
+test("remounts the account control in both dynamic Playground headers without touching the audio microtask queue", () => {
   assert.match(view, /class="lobby-nav"/);
   assert.match(view, /class="workbench-actions"/);
   assert.match(loader, /\.lobby-nav/);
   assert.match(loader, /\.workbench-actions/);
-  assert.match(loader, /MutationObserver/);
+  assert.match(loader, /new MutationObserver\(mountIdentity\)/);
   assert.match(loader, /observer\.observe\(app, \{ childList: true \}\)/);
   assert.match(loader, /HaraIdentity\?\.refresh/);
+  assert.doesNotMatch(loader, /queueMicrotask/);
 });
 
 test("publishes the loader because the build copies the complete source tree", () => {
