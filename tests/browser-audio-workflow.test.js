@@ -12,17 +12,21 @@ test("browser audio CI is path-scoped, read-only and manually runnable", async (
   assert.match(workflow, /src\/audio\/\*\*/);
   assert.match(workflow, /samples\/supersonic-live\/\*\*/);
   assert.match(workflow, /scripts\/verify-supersonic-project-open\.mjs/);
+  assert.match(workflow, /runtime\.lock\.json/);
+  assert.match(workflow, /scripts\/install-pinned-runtime/);
   assert.doesNotMatch(workflow, /scripts\/verify-live-supersonic\.mjs/);
   assert.match(workflow, /contents: read/);
   assert.doesNotMatch(workflow, /contents: write/);
 });
 
-test("the browser toolchain is pinned and does not alter package metadata", async () => {
+test("the browser toolchain and Hara runtime are pinned without altering package metadata", async () => {
   const workflow = await read(".github/workflows/browser-audio-ci.yml");
   assert.match(workflow, /playwright@1\.53\.2/);
   assert.match(workflow, /--no-save/);
   assert.match(workflow, /--package-lock=false/);
   assert.match(workflow, /playwright install --with-deps chromium/);
+  assert.match(workflow, /npm run runtime:download/);
+  assert.match(workflow, /checksum-verified Hara Studio runtime/i);
   assert.match(workflow, /verify-browser-audio\.mjs/);
   assert.match(workflow, /verify-supersonic-project-open\.mjs/);
   assert.doesNotMatch(workflow, /verify-live-supersonic\.mjs/);
@@ -92,13 +96,16 @@ test("the full Playground check opens the real sample and detects render-loop st
     "page.on(\"crash\"",
     "#editor",
     "[data-output-tab=\"audio\"]",
-    "audio/playback"
+    "audio/playback",
+    "workspaceManifestStatus",
+    "workspace.edn"
   ]) {
     assert.ok(runner.includes(marker), `full project runner is missing ${marker}`);
   }
   assert.match(runner, /url\.searchParams\.set\("path", sampleRoot\)/);
   assert.match(runner, /heartbeat\.after - heartbeat\.before < 10/);
   assert.match(runner, /finalMicrotasks - audioSurface\.queuedMicrotasks < 10/);
+  assert.match(runner, /Supersonic Workspace shell diagnostic/);
 });
 
 test("the production smoke requires graph publication, Play, live update and Stop", async () => {
