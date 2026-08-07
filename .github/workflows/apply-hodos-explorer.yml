@@ -26,8 +26,16 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          source = Path('.github/scripts/apply-hodos-explorer.py').read_text(encoding='utf-8')
-          compile(source, '.github/scripts/apply-hodos-explorer.py', 'exec')
+
+          path = Path('.github/scripts/apply-hodos-explorer.py')
+          source = path.read_text(encoding='utf-8')
+          old = "    direct = '''  document.querySelector"
+          new = "    direct = r'''  document.querySelector"
+          if source.count(old) != 1:
+              raise SystemExit(f'Explorer direct-handler anchor count: {source.count(old)}')
+          source = source.replace(old, new, 1)
+          path.write_text(source, encoding='utf-8')
+          compile(source, str(path), 'exec')
           PY
 
       - name: Pin the merged Hodos Explorer boundary
