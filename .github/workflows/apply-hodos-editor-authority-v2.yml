@@ -1,0 +1,174 @@
+name: Apply Hodos Editor authority migration v2
+
+on:
+  push:
+    branches: [agent/hodos-editor-authority]
+    paths: [.github/workflows/apply-hodos-editor-authority-v2.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/hodos-editor-authority
+      - name: Route editor state through Hodos semantic events
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/app/events.js")
+          source = path.read_text()
+
+          def replace_once(old, new, label):
+              global source
+              count = source.count(old)
+              if count != 1:
+                  raise SystemExit(f"{label}: expected one match, found {count}")
+              source = source.replace(old, new, 1)
+
+          replace_once(
+              'import { isHaraSource } from "../workspace/project.js";\nimport { previewDocument } from "../ui/hta.js";',
+              'import { isHaraSource } from "../workspace/project.js";\nimport { editorWorkspacePatch } from "../hodos/editor-events.js";\nimport { updateHodosPreview } from "../hodos/preview.js";\nimport { previewDocument } from "../ui/hta.js";',
+              "imports",
+          )
+
+          replace_once(
+              '''function syncEditorState(editor, { highlight = true } = {}) {
+            if (!editor) return;
+            state.editor.selectionStart = editor.selectionStart;
+            state.editor.selectionEnd = editor.selectionEnd;
+            state.editor.cursor = editor.selectionEnd;
+            if (highlight) updateEditorHighlight();
+          }
+
+          ''',
+              '',
+              "legacy selection sync",
+          )
+
+          replace_once(
+              '''  editor.value = edit.source;
+            editor.setSelectionRange(edit.selectionStart, edit.selectionEnd);
+            syncEditorState(editor, { highlight: false });
+            if (changed) {
+              suppressCompletionOnce = !completion;
+              editor.dispatchEvent(new Event("input", { bubbles: true }));
+            } else {
+              updateEditorHighlight();
+              resetCompletion();
+              updateCompletionOnly();
+            }
+          ''',
+              '''  editor.value = edit.source;
+            editor.setSelectionRange(edit.selectionStart, edit.selectionEnd);
+            if (changed) {
+              suppressCompletionOnce = !completion;
+              editor.dispatchEvent(new Event("input", { bubbles: true }));
+            } else {
+              editor.dispatchEvent(new Event("select", { bubbles: true }));
+              resetCompletion();
+              updateCompletionOnly();
+            }
+          ''',
+              "structural edit dispatch",
+          )
+
+          marker = 'function bindProjectLobbyEvents() {'
+          handler = '''function applyEditorWorkspaceSelection(selection, { highlight = true } = {}) {
+            state.editor.selectionStart = selection.start;
+            state.editor.selectionEnd = selection.end;
+            state.editor.cursor = selection.end;
+            if (highlight) updateEditorHighlight();
+          }
+
+          function handleHodosWorkspaceEvent(event) {
+            let patch;
+            try {
+              patch = editorWorkspacePatch(event.detail, state.content);
+            } catch (error) {
+              appendRepl("error", `Editor event rejected: ${error.message}`);
+              updateReplOnly();
+              return;
+            }
+            if (!patch) return;
+
+            const editor = document.querySelector("#editor");
+            if (patch.kind === "change") {
+              state.content = patch.source;
+              state.dirty = true;
+              applyEditorWorkspaceSelection(patch.selection, { highlight: false });
+              updateEditorOnly();
+              clearTimeout(getSaveTimer());
+              setSaveTimer(setTimeout(() => saveCurrentFile(false), 900));
+              scheduleInstantEvaluation(editor);
+              scheduleCompletion(editor);
+              return;
+            }
+
+            applyEditorWorkspaceSelection(patch.selection);
+            scheduleInstantEvaluation(editor, { delay: 160 });
+            if (!state.editor.completion.open) scheduleCompletion(editor, { delay: 100 });
+          }
+
+          '''
+          replace_once(marker, handler + marker, "Workspace event handler")
+
+          function_start = source.index('function bindEditorEvents(editor) {')
+          listeners_start = source.index('  editor.addEventListener("input", () => {', function_start)
+          keydown_start = source.index('\n\n  editor.addEventListener("keydown",', listeners_start)
+          source = (
+              source[:listeners_start]
+              + '  editor.addEventListener("scroll", () => syncEditorScroll(editor));'
+              + source[keydown_start:]
+          )
+
+          replace_once(
+              '''  syncEditorState(editor);
+            syncEditorScroll(editor);
+          ''',
+              '''  syncEditorScroll(editor);
+          ''',
+              "initial direct editor sync",
+          )
+
+          replace_once(
+              '''export function setupRuntimeEvents() {
+            runtime.addEventListener("stdout", (event) => {
+          ''',
+              '''export function setupRuntimeEvents() {
+            document.addEventListener("hodos:workspace-event", handleHodosWorkspaceEvent);
+            runtime.addEventListener("stdout", (event) => {
+          ''',
+              "Workspace event subscription",
+          )
+
+          replace_once(
+              '''  runtime.addEventListener("effect", (event) => {
+              state.preview = previewDocument(event.detail.effect);
+              const preview = document.querySelector("#preview");
+              if (preview) preview.srcdoc = state.preview;
+            });
+          ''',
+              '''  runtime.addEventListener("effect", (event) => {
+              state.preview = previewDocument(event.detail.effect);
+              updateHodosPreview({ document: state.preview, theme: state.theme });
+            });
+          ''',
+              "Hodos Preview effect update",
+          )
+
+          path.write_text(source)
+          Path(".github/workflows/apply-hodos-editor-authority.yml").unlink(missing_ok=True)
+          Path(".github/workflows/apply-hodos-editor-authority-v2.yml").unlink()
+          PY
+      - name: Commit migration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/app/events.js .github/workflows/apply-hodos-editor-authority.yml .github/workflows/apply-hodos-editor-authority-v2.yml
+          git commit -m "Make Hodos Editor events authoritative"
+          git push origin HEAD:agent/hodos-editor-authority
