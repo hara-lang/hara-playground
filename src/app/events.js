@@ -12,6 +12,7 @@ import {
   store
 } from "./context.js";
 import { isHaraSource } from "../workspace/project.js";
+import { catalogWorkspacePatch } from "../hodos/catalog-events.js";
 import { editorWorkspacePatch } from "../hodos/editor-events.js";
 import { explorerWorkspacePatch } from "../hodos/explorer-events.js";
 import {
@@ -451,6 +452,49 @@ function applyEditorWorkspacePatch(patch) {
 }
 
 
+async function applyCatalogWorkspacePatch(patch) {
+  if (patch.kind === "select-toolset") {
+    if (!selectToolset(patch.toolsetId)) {
+      throw new Error(`Catalog toolset is unavailable: ${patch.toolsetId}`);
+    }
+    return;
+  }
+  if (patch.kind === "select-activity") {
+    if (!selectActivity(patch.activityId)) {
+      throw new Error(`Catalog activity is unavailable: ${patch.activityId}`);
+    }
+    return;
+  }
+  if (patch.kind === "insert-tool") {
+    const tool = toolById(patch.toolsetId, patch.toolId);
+    if (!tool) throw new Error(`Catalog tool is unavailable: ${patch.toolsetId}/${patch.toolId}`);
+    const editor = document.querySelector("#editor");
+    if (!editor || editor.disabled || !state.selectedPath || !isHaraSource(state.selectedPath)) {
+      throw new Error("Select a Hara source file before inserting a tool template");
+    }
+    insertToolSnippet(editor, tool.snippet);
+    return;
+  }
+
+  if (patch.activityId !== state.activityId) {
+    throw new Error(`Catalog activity is no longer selected: ${patch.activityId}`);
+  }
+  if (patch.kind === "open-activity") {
+    await openActivity();
+    return;
+  }
+  if (patch.kind === "check-activity") {
+    await checkActivity();
+    return;
+  }
+  if (patch.kind === "reset-activity") {
+    if (confirm("Restore the starter source for this activity? Your edits in its activity file will be replaced.")) {
+      await openActivity({ reset: true });
+    }
+  }
+}
+
+
     async function applyExplorerWorkspacePatch(patch) {
       if (patch.kind === "select") {
         await selectFile(patch.path);
@@ -700,6 +744,11 @@ async function applyValueInspectorWorkspacePatch(patch) {
 
 function handleHodosWorkspaceEvent(event) {
   try {
+    const catalogPatch = catalogWorkspacePatch(event.detail);
+    if (catalogPatch) {
+      void applyCatalogWorkspacePatch(catalogPatch).catch(reportWorkspaceEventError);
+      return;
+    }
     const editorPatch = editorWorkspacePatch(event.detail, state.content);
     if (editorPatch) {
       applyEditorWorkspacePatch(editorPatch);
@@ -872,17 +921,6 @@ function bindWorkbenchEvents() {
   });
   document.querySelectorAll("[data-structural-action]").forEach((button) => button.addEventListener("click", () => runStructuralAction(button.dataset.structuralAction, editor)));
   document.querySelectorAll("[data-output-tab]").forEach((button) => button.addEventListener("click", () => selectOutputTab(button.dataset.outputTab)));
-  document.querySelector("#toolset-select")?.addEventListener("change", (event) => selectToolset(event.currentTarget.value));
-  document.querySelector("#activity-select")?.addEventListener("change", (event) => selectActivity(event.currentTarget.value));
-  document.querySelectorAll(".tool-chip").forEach((button) => button.addEventListener("click", () => {
-    const tool = toolById(state.toolsetId, button.dataset.toolId);
-    if (tool) insertToolSnippet(editor, tool.snippet);
-  }));
-  document.querySelector("#activity-open-button")?.addEventListener("click", () => openActivity());
-  document.querySelector("#activity-check-button")?.addEventListener("click", checkActivity);
-  document.querySelector("#activity-reset-button")?.addEventListener("click", () => {
-    if (confirm("Restore the starter source for this activity? Your edits in its activity file will be replaced.")) openActivity({ reset: true });
-  });
 
   document.querySelector("#reset-button")?.addEventListener("click", async () => {
     resetCompletion();
