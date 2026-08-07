@@ -5,6 +5,7 @@ import { bindEvents, setupRuntimeEvents } from "./app/events.js";
 import { render } from "./app/view.js";
 import { installWorkspaceLayout } from "./app/workspace-layout.js";
 import { installAudioOutput } from "./audio/integration.js";
+import { disposeHodosCatalog, mountHodosCatalog } from "./hodos/catalog.js";
 import { disposeHodosEditor, mountHodosEditor } from "./hodos/editor.js";
 import { disposeHodosExplorer, mountHodosExplorer } from "./hodos/explorer.js";
 import { disposeHodosPreview, mountHodosPreview } from "./hodos/preview.js";
@@ -13,6 +14,7 @@ import { disposeHodosRepl, mountHodosRepl } from "./hodos/repl.js";
 import { disposeHodosValueInspector, mountHodosValueInspector } from "./hodos/value-inspector.js";
 
 function renderPlayground() {
+  disposeHodosCatalog();
   disposeHodosEditor();
   disposeHodosExplorer();
   disposeHodosPreview();
@@ -20,6 +22,7 @@ function renderPlayground() {
   disposeHodosRepl();
   disposeHodosValueInspector();
   render(bindEvents);
+  mountHodosCatalog(state);
   mountHodosExplorer(state);
   mountHodosEditor({
     selectedPath: state.selectedPath,

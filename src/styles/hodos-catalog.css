@@ -1,0 +1,27 @@
+[data-hodos-catalog-tools],
+[data-hodos-catalog-activity] {
+  min-width: 0;
+}
+
+[data-hodos-catalog-tools][data-area-type="hodos.dev/catalog"] {
+  display: grid;
+}
+
+.catalog-toolset-select,
+.catalog-activity-select {
+  min-width: 0;
+}
+
+.catalog-activity-slot {
+  display: grid;
+  gap: 10px;
+}
+
+.catalog-empty {
+  padding: 14px 12px;
+  color: var(--hara-faint);
+  font-family: var(--hara-font-mono);
+  font-size: .58rem;
+  line-height: 1.5;
+  text-align: center;
+}

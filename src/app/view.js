@@ -2,13 +2,6 @@ import { app, state } from "./context.js";
 import { isHaraSource } from "../workspace/project.js";
 import { highlightHara } from "../editor/lisp.js";
 import { updateHodosRepl } from "../hodos/repl.js";
-import {
-  ACTIVITIES,
-  TOOLSETS,
-  activitiesForToolset,
-  activityById,
-  toolsetById
-} from "../studio/catalog.js";
 import { FEATURED_PROJECTS, PLAYGROUND_NICETIES, projectDeepLink, repositoryLabel } from "../studio/projects.js";
 import { icon, haraMark, escapeHtml, fileName, fileLanguage, renderRepl } from "./view-helpers.js";
 
@@ -108,50 +101,6 @@ function renderProjectLobby() {
   </div>`;
 }
 
-function renderToolsetOptions() {
-  return TOOLSETS.map((toolset) => `<option value="${escapeHtml(toolset.id)}" ${toolset.id === state.toolsetId ? "selected" : ""}>${escapeHtml(toolset.title)}</option>`).join("");
-}
-
-function renderActivityOptions() {
-  return activitiesForToolset(state.toolsetId).map((activity) => `<option value="${escapeHtml(activity.id)}" ${activity.id === state.activityId ? "selected" : ""}>${escapeHtml(activity.title)}</option>`).join("");
-}
-
-function renderTools(toolset) {
-  if (!toolset) return "";
-  return toolset.tools.map((tool) => `
-    <button class="tool-chip" data-tool-id="${escapeHtml(tool.id)}" title="${escapeHtml(tool.description)}" ${state.selectedPath && isHaraSource(state.selectedPath) ? "" : "disabled"}>
-      <strong>${escapeHtml(tool.label)}</strong><span>${escapeHtml(tool.description)}</span>
-    </button>`).join("");
-}
-
-function renderActivityChecks() {
-  if (!state.activityRun.checks.length) return "";
-  return `<div class="activity-checks">${state.activityRun.checks.map((check) => `
-    <div class="activity-check ${check.passed ? "passed" : "failed"}">
-      <span class="activity-check-mark">${check.passed ? "✓" : "×"}</span>
-      <span>${escapeHtml(check.label)}</span>
-      ${check.passed ? "" : `<code>${escapeHtml(check.error || check.actual || `expected ${check.expected}`)}</code>`}
-    </div>`).join("")}</div>`;
-}
-
-function renderActivityPanel(activity) {
-  if (!activity) return "";
-  const busy = state.activityRun.status === "opening" || state.activityRun.status === "running";
-  return `<section class="activity-panel">
-    <div class="activity-kicker"><span>${escapeHtml(activity.level)}</span><span>${escapeHtml(activity.toolsetId)}</span></div>
-    <h2>${escapeHtml(activity.title)}</h2>
-    <p>${escapeHtml(activity.summary)}</p>
-    <ol>${activity.instructions.map((instruction) => `<li>${escapeHtml(instruction)}</li>`).join("")}</ol>
-    ${renderActivityChecks()}
-    ${state.activityRun.message ? `<div class="activity-message ${escapeHtml(state.activityRun.status)}">${escapeHtml(state.activityRun.message)}</div>` : ""}
-    <div class="activity-actions">
-      <button id="activity-open-button" class="quiet-action" ${busy ? "disabled" : ""}>Open</button>
-      <button id="activity-check-button" class="primary-mini" ${busy || state.runtimeStatus !== "ready" ? "disabled" : ""}>Check</button>
-      <button id="activity-reset-button" class="text-button" ${busy ? "disabled" : ""}>Reset</button>
-    </div>
-  </section>`;
-}
-
 function instantSummary() {
   if (!state.instarepl.enabled) return "InstaREPL off";
   if (!state.instarepl.candidate) return "InstaREPL ready";
@@ -202,7 +151,7 @@ function sourceLabel() {
   return "Local browser project";
 }
 
-function renderEditor(toolset) {
+function renderEditor() {
   const haraSourceSelected = Boolean(state.selectedPath && isHaraSource(state.selectedPath));
   const language = state.selectedPath ? fileLanguage(state.selectedPath) : "";
   const highlighted = haraSourceSelected && state.editor.rainbow
@@ -233,7 +182,7 @@ function renderEditor(toolset) {
         <button data-structural-action="format" title="Format buffer (Ctrl/Cmd+Shift+F)">${icon("format")} Format</button>
       </div>
     </div>
-    <div class="toolset-strip"><div><label>Toolset<select id="toolset-select">${renderToolsetOptions()}</select></label><span>${escapeHtml(toolset.description)}</span></div><div class="tool-chips">${renderTools(toolset)}</div></div>
+    <div class="toolset-strip" data-hodos-catalog-tools aria-label="Developer tools"></div>
     <div class="editor-wrap ${haraSourceSelected ? "with-instarepl" : ""}">
       <div class="line-rail" id="line-rail">${state.content.split("\n").map((_, index) => `<span>${index + 1}</span>`).join("")}</div>
       <div id="editor-code-layer" class="editor-code-layer ${haraSourceSelected && state.editor.rainbow ? "syntax-enabled" : ""}">
@@ -279,8 +228,6 @@ function renderOutputPanel() {
 }
 
 function renderWorkbench() {
-  const toolset = toolsetById(state.toolsetId) || TOOLSETS[0];
-  const activity = activityById(state.activityId) || ACTIVITIES[0];
   const repositoryUrl = state.metadata.url || (state.metadata.source === "github" ? `https://github.com/${state.metadata.owner}/${state.metadata.repository}` : null);
   return `<div class="playground-shell">
     <header class="workbench-header hara-surface">
@@ -306,10 +253,9 @@ function renderWorkbench() {
         <header class="panel-heading"><span>${icon("folder")} Project</span><div><button id="new-file-button" class="mini-button" title="New file">${icon("plus")}</button><button id="delete-file-button" class="mini-button" title="Delete selected file">${icon("trash")}</button></div></header>
         <div class="project-path"><strong>${escapeHtml(state.workspace)}</strong><span>${escapeHtml(state.metadata.path || "project root")}</span></div>
         <nav class="file-tree" aria-label="Workspace files"></nav>
-        <div class="activity-selector"><label>Activity<select id="activity-select">${renderActivityOptions()}</select></label></div>
-        ${renderActivityPanel(activity)}
+        <section class="catalog-activity-slot" data-hodos-catalog-activity aria-label="Guided activity"></section>
       </aside>
-      ${renderEditor(toolset)}
+      ${renderEditor()}
       ${renderOutputPanel()}
     </main>
 
