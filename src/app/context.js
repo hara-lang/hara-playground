@@ -2,6 +2,7 @@ import { WebCapabilityRegistry } from "../runtime/capabilities.js";
 import { RuntimeClient } from "../runtime/client.js";
 import { DEFAULT_WORKSPACE, WorkspaceStore } from "../workspace/store.js";
 import { previewDocument } from "../ui/hta.js";
+import { createProblemsState } from "../hodos/problems-state.js";
 import {
   DEFAULT_ACTIVITY_ID,
   DEFAULT_TOOLSET_ID,
@@ -67,10 +68,11 @@ valueInspector: {
   metadata: {},
   error: ""
 },
+  problems: createProblemsState(),
   importBusy: false, importProgress: "", examples: [], exampleBusy: false,
   theme: initialTheme === "light" ? "light" : "dark",
   home: { error: "", resume: null },
-  outputTab: ["preview", "repl", "value"].includes(initialOutput) ? initialOutput : "preview",
+  outputTab: ["preview", "repl", "value", "problems"].includes(initialOutput) ? initialOutput : "preview",
   toolsetId: initialToolsetId,
   activityId: initialActivity?.id || DEFAULT_ACTIVITY_ID,
   activityRun: { status: "idle", checks: [], message: "" },

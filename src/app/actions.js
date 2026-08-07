@@ -20,6 +20,20 @@ import {
   toolsetById
 } from "../studio/catalog.js";
 import { featuredProject } from "../studio/projects.js";
+import {
+  appendProblemState,
+  problemFromError,
+  resetProblemsState,
+  setProblemsStatus,
+} from "../hodos/problems-state.js";
+
+function recordActionProblem(error, context = {}) {
+  state.problems = appendProblemState(state.problems, problemFromError(error, {
+    ...context,
+    namespace: context.namespace ?? state.namespace,
+    runtimeKind: state.runtimeKind,
+  }));
+}
 
 function writeSetting(key, value) {
   try {
@@ -179,6 +193,7 @@ export async function bootRuntime() {
   state.runtimeStatus = "booting";
   resetInstantEvaluation();
   resetValueInspector();
+  state.problems = resetProblemsState(state.problems, { status: "collecting" });
   render();
   try {
     const files = await store.files();
@@ -188,9 +203,14 @@ export async function bootRuntime() {
     state.namespace = result.namespace;
     state.runtimeKind = result.runtimeKind || state.runtimeKind;
     state.runtimeStatus = "ready";
+    state.problems = setProblemsStatus(
+      state.problems,
+      state.problems.entries.length ? "ready" : "idle",
+    );
     appendRepl("result", `Hara kernel ready · ${sourceFiles.length} source files loaded · ${files.length} workspace files`);
   } catch (error) {
     state.runtimeStatus = "error";
+    recordActionProblem(error, { source: "runtime", phase: "boot" });
     appendRepl("error", error.message);
   }
   render();
@@ -223,6 +243,13 @@ export async function evaluate(source, { echo = true } = {}) {
     }
     return result;
   } catch (error) {
+    recordActionProblem(error, {
+      source: "runtime",
+      phase: "eval",
+      namespace,
+      path: state.selectedPath,
+      sourceText: source,
+    });
     if (echo) {
       appendRepl("error", error.message);
       render();
@@ -276,7 +303,7 @@ export function selectActivity(activityId) {
 }
 
 export function selectOutputTab(tab) {
-  if (!["preview", "repl", "value"].includes(tab)) return false;
+  if (!["preview", "repl", "value", "problems"].includes(tab)) return false;
   state.outputTab = tab;
   writeSetting(STUDIO_SETTING_KEYS.output, tab);
   render();
@@ -415,6 +442,12 @@ export async function runCurrentFile() {
       source: state.content
     });
   } catch (error) {
+    recordActionProblem(error, {
+      source: "runtime",
+      phase: "load-file",
+      path: state.selectedPath,
+      sourceText: state.content,
+    });
     appendRepl("error", error.message);
   }
   render();
