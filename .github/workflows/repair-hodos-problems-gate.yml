@@ -1,0 +1,73 @@
+name: Repair Hodos Problems authority gate
+
+on:
+  push:
+    branches: [agent/hodos-problems]
+    paths: [.github/workflows/repair-hodos-problems-gate.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/hodos-problems
+          fetch-depth: 0
+
+      - name: Narrow the diagnostic authority assertion
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          script = Path('.github/scripts/apply-hodos-problems.py')
+          source = script.read_text(encoding='utf-8')
+
+          old_assertion = '      assert.doesNotMatch(events, /appendRepl\\(\\"stdout\\", event\\.detail\\.text\\)/);'
+          new_assertion = '      assert.match(events, /runtime\\.addEventListener\\(\\"stdout\\"/);'
+          if source.count(old_assertion) != 1:
+              raise SystemExit('diagnostic assertion did not match exactly once')
+          source = source.replace(old_assertion, new_assertion, 1)
+
+          old_terminator = "    ''']\n    source = replace_once(source, insertion_anchor"
+          new_terminator = "    '''\n    source = replace_once(source, insertion_anchor"
+          if source.count(old_terminator) != 1:
+              raise SystemExit('Problems policy terminator did not match exactly once')
+          source = source.replace(old_terminator, new_terminator, 1)
+          script.write_text(source, encoding='utf-8')
+
+          workflow = Path('.github/workflows/apply-hodos-problems.yml')
+          text = workflow.read_text(encoding='utf-8')
+          old_step = '''      - name: Validate the migration program
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/scripts/apply-hodos-problems.py')
+          source = path.read_text(encoding='utf-8')
+          old = "    ''']\\n    source = replace_once(source, insertion_anchor"
+          new = "    '''\\n    source = replace_once(source, insertion_anchor"
+          if source.count(old) != 1:
+              raise SystemExit('Problems policy terminator did not match exactly once')
+          path.write_text(source.replace(old, new, 1), encoding='utf-8')
+          PY
+          python3 -m py_compile .github/scripts/apply-hodos-problems.py
+'''
+          new_step = '''      - name: Validate the migration program
+        run: python3 -m py_compile .github/scripts/apply-hodos-problems.py
+'''
+          if text.count(old_step) != 1:
+              raise SystemExit('migration validation step did not match exactly once')
+          workflow.write_text(text.replace(old_step, new_step, 1), encoding='utf-8')
+
+          Path('.github/workflows/repair-hodos-problems-gate.yml').unlink()
+          PY
+
+      - name: Commit the focused gate repair
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Narrow the Hodos Problems diagnostic authority test"
+          git push origin HEAD:agent/hodos-problems
