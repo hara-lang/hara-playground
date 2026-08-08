@@ -44,32 +44,29 @@ jobs:
           if start < 0 or end < 0:
               raise SystemExit('Unable to locate the browser-workflow migration block')
 
-          replacement = '''    script_anchor = '      - scripts/verify-supersonic-project-open.mjs\\n'
-              script_count = source.count(script_anchor)
-              if script_count != 2:
-                  raise SystemExit(
-                      f"Hodos Document browser script paths: expected two matches, found {script_count}"
-                  )
-              source = source.replace(
-                  script_anchor,
-                  script_anchor + '      - scripts/verify-hodos-document-project-open.mjs\\n',
-              )
-
-              sample_anchor = '      - samples/supersonic-live/**\\n'
-              sample_count = source.count(sample_anchor)
-              if sample_count != 2:
-                  raise SystemExit(
-                      f"Hodos Document sample paths: expected two matches, found {sample_count}"
-                  )
-              source = source.replace(
-                  sample_anchor,
-                  sample_anchor + '      - samples/hodos-document/**\\n',
-              )
-          '''
-          replacement = '\n'.join(
-              line[4:] if line.startswith('    ') else line
-              for line in replacement.splitlines()
-          ) + '\n'
+          replacement = (
+              "    script_anchor = '      - scripts/verify-supersonic-project-open.mjs\\n'\n"
+              "    script_count = source.count(script_anchor)\n"
+              "    if script_count != 2:\n"
+              "        raise SystemExit(\n"
+              "            f\"Hodos Document browser script paths: expected two matches, found {script_count}\"\n"
+              "        )\n"
+              "    source = source.replace(\n"
+              "        script_anchor,\n"
+              "        script_anchor + '      - scripts/verify-hodos-document-project-open.mjs\\n',\n"
+              "    )\n"
+              "\n"
+              "    sample_anchor = '      - samples/supersonic-live/**\\n'\n"
+              "    sample_count = source.count(sample_anchor)\n"
+              "    if sample_count != 2:\n"
+              "        raise SystemExit(\n"
+              "            f\"Hodos Document sample paths: expected two matches, found {sample_count}\"\n"
+              "        )\n"
+              "    source = source.replace(\n"
+              "        sample_anchor,\n"
+              "        sample_anchor + '      - samples/hodos-document/**\\n',\n"
+              "    )\n"
+          )
           source = source[:start] + replacement + source[end:]
           compile(source, str(path), 'exec')
           path.write_text(source, encoding='utf-8')
