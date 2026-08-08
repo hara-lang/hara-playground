@@ -3,9 +3,16 @@ name: Verify Hodos 2D browser proof
 on:
   push:
     branches: [agent/hodos-2d-browser-proof]
+    paths:
+      - .github/workflows/verify-hodos-2d-browser-proof.yml
+      - scripts/verify-hodos-document-project-open.mjs
+      - scripts/verify-hodos-graph-project-open.mjs
+      - src/app/events.js
+      - src/hodos/document-state.js
+      - tests/hodos-document-state.test.js
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: hodos-2d-browser-proof
@@ -20,6 +27,7 @@ jobs:
         with:
           ref: agent/hodos-2d-browser-proof
           submodules: recursive
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -50,3 +58,22 @@ jobs:
 
       - name: Open the Hodos 2D graph project
         run: node scripts/verify-hodos-graph-project-open.mjs
+
+      - name: Record the successful proof
+        run: |
+          cat > hodos-2d-browser-proof.json <<EOF
+          {
+            "protocol": "hara-playground.hodos-2d-browser-proof/1",
+            "head": "${GITHUB_SHA}",
+            "repositoryGates": "passed",
+            "audio": "passed",
+            "supersonic": "passed",
+            "document": "passed",
+            "graph": "passed"
+          }
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add hodos-2d-browser-proof.json
+          git commit -m "Record successful Hodos 2D browser proof"
+          git push origin HEAD:agent/hodos-2d-browser-proof
