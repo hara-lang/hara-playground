@@ -100,6 +100,11 @@ export function selectWorkspaceDocumentNode(view, patch) {
   if (!containsNode(record.document.children, nodeId)) {
     throw new Error(`Workspace document node is missing: ${nodeId}`);
   }
+  const currentNodeId = record.model.selection?.nodeId ?? null;
+  const selectedAreaId = record.input["workspace/selection"]?.["area/id"] ?? null;
+  if (currentNodeId === nodeId && selectedAreaId === record.requested) {
+    return view;
+  }
   return replaceArea(record, {
     ...record.model,
     selection: {
