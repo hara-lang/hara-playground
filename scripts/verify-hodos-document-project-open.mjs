@@ -100,12 +100,17 @@ try {
   null,
   { timeout: 5_000 });
 
-  const intro = page.locator('[data-text-id="text/intro"]');
-  await intro.click();
+  await page.locator('[data-node-id="block/intro"]').dispatchEvent("pointerdown", {
+    bubbles: true,
+    button: 0,
+    pointerId: 41,
+  });
   await page.waitForFunction(() =>
     document.querySelector('[data-node-id="block/intro"]')?.classList.contains("selected"),
   null,
   { timeout: 5_000 });
+
+  const intro = page.locator('[data-text-id="text/intro"]');
   await intro.fill("Edited through the authoritative Hodos document event stream.");
 
   await page.waitForFunction(() => {
