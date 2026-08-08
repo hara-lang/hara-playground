@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { FEATURED_PROJECTS, PLAYGROUND_NICETIES, projectDeepLink, repositoryLabel } from "../src/studio/projects.js";
 
 test("featured projects point at complete GitHub subprojects", () => {
-  assert.equal(FEATURED_PROJECTS.length, 5);
+  assert.equal(FEATURED_PROJECTS.length, 6);
   assert.ok(FEATURED_PROJECTS.every((project) => project.repository.owner === "hara-lang"));
   assert.ok(FEATURED_PROJECTS.every((project) => project.repository.repo === "hara-playground"));
   assert.ok(FEATURED_PROJECTS.every((project) => project.repository.path.startsWith("samples/")));
@@ -17,6 +17,13 @@ test("Supersonic is a featured audio project", () => {
   assert.equal(project.repository.path, "samples/supersonic-live");
   assert.ok(project.capabilities.includes("Supersonic"));
   assert.equal(project.primary, true);
+});
+
+test("Hodos Graph is a featured manifest-native project", () => {
+  const project = FEATURED_PROJECTS.find((candidate) => candidate.id === "hodos-graph");
+  assert.ok(project);
+  assert.equal(project.repository.path, "samples/hodos-graph");
+  assert.ok(project.capabilities.includes("Typed ports"));
 });
 
 test("project links carry branch and project path", () => {

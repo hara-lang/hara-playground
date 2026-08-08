@@ -1,6 +1,9 @@
 import { createHodosComponentRegistry } from "@greenways/hodos-web";
 import { createWorkspaceShellHost } from "@greenways/hodos-workspace-ui";
-import { registerHodosDocumentDomUi } from "@greenways/hodos-2d-ui";
+import {
+  registerHodosDocumentDomUi,
+  registerHodosGraphDomUi,
+} from "@greenways/hodos-2d-ui";
 import {
   playgroundSurfaceById,
   projectPlaygroundWorkspace,
@@ -15,6 +18,13 @@ registerHodosDocumentDomUi(registry, {
     },
   },
 });
+registerHodosGraphDomUi(registry, {
+  graphDom: {
+    reportError(error) {
+      console.error("[hara playground hodos graph]", error);
+    },
+  },
+});
 const SURFACE_GLYPHS = Object.freeze({
   files: "≡",
   code: "⌘",
@@ -23,6 +33,7 @@ const SURFACE_GLYPHS = Object.freeze({
   repl: ">_",
   learn: "?",
   document: "▤",
+  graph: "◇",
 });
 
 let shellHost = null;
@@ -111,14 +122,11 @@ function focusTarget(surface) {
   const mode = surfaceMode(surface);
   if (mode === "code") return globalThis.document?.querySelector("#editor") ?? null;
   if (mode === "repl") return globalThis.document?.querySelector("#repl-input") ?? null;
-  if (mode === "files") {
-    return globalThis.document?.querySelector(".tree-file.active, .tree-file") ?? null;
-  }
-  if (mode === "audio") {
-    return globalThis.document?.querySelector("#audio-play-button, [data-audio-control]") ?? null;
-  }
+  if (mode === "files") return globalThis.document?.querySelector(".tree-file.active, .tree-file") ?? null;
+  if (mode === "audio") return globalThis.document?.querySelector("#audio-play-button, [data-audio-control]") ?? null;
   if (mode === "learn") return globalThis.document?.querySelector(".activity-panel button") ?? null;
   if (mode === "document") return globalThis.document?.querySelector('[data-hodos-component="hodos.2d/document"] [contenteditable="plaintext-only"], [data-hodos-component="hodos.2d/document"] textarea') ?? null;
+  if (mode === "graph") return globalThis.document?.querySelector('[data-hodos-component="hodos.2d/graph"] [data-graph-drag-handle]') ?? null;
   return null;
 }
 
@@ -206,9 +214,7 @@ export function mountHodosWorkspaceShell(state) {
     resolveAreaRoot,
     createAreaRoot,
     dispatch(event) {
-      globalThis.document?.dispatchEvent(new CustomEvent("hodos:workspace-event", {
-        detail: event,
-      }));
+      globalThis.document?.dispatchEvent(new CustomEvent("hodos:workspace-event", { detail: event }));
     },
   });
   shellHost.mount(descriptor, { state });

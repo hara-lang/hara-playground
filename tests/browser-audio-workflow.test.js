@@ -14,6 +14,8 @@ test("browser audio CI is path-scoped, read-only and manually runnable", async (
   assert.match(workflow, /scripts\/verify-supersonic-project-open\.mjs/);
   assert.match(workflow, /scripts\/verify-hodos-document-project-open\.mjs/);
   assert.match(workflow, /samples\/hodos-document\/\*\*/);
+  assert.match(workflow, /scripts\/verify-hodos-graph-project-open\.mjs/);
+  assert.match(workflow, /samples\/hodos-graph\/\*\*/);
   assert.match(workflow, /runtime\.lock\.json/);
   assert.match(workflow, /scripts\/install-pinned-runtime/);
   assert.doesNotMatch(workflow, /scripts\/verify-live-supersonic\.mjs/);
@@ -37,16 +39,14 @@ test("the browser toolchain and Hara runtime are pinned without altering package
 
 test("browser runner names do not match Node's default test patterns", async () => {
   const workflow = await read(".github/workflows/browser-audio-ci.yml");
-  const paths = [...workflow.matchAll(/node (scripts\/[A-Za-z0-9_.-]+\.mjs)/g)]
-    .map((match) => match[1]);
+  const paths = [...workflow.matchAll(/node (scripts\/[A-Za-z0-9_.-]+\.mjs)/g)].map((match) => match[1]);
   assert.deepEqual(paths, [
     "scripts/verify-browser-audio.mjs",
     "scripts/verify-supersonic-project-open.mjs",
-    "scripts/verify-hodos-document-project-open.mjs"
+    "scripts/verify-hodos-document-project-open.mjs",
+    "scripts/verify-hodos-graph-project-open.mjs"
   ]);
-  for (const path of paths) {
-    assert.doesNotMatch(path, /(?:^|[\/_-])test(?:[._-]|$)|\.test\./i);
-  }
+  for (const path of paths) assert.doesNotMatch(path, /(?:^|[\/_-])test(?:[._-]|$)|\.test\./i);
 });
 
 test("the fixture prepares silently and unlocks audio only from a click", async () => {
@@ -62,14 +62,7 @@ test("the fixture prepares silently and unlocks audio only from a click", async 
 test("the real-browser result covers clock continuity and authority revocation", async () => {
   const fixture = await read("tests/browser/supersonic-audio.html");
   const runner = await read("scripts/verify-browser-audio.mjs");
-  for (const marker of [
-    "timerPreserved",
-    "phasePreserved",
-    "clockAdvanced",
-    "revisionAdvanced",
-    "paused",
-    "contextRevoked"
-  ]) {
+  for (const marker of ["timerPreserved", "phasePreserved", "clockAdvanced", "revisionAdvanced", "paused", "contextRevoked"]) {
     assert.ok(fixture.includes(marker), `fixture does not report ${marker}`);
     assert.ok(runner.includes(marker), `runner does not require ${marker}`);
   }
@@ -89,20 +82,7 @@ test("the isolated browser runner serves only normalized repository paths", asyn
 
 test("the full Playground check opens the real sample and detects render-loop starvation", async () => {
   const runner = await read("scripts/verify-supersonic-project-open.mjs");
-  for (const marker of [
-    "samples/supersonic-live",
-    "api.github.com",
-    "raw.githubusercontent.com",
-    "page.route",
-    "__haraQueuedMicrotasks",
-    "requestAnimationFrame",
-    "page.on(\"crash\"",
-    "#editor",
-    "[data-output-tab=\"audio\"]",
-    "audio/playback",
-    "workspaceManifestStatus",
-    "workspace.edn"
-  ]) {
+  for (const marker of ["samples/supersonic-live", "api.github.com", "raw.githubusercontent.com", "page.route", "__haraQueuedMicrotasks", "requestAnimationFrame", "page.on(\"crash\"", "#editor", "[data-output-tab=\"audio\"]", "audio/playback", "workspaceManifestStatus", "workspace.edn"]) {
     assert.ok(runner.includes(marker), `full project runner is missing ${marker}`);
   }
   assert.match(runner, /url\.searchParams\.set\("path", sampleRoot\)/);
@@ -116,17 +96,7 @@ test("the production smoke requires graph publication, Play, live update and Sto
   const runner = await read("scripts/verify-live-supersonic.mjs");
   assert.match(pages, /node scripts\/verify-live-supersonic\.mjs/);
   assert.match(pages, /HARA_PLAYGROUND_URL:\s*\$\{\{ needs\.deploy\.outputs\.page_url \}\}/);
-  for (const marker of [
-    "samples/supersonic-live",
-    "#audio-play-button",
-    "Glass Signal",
-    "#audio-stop-button",
-    "data-audio-parameter=\"tempo\"",
-    "requestAnimationFrame",
-    "page.on(\"crash\"",
-    "pageerror",
-    "requestfailed"
-  ]) {
+  for (const marker of ["samples/supersonic-live", "#audio-play-button", "Glass Signal", "#audio-stop-button", "data-audio-parameter=\"tempo\"", "requestAnimationFrame", "page.on(\"crash\"", "pageerror", "requestfailed"]) {
     assert.ok(runner.includes(marker), `public smoke is missing ${marker}`);
   }
   assert.match(runner, /element\.value = "138"/);
