@@ -9,7 +9,7 @@ import { chromium } from "playwright";
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const sampleRoot = "samples/hodos-graph";
 const samplePaths = [`${sampleRoot}/README.md`, `${sampleRoot}/project.edn`, `${sampleRoot}/workspace.edn`, `${sampleRoot}/src/main.hal`];
-const commit = "g".repeat(40);
+const commit = "c".repeat(40);
 const sampleFiles = new Map(await Promise.all(samplePaths.map(async (path) => [path, await readFile(resolve(root, path), "utf8")])));
 let browser = null;
 let server = null;
