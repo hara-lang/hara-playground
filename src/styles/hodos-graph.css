@@ -1,0 +1,20 @@
+.workspace-component-area[data-workspace-area-type="hodos.2d/graph"] {
+  --hodos-2d-graph-border: var(--hara-border);
+  --hodos-2d-graph-control: var(--hara-surface-raised);
+  --hodos-2d-graph-control-hover: var(--hara-surface-hover);
+  --hodos-2d-graph-canvas: var(--hara-surface);
+  --hodos-2d-graph-grid: color-mix(in srgb, var(--hara-text) 8%, transparent);
+  --hodos-2d-graph-node-background: var(--hara-surface-muted);
+  --hodos-2d-graph-selection: var(--hara-spectrum-violet);
+  --hodos-2d-graph-connection: color-mix(in srgb, var(--hara-spectrum-cyan) 62%, var(--hara-text));
+  --hodos-2d-graph-port-border: var(--hara-spectrum-violet);
+  --hodos-2d-graph-port-background: var(--hara-surface);
+}
+
+.workspace-component-area .hodos-2d-graph-host {
+  min-height: 280px;
+}
+
+.workspace-component-area .hodos-2d-graph-node-header strong {
+  letter-spacing: -0.01em;
+}
