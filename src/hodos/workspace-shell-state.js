@@ -150,15 +150,20 @@ function ensureContentLayout(layout, editorId, outputId) {
 function withPresentation(area, role, id, title) {
   const presentation = field(area, ["area/presentation", "presentation"]);
   const next = { ...area };
-  delete next["area/component"];
-  delete next.component;
+  const retainsComponent = role === "unsupported"
+    && Boolean(field(area, ["area/component", "component"]));
+  if (!retainsComponent) {
+    delete next["area/component"];
+    delete next.component;
+  }
+  const explicitCompact = field(presentation, ["presentation/compact", "compact"]);
   next["area/id"] = id;
   next["area/title"] = field(area, ["area/title", "title"]) || title;
   next["area/presentation"] = {
     ...(presentation && typeof presentation === "object" && !Array.isArray(presentation) ? presentation : {}),
     "presentation/label": field(presentation, ["presentation/label", "label"]) || next["area/title"],
     "presentation/role": role,
-    "presentation/compact": role !== "unsupported",
+    "presentation/compact": explicitCompact == null ? role !== "unsupported" : Boolean(explicitCompact),
   };
   return next;
 }
@@ -245,20 +250,7 @@ export function projectPlaygroundWorkspace(state) {
     content,
   );
 
-  let surfaceId = tokenName(state?.workspaceShell?.surfaceId) || selectedSurfaceId(view);
-  if (!PLAYGROUND_WORKSPACE_SURFACES.some((surface) => surface.id === surfaceId)) {
-    const mappedSelection = aliases.get(selectedAreaId(view)) || selectedAreaId(view);
-    surfaceId = mappedSelection === ids.project ? "files"
-      : mappedSelection === ids.output ? "preview"
-        : "code";
-  }
-  const role = surfaceRole(surfaceId) || "editor";
-  const areaByRole = ids[role] || ids.editor;
-  const baseCustomizations = view["workspace/customizations"];
-  const customizations = baseCustomizations && typeof baseCustomizations === "object" && !Array.isArray(baseCustomizations)
-    ? baseCustomizations
-    : {};
-  const surfaces = PLAYGROUND_WORKSPACE_SURFACES.map((surface) => ({
+  const fixedSurfaces = PLAYGROUND_WORKSPACE_SURFACES.map((surface) => ({
     "surface/id": surface.id,
     "surface/area": ids[surface.role],
     "surface/label": surface.label,
@@ -267,14 +259,49 @@ export function projectPlaygroundWorkspace(state) {
     "surface/order": surface.order,
     "surface/auto-focus": Boolean(surface.autoFocus),
   }));
+  const extensionSurfaces = unsupported
+    .filter((area) => Boolean(field(area, ["area/component", "component"])))
+    .map((area, index) => {
+      const presentation = field(area, ["area/presentation", "presentation"]) || {};
+      const id = tokenName(field(presentation, ["presentation/surface", "surfaceId"])) || areaId(area);
+      const order = Number(field(presentation, ["presentation/order", "order"]));
+      return {
+        "surface/id": id,
+        "surface/area": areaId(area),
+        "surface/label": field(presentation, ["presentation/label", "label"])
+          || field(area, ["area/title", "title"])
+          || areaId(area),
+        "surface/icon": tokenName(field(presentation, ["presentation/icon", "icon"])) || "document",
+        "surface/mode": tokenName(field(presentation, ["presentation/mode", "mode"])) || "document",
+        "surface/order": Number.isFinite(order) ? order : 100 + index,
+        "surface/auto-focus": Boolean(field(presentation, ["presentation/auto-focus", "autoFocus"])),
+      };
+    });
+  const surfaces = [...fixedSurfaces, ...extensionSurfaces];
 
+  let surfaceId = tokenName(state?.workspaceShell?.surfaceId) || selectedSurfaceId(view);
+  if (!surfaces.some((surface) => tokenName(surface["surface/id"]) === surfaceId)) {
+    const mappedSelection = aliases.get(selectedAreaId(view)) || selectedAreaId(view);
+    const extension = extensionSurfaces.find((surface) => surface["surface/area"] === mappedSelection);
+    surfaceId = mappedSelection === ids.project ? "files"
+      : mappedSelection === ids.output ? "preview"
+        : mappedSelection === ids.editor ? "code"
+          : extension?.["surface/id"] || "code";
+  }
+  const selectedSurface = surfaces.find((surface) =>
+    tokenName(surface["surface/id"]) === surfaceId) || fixedSurfaces[1];
+  const selectedProjectedAreaId = selectedSurface?.["surface/area"] || ids.editor;
+  const baseCustomizations = view["workspace/customizations"];
+  const customizations = baseCustomizations && typeof baseCustomizations === "object" && !Array.isArray(baseCustomizations)
+    ? baseCustomizations
+    : {};
   return {
     ...view,
     "workspace/id": tokenName(view["workspace/id"]) || tokenName(state?.workspace) || "workspace/playground",
     "workspace/layout": layout,
     "workspace/areas": areas,
     "workspace/selection": {
-      "area/id": areaByRole,
+      "area/id": selectedProjectedAreaId,
       "surface/id": surfaceId,
     },
     "workspace/customizations": {

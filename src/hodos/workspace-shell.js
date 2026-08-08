@@ -1,5 +1,6 @@
 import { createHodosComponentRegistry } from "@greenways/hodos-web";
 import { createWorkspaceShellHost } from "@greenways/hodos-workspace-ui";
+import { registerHodosDocumentDomUi } from "@greenways/hodos-2d-ui";
 import {
   playgroundSurfaceById,
   projectPlaygroundWorkspace,
@@ -7,6 +8,13 @@ import {
 } from "./workspace-shell-state.js";
 
 const registry = createHodosComponentRegistry();
+registerHodosDocumentDomUi(registry, {
+  documentDom: {
+    reportError(error) {
+      console.error("[hara playground hodos document]", error);
+    },
+  },
+});
 const SURFACE_GLYPHS = Object.freeze({
   files: "≡",
   code: "⌘",
@@ -14,6 +22,7 @@ const SURFACE_GLYPHS = Object.freeze({
   audio: "♪",
   repl: ">_",
   learn: "?",
+  document: "▤",
 });
 
 let shellHost = null;
@@ -109,6 +118,7 @@ function focusTarget(surface) {
     return globalThis.document?.querySelector("#audio-play-button, [data-audio-control]") ?? null;
   }
   if (mode === "learn") return globalThis.document?.querySelector(".activity-panel button") ?? null;
+  if (mode === "document") return globalThis.document?.querySelector('[data-hodos-component="hodos.2d/document"] [contenteditable="plaintext-only"], [data-hodos-component="hodos.2d/document"] textarea') ?? null;
   return null;
 }
 
@@ -124,6 +134,10 @@ function createAreaRoot(area) {
   const document = globalThis.document;
   if (!document) return null;
   const root = document.createElement("section");
+  if (area?.component) {
+    root.className = "workspace-component-area hara-surface";
+    return root;
+  }
   root.className = "workspace-unsupported-area hara-surface";
   const title = document.createElement("h2");
   title.textContent = area?.title || area?.id || "Workspace area";

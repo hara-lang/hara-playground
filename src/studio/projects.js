@@ -52,6 +52,23 @@ export const FEATURED_PROJECTS = Object.freeze([
     field: "flow"
   }),
   Object.freeze({
+    id: "hodos-document",
+    title: "Hodos document",
+    eyebrow: "2D · RICH DOCUMENT",
+    description: "Open a manifest-native Hodos document, edit stable text nodes and inspect a committed Hara artefact snapshot.",
+    repository: Object.freeze({
+      owner: "hara-lang",
+      repo: "hara-playground",
+      branch: "main",
+      path: "samples/hodos-document"
+    }),
+    sourceUrl: "https://github.com/hara-lang/hara-playground/tree/main/samples/hodos-document",
+    entry: "src/main.hal",
+    capabilities: Object.freeze(["Hodos 2D", "Stable node IDs", "Artefact snapshots"]),
+    action: "Open Document",
+    field: "document"
+  }),
+  Object.freeze({
     id: "decision",
     title: "Decision model",
     eyebrow: "DATA · INSPECTION",

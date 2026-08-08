@@ -1,0 +1,13 @@
+(ns playground.hodos-document)
+
+(def answer
+  (* 6 7))
+
+(defn view []
+  [:main {:class "preview-shell"}
+   [:article {:class "card"}
+    [:span {:class "eyebrow"} "HODOS 2D"]
+    [:h1 "Inspectable document"]
+    [:p "The committed answer is " answer]]])
+
+(view)
