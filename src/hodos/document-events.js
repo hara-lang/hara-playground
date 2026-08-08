@@ -1,4 +1,6 @@
 const COMPONENT_ID = "hodos.2d/document";
+// Playground admits only the first authoritative selection/text slice here;
+// broader document commands remain application-service policy until separately proven.
 const MAX_TEXT_LENGTH = 1_000_000;
 
 const nonEmptyString = (value, label) => {
