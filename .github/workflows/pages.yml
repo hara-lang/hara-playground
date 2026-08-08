@@ -157,6 +157,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Initialise exact Hara UI and Hodos package pins
+        run: npm run web:prepare
       - name: Match public assets to the deployed commit
         env:
           HARA_PLAYGROUND_URL: ${{ needs.deploy.outputs.page_url }}
