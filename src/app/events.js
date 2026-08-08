@@ -471,9 +471,11 @@ async function applyWorkspaceShellPatch(patch) {
 async function applyDocumentWorkspacePatch(patch) {
   const view = state.workspaceShell?.view;
   if (!view) throw new Error("The current Workspace has no document model");
-  state.workspaceShell.view = patch.kind === "select"
+  const next = patch.kind === "select"
     ? selectWorkspaceDocumentNode(view, patch)
     : editWorkspaceDocumentText(view, patch);
+  if (next === view) return;
+  state.workspaceShell.view = next;
   updateHodosWorkspaceShell(state);
 }
 
