@@ -195,8 +195,6 @@ const selectedSurfaceId = (view) => tokenName(field(
   ["surface/id", "surfaceId"],
 ));
 
-const surfaceRole = (surfaceId) => PLAYGROUND_WORKSPACE_SURFACES.find((surface) => surface.id === surfaceId)?.role;
-
 export function projectPlaygroundWorkspace(state) {
   const loaded = state?.workspaceShell?.workspaceId === state?.workspace
     ? state.workspaceShell.view
@@ -280,13 +278,18 @@ export function projectPlaygroundWorkspace(state) {
   const surfaces = [...fixedSurfaces, ...extensionSurfaces];
 
   const manifestSurfaceId = selectedSurfaceId(view);
-const manifestSelectedAreaId = aliases.get(selectedAreaId(view)) || selectedAreaId(view);
-const manifestSurface = surfaces.find((surface) =>
-  tokenName(surface["surface/id"]) === manifestSurfaceId
-    && surface["surface/area"] === manifestSelectedAreaId);
-let surfaceId = manifestSurface?.["surface/id"]
-  || tokenName(state?.workspaceShell?.surfaceId)
-  || manifestSurfaceId;
+  const manifestSelectedAreaId = aliases.get(selectedAreaId(view)) || selectedAreaId(view);
+  const manifestSurface = surfaces.find((surface) =>
+    tokenName(surface["surface/id"]) === manifestSurfaceId
+      && surface["surface/area"] === manifestSelectedAreaId);
+  const showcase = state?.presentation?.mode === "showcase";
+  const requestedSurfaceId = showcase
+    ? tokenName(state?.presentation?.surfaceId)
+    : "";
+  let surfaceId = requestedSurfaceId
+    || manifestSurface?.["surface/id"]
+    || tokenName(state?.workspaceShell?.surfaceId)
+    || manifestSurfaceId;
   if (!surfaces.some((surface) => tokenName(surface["surface/id"]) === surfaceId)) {
     const mappedSelection = aliases.get(selectedAreaId(view)) || selectedAreaId(view);
     const extension = extensionSurfaces.find((surface) => surface["surface/area"] === mappedSelection);
@@ -305,7 +308,7 @@ let surfaceId = manifestSurface?.["surface/id"]
   return {
     ...view,
     "workspace/id": tokenName(view["workspace/id"]) || tokenName(state?.workspace) || "workspace/playground",
-    "workspace/layout": layout,
+    "workspace/layout": showcase ? areaLayout(selectedProjectedAreaId) : layout,
     "workspace/areas": areas,
     "workspace/selection": {
       "area/id": selectedProjectedAreaId,
@@ -313,6 +316,7 @@ let surfaceId = manifestSurface?.["surface/id"]
     },
     "workspace/customizations": {
       ...customizations,
+      "presentation/mode": showcase ? "showcase" : "studio",
       "responsive/breakpoint": Number(customizations["responsive/breakpoint"] ?? 1000),
       "responsive/default-surface": surfaceId,
       "responsive/surfaces": surfaces,

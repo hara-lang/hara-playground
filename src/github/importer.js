@@ -9,12 +9,23 @@ function normalizeSubpath(path) {
   return normalized;
 }
 
+function normalizeCommit(value) {
+  const commit = String(value || "").trim();
+  if (!commit) return null;
+  if (!/^[0-9a-f]{40}$/.test(commit)) {
+    throw new Error("GitHub commit must be a 40-character lowercase hexadecimal SHA");
+  }
+  return commit;
+}
+
 export function parseGitHubRepository(input) {
   if (input && typeof input === "object") {
     const owner = String(input.owner || "").trim();
     const repo = String(input.repo || input.repository || "").trim().replace(/\.git$/, "");
     if (!owner || !repo) throw new Error("A GitHub owner and repository are required");
     const result = { owner, repo, branch: input.branch || input.ref || null };
+    const commit = normalizeCommit(input.commit || input.sha);
+    if (commit) result.commit = commit;
     const path = normalizeSubpath(input.path);
     if (path) result.path = path;
     return result;
@@ -39,6 +50,8 @@ export function parseGitHubRepository(input) {
   if (parts[2] === "tree" && parts[3]) result.branch = decodeURIComponent(parts.slice(3).join("/"));
   const explicitBranch = url.searchParams.get("branch") || url.searchParams.get("ref");
   if (explicitBranch) result.branch = explicitBranch;
+  const commit = normalizeCommit(url.searchParams.get("commit"));
+  if (commit) result.commit = commit;
   const path = normalizeSubpath(url.searchParams.get("path"));
   if (path) result.path = path;
   return result;
@@ -49,11 +62,19 @@ export function repositoryFromStudioLocation(location) {
   const search = new URLSearchParams(location.search || "");
   const queryRepository = search.get("repo");
   if (queryRepository) {
+    const [owner, repo] = queryRepository.replace(/^\/+|\/+$/g, "").split("/");
+    if (!owner || !repo) throw new Error("The repo query must use owner/repository");
     const branch = search.get("branch");
+    const commit = normalizeCommit(search.get("commit"));
     const path = normalizeSubpath(search.get("path"));
-    if (path) {
-      const [owner, repo] = queryRepository.replace(/^\/+|\/+$/g, "").split("/");
-      return { owner, repo, branch: branch || null, path };
+    if (path || commit) {
+      return {
+        owner,
+        repo,
+        branch: branch || null,
+        ...(commit ? { commit } : {}),
+        ...(path ? { path } : {}),
+      };
     }
     return branch
       ? `https://github.com/${queryRepository.replace(/^\/+|\/+$/g, "")}/tree/${branch}`
@@ -141,8 +162,7 @@ export async function importGitHubRepository(input, {
   onProgress({ phase: "metadata", completed: 0, total: 1 });
   const repository = await request(api);
   const branch = parsed.branch || repository.default_branch;
-  const branchData = await request(`${api}/branches/${encodeURIComponent(branch)}`);
-  const commit = branchData.commit.sha;
+  const commit = parsed.commit || (await request(`${api}/branches/${encodeURIComponent(branch)}`)).commit.sha;
   const tree = await request(`${api}/git/trees/${encodeURIComponent(commit)}?recursive=1`);
   if (tree.truncated) throw new Error("This repository is too large for the browser importer. A server-side archive importer is required.");
 
@@ -166,8 +186,10 @@ export async function importGitHubRepository(input, {
   });
 
   const workspaceSuffix = parsed.path ? `/${parsed.path}` : "";
+  const workspaceRevision = parsed.commit || branch;
+  const sourceRevision = parsed.commit || branch;
   return {
-    workspace: `github.com/${parsed.owner}/${parsed.repo}/${branch}${workspaceSuffix}`,
+    workspace: `github.com/${parsed.owner}/${parsed.repo}/${workspaceRevision}${workspaceSuffix}`,
     files,
     metadata: {
       source: "github",
@@ -176,7 +198,11 @@ export async function importGitHubRepository(input, {
       branch,
       path: parsed.path || null,
       commit,
-      url: parsed.path ? `${repository.html_url}/tree/${encodeURIComponent(branch)}/${parsed.path}` : repository.html_url,
+      url: parsed.path
+        ? `${repository.html_url}/tree/${encodeURIComponent(sourceRevision)}/${parsed.path}`
+        : parsed.commit
+          ? `${repository.html_url}/tree/${encodeURIComponent(sourceRevision)}`
+          : repository.html_url,
       importedAt: new Date().toISOString(),
       skipped: Math.max(0, scoped.length - entries.length)
     }

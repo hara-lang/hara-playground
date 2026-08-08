@@ -1,0 +1,242 @@
+#!/usr/bin/env node
+import assert from "node:assert/strict";
+import { createServer } from "node:http";
+import { readFile, stat } from "node:fs/promises";
+import { extname, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
+import { chromium } from "playwright";
+
+const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
+const sampleRoot = "samples/hodos-document";
+const samplePaths = [
+  `${sampleRoot}/README.md`,
+  `${sampleRoot}/project.edn`,
+  `${sampleRoot}/workspace.edn`,
+  `${sampleRoot}/src/main.hal`,
+];
+const commit = "c".repeat(40);
+const sampleFiles = new Map(await Promise.all(
+  samplePaths.map(async (path) => [path, await readFile(resolve(root, path), "utf8")]),
+));
+let browser = null;
+let server = null;
+
+const parentDocument = `<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Packages Showcase fixture</title></head>
+<body>
+  <iframe id="showcase" title="Hara package Showcase"></iframe>
+  <script>
+    window.showcaseMessages = [];
+    const frame = document.querySelector("#showcase");
+    const source = new URL(location.href).searchParams.get("source");
+    frame.src = source;
+    window.addEventListener("message", (event) => {
+      if (event.source === frame.contentWindow) window.showcaseMessages.push(event.data);
+    });
+  </script>
+</body>
+</html>`;
+
+try {
+  server = createServer(async (request, response) => {
+    try {
+      const url = new URL(request.url || "/", "http://127.0.0.1");
+      if (url.pathname === "/showcase-fixture.html") {
+        response.writeHead(200, {
+          "content-type": "text/html; charset=utf-8",
+          "cache-control": "no-store",
+        });
+        response.end(parentDocument);
+        return;
+      }
+      const target = safeTarget(url.pathname === "/" ? "/index.html" : url.pathname);
+      const metadata = await stat(target);
+      if (!metadata.isFile()) throw Object.assign(new Error("not a file"), { code: "ENOENT" });
+      response.writeHead(200, {
+        "content-type": contentType(target),
+        "cache-control": "no-store",
+        "x-content-type-options": "nosniff",
+      });
+      response.end(await readFile(target));
+    } catch (error) {
+      response.writeHead(error?.code === "ENOENT" ? 404 : 400, {
+        "content-type": "text/plain; charset=utf-8",
+        "cache-control": "no-store",
+      });
+      response.end(error?.message || String(error));
+    }
+  });
+  await new Promise((resolveListen, rejectListen) => {
+    server.once("error", rejectListen);
+    server.listen(0, "127.0.0.1", resolveListen);
+  });
+  const address = server.address();
+  assert.ok(address && typeof address === "object");
+  const origin = `http://127.0.0.1:${address.port}`;
+
+  browser = await chromium.launch({ headless: true });
+  const context = await browser.newContext({ viewport: { width: 1000, height: 800 } });
+  const page = await context.newPage();
+  const pageErrors = [];
+  page.on("pageerror", (error) => pageErrors.push(error.stack || error.message));
+  await installGitHubFixtureRoutes(page);
+
+  const showcase = new URL(`${origin}/`);
+  showcase.searchParams.set("repo", "hara-lang/hara-playground");
+  showcase.searchParams.set("branch", "main");
+  showcase.searchParams.set("commit", commit);
+  showcase.searchParams.set("path", sampleRoot);
+  showcase.searchParams.set("presentation", "showcase");
+  showcase.searchParams.set("surface", "document");
+
+  const parent = new URL(`${origin}/showcase-fixture.html`);
+  parent.searchParams.set("source", showcase.href);
+  await page.goto(parent.href, { waitUntil: "domcontentloaded", timeout: 15_000 });
+
+  const frame = page.frameLocator("#showcase");
+  await frame.locator('html[data-presentation="showcase"][data-showcase-status="ready"]')
+    .waitFor({ state: "attached", timeout: 15_000 });
+  await frame.locator('.hodos-2d-document-host[data-hodos-component="hodos.2d/document"]')
+    .waitFor({ state: "visible", timeout: 15_000 });
+
+  await page.waitForFunction(() =>
+    window.showcaseMessages.some((message) =>
+      message?.type === "hara.showcase/ready"
+      && message?.commit === "c".repeat(40)
+      && message?.surfaceId === "document"));
+
+  const initial = await frame.locator("html").evaluate((html) => ({
+    url: location.href,
+    presentation: html.dataset.presentation,
+    status: html.dataset.showcaseStatus,
+    header: getComputedStyle(document.querySelector(".workbench-header")).display,
+    statusbar: getComputedStyle(document.querySelector(".statusbar")).display,
+    layoutAreas: [...document.querySelectorAll(".hodos-workspace-area")].length,
+    selectedSurface: document.querySelector(".workbench-grid")?.dataset.workspaceSurfaceId || "",
+  }));
+  const initialUrl = new URL(initial.url);
+  assert.equal(initialUrl.searchParams.get("commit"), commit);
+  assert.equal(initialUrl.searchParams.get("presentation"), "showcase");
+  assert.equal(initialUrl.searchParams.get("surface"), "document");
+  assert.equal(initial.presentation, "showcase");
+  assert.equal(initial.status, "ready");
+  assert.equal(initial.header, "none");
+  assert.equal(initial.statusbar, "none");
+  assert.equal(initial.layoutAreas, 1);
+  assert.equal(initial.selectedSurface, "document");
+
+  await page.evaluate(() => {
+    document.querySelector("#showcase").contentWindow.postMessage({
+      type: "hara.showcase/select-surface",
+      version: 1,
+      surfaceId: "code",
+    }, location.origin);
+  });
+  await page.waitForFunction(() =>
+    window.showcaseMessages.some((message) =>
+      message?.type === "hara.showcase/selection"
+      && message?.ok === true
+      && message?.surfaceId === "code"));
+  await frame.locator(".editor-panel").waitFor({ state: "visible", timeout: 5_000 });
+
+  await page.evaluate(() => {
+    document.querySelector("#showcase").contentWindow.postMessage({
+      type: "hara.showcase/select-surface",
+      version: 1,
+      surfaceId: "not-declared",
+    }, location.origin);
+  });
+  await page.waitForFunction(() =>
+    window.showcaseMessages.some((message) =>
+      message?.type === "hara.showcase/selection"
+      && message?.ok === false
+      && message?.surfaceId === "not-declared"));
+
+  const finalSurface = await frame.locator(".workbench-grid")
+    .getAttribute("data-workspace-surface-id");
+  assert.equal(finalSurface, "code");
+  assert.deepEqual(pageErrors, [], `Showcase page errors:\n${pageErrors.join("\n")}`);
+  console.log("Verified immutable embedded Showcase mounting and declared surface selection in Chromium.");
+} finally {
+  await browser?.close().catch(() => {});
+  if (server) await new Promise((resolveClose) => server.close(resolveClose));
+}
+
+async function installGitHubFixtureRoutes(page) {
+  const cors = { "access-control-allow-origin": "*", "cache-control": "no-store" };
+  await page.route("https://api.github.com/**", async (route) => {
+    const url = new URL(route.request().url());
+    let body = null;
+    if (url.pathname === "/repos/hara-lang/hara-playground") {
+      body = {
+        default_branch: "main",
+        html_url: "https://github.com/hara-lang/hara-playground",
+      };
+    } else if (url.pathname === `/repos/hara-lang/hara-playground/git/trees/${commit}`) {
+      body = {
+        truncated: false,
+        tree: [...sampleFiles].map(([path, content]) => ({
+          path,
+          type: "blob",
+          size: Buffer.byteLength(content),
+        })),
+      };
+    }
+    if (!body) return route.fulfill({ status: 404, headers: cors, body: "not found" });
+    await route.fulfill({
+      status: 200,
+      headers: { ...cors, "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  });
+  await page.route("https://raw.githubusercontent.com/**", async (route) => {
+    const url = new URL(route.request().url());
+    const prefix = `/hara-lang/hara-playground/${commit}/`;
+    if (!url.pathname.startsWith(prefix)) {
+      return route.fulfill({ status: 404, headers: cors, body: "not found" });
+    }
+    const path = url.pathname.slice(prefix.length).split("/").map(decodeURIComponent).join("/");
+    const content = sampleFiles.get(path);
+    if (content == null) return route.fulfill({ status: 404, headers: cors, body: "not found" });
+    await route.fulfill({
+      status: 200,
+      headers: { ...cors, "content-type": "text/plain; charset=utf-8" },
+      body: content,
+    });
+  });
+}
+
+function safeTarget(pathname) {
+  const decoded = decodeURIComponent(pathname);
+  const parts = decoded.split("/").filter(Boolean);
+  if (parts.some((part) =>
+    part === "."
+    || part === ".."
+    || part.includes("\\")
+    || part.includes("\0"))) {
+    throw new Error("unsafe request path");
+  }
+  const target = resolve(root, ...parts);
+  if (target !== root && !target.startsWith(`${root}${sep}`)) {
+    throw new Error("request escaped repository root");
+  }
+  return target;
+}
+
+function contentType(path) {
+  return ({
+    ".html": "text/html; charset=utf-8",
+    ".js": "text/javascript; charset=utf-8",
+    ".mjs": "text/javascript; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".hal": "text/plain; charset=utf-8",
+    ".edn": "text/plain; charset=utf-8",
+    ".md": "text/markdown; charset=utf-8",
+    ".svg": "image/svg+xml",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".wasm": "application/wasm",
+  })[extname(path)] || "application/octet-stream";
+}

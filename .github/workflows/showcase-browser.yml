@@ -1,0 +1,66 @@
+name: Playground Showcase browser
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/showcase-browser.yml"
+      - "docs/showcase-host.md"
+      - "runtime.lock.json"
+      - "scripts/verify-showcase-project-open.mjs"
+      - "src/app/**"
+      - "src/github/**"
+      - "src/hodos/**"
+      - "src/studio/showcase*.js"
+      - "src/styles/**"
+      - "src/styles.css"
+      - "tests/showcase*.test.js"
+      - "vendor/hodos"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/showcase-browser.yml"
+      - "docs/showcase-host.md"
+      - "runtime.lock.json"
+      - "scripts/verify-showcase-project-open.mjs"
+      - "src/app/**"
+      - "src/github/**"
+      - "src/hodos/**"
+      - "src/studio/showcase*.js"
+      - "src/styles/**"
+      - "src/styles.css"
+      - "tests/showcase*.test.js"
+      - "vendor/hodos"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  showcase:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run repository gates
+        run: |
+          npm test
+          npm run check
+          npm run build
+
+      - name: Install pinned browser tooling
+        run: |
+          npm install --no-save --ignore-scripts --package-lock=false playwright@1.53.2
+          npx playwright install --with-deps chromium
+
+      - name: Install checksum-verified Hara runtime
+        run: npm run runtime:download
+
+      - name: Verify the embedded Showcase host
+        run: node scripts/verify-showcase-project-open.mjs

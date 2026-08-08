@@ -4,6 +4,7 @@ import { DEFAULT_WORKSPACE, WorkspaceStore } from "../workspace/store.js";
 import { previewDocument } from "../ui/hta.js";
 import { createProblemsState } from "../hodos/problems-state.js";
 import { createExplorerState } from "../hodos/explorer-state.js";
+import { showcasePresentationFromLocation } from "../studio/showcase.js";
 import {
   DEFAULT_ACTIVITY_ID,
   DEFAULT_TOOLSET_ID,
@@ -36,7 +37,9 @@ const initialToolsetId = storedToolset?.id || storedActivity?.toolsetId || DEFAU
 const initialActivity = storedActivity?.toolsetId === initialToolsetId
   ? storedActivity
   : activitiesForToolset(initialToolsetId)[0] || activityById(DEFAULT_ACTIVITY_ID);
-const initialTheme = readSetting(STUDIO_SETTING_KEYS.theme, readSetting("hara-studio-theme", "dark"));
+const initialPresentation = showcasePresentationFromLocation(globalThis.location);
+const initialTheme = initialPresentation.theme
+  || readSetting(STUDIO_SETTING_KEYS.theme, readSetting("hara-studio-theme", "dark"));
 const initialOutput = readSetting(STUDIO_SETTING_KEYS.output, "preview");
 
 export const app = document.querySelector("#app");
@@ -48,7 +51,8 @@ export const runtime = new RuntimeClient(
 );
 
 export const state = {
-  screen: "projects",
+  screen: initialPresentation.mode === "showcase" ? "workspace" : "projects",
+  presentation: initialPresentation,
   files: [], selectedPath: null, content: "", dirty: false, namespace: "user",
   runtimeStatus: "idle", runtimeKind: "detecting", workspace: store.workspace,
   metadata: store.metadata, repl: [], replInput: "", history: [], historyIndex: 0,
@@ -76,7 +80,7 @@ valueInspector: {
     source: "fallback",
     view: null,
     error: "",
-    surfaceId: null
+    surfaceId: initialPresentation.surfaceId
   },
   explorer: createExplorerState(),
   importBusy: false, importProgress: "", examples: [], exampleBusy: false,

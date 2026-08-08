@@ -33,6 +33,31 @@ test("accepts a repository object with a project subpath", () => {
   });
 });
 
+test("accepts and validates an immutable commit", () => {
+  const commit = "a".repeat(40);
+  assert.deepEqual(parseGitHubRepository({
+    owner: "hara-lang",
+    repo: "hara",
+    branch: "main",
+    commit,
+    path: "examples/card",
+  }), {
+    owner: "hara-lang",
+    repo: "hara",
+    branch: "main",
+    commit,
+    path: "examples/card",
+  });
+  assert.throws(
+    () => parseGitHubRepository({ owner: "hara-lang", repo: "hara", commit: "abc123" }),
+    /40-character lowercase hexadecimal SHA/,
+  );
+  assert.throws(
+    () => parseGitHubRepository({ owner: "hara-lang", repo: "hara", commit: "A".repeat(40) }),
+    /40-character lowercase hexadecimal SHA/,
+  );
+});
+
 test("rejects non-GitHub hosts and parent traversal", () => {
   assert.throws(() => parseGitHubRepository("https://example.com/a/b"), /Only github.com/);
   assert.throws(() => parseGitHubRepository({ owner: "a", repo: "b", path: "../secret" }), /cannot contain/);
@@ -46,6 +71,18 @@ test("reads repository deep links from query, hash and clean routes", () => {
     repo: "hara-playground",
     branch: "main",
     path: "samples/live-values"
+  });
+  const commit = "b".repeat(40);
+  assert.deepEqual(repositoryFromStudioLocation({
+    search: `?repo=hara-lang/hara-playground&branch=main&commit=${commit}&path=samples/live-values`,
+    hash: "",
+    pathname: "/",
+  }), {
+    owner: "hara-lang",
+    repo: "hara-playground",
+    branch: "main",
+    commit,
+    path: "samples/live-values",
   });
   assert.equal(repositoryFromStudioLocation({ search: "", hash: "#github/hara-lang/hara", pathname: "/" }),
     "hara-lang/hara");
@@ -92,6 +129,55 @@ test("imports only a selected GitHub project directory and strips its prefix", a
     ]);
     assert.equal(imported.metadata.path, project);
     assert.equal(imported.workspace, `github.com/hara-lang/hara-playground/main/${project}`);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("commit-pinned imports skip branch resolution and isolate the Workspace", async () => {
+  const originalFetch = globalThis.fetch;
+  const api = "https://api.github.com/repos/hara-lang/hara-playground";
+  const commit = "c".repeat(40);
+  const project = "samples/hodos-document";
+  let branchRequests = 0;
+
+  globalThis.fetch = async (url) => {
+    const value = String(url);
+    if (value === api) {
+      return mockResponse({
+        default_branch: "main",
+        html_url: "https://github.com/hara-lang/hara-playground",
+      });
+    }
+    if (value.includes("/branches/")) {
+      branchRequests += 1;
+      return mockResponse({}, { status: 500 });
+    }
+    if (value === `${api}/git/trees/${commit}?recursive=1`) {
+      return mockResponse({
+        truncated: false,
+        tree: [{ type: "blob", path: `${project}/src/main.hal`, size: 42 }],
+      });
+    }
+    if (value === `https://raw.githubusercontent.com/hara-lang/hara-playground/${commit}/${project}/src/main.hal`) {
+      return mockResponse("(ns showcase.main)\n42", { json: false });
+    }
+    return mockResponse({}, { status: 404 });
+  };
+
+  try {
+    const imported = await importGitHubRepository({
+      owner: "hara-lang",
+      repo: "hara-playground",
+      branch: "main",
+      commit,
+      path: project,
+    });
+    assert.equal(branchRequests, 0);
+    assert.equal(imported.metadata.commit, commit);
+    assert.equal(imported.metadata.branch, "main");
+    assert.equal(imported.workspace, `github.com/hara-lang/hara-playground/${commit}/${project}`);
+    assert.equal(imported.metadata.url, `https://github.com/hara-lang/hara-playground/tree/${commit}/${project}`);
   } finally {
     globalThis.fetch = originalFetch;
   }

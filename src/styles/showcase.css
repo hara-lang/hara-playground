@@ -1,0 +1,96 @@
+html[data-presentation="showcase"],
+html[data-presentation="showcase"] body {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+html[data-presentation="showcase"] .playground-shell {
+  display: block;
+  width: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
+}
+
+html[data-presentation="showcase"] .workbench-header,
+html[data-presentation="showcase"] .kernel-ribbon,
+html[data-presentation="showcase"] .statusbar,
+html[data-presentation="showcase"] .hodos-workspace-dock,
+html[data-presentation="showcase"] .output-tabs {
+  display: none !important;
+}
+
+html[data-presentation="showcase"] .workbench-grid,
+html[data-presentation="showcase"] .hodos-workspace-shell,
+html[data-presentation="showcase"] .hodos-workspace-layout,
+html[data-presentation="showcase"] .hodos-workspace-area {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  gap: 0;
+}
+
+html[data-presentation="showcase"] .project-panel,
+html[data-presentation="showcase"] .editor-panel,
+html[data-presentation="showcase"] .output-panel,
+html[data-presentation="showcase"] .workspace-component-area {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  border-radius: 0;
+  border: 0;
+}
+
+html[data-presentation="showcase"] .preview-view.active,
+html[data-presentation="showcase"] .repl-view.active,
+html[data-presentation="showcase"] .value-view.active,
+html[data-presentation="showcase"] .problems-view.active,
+html[data-presentation="showcase"] #preview {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+}
+
+.showcase-status {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-content: center;
+  gap: 0.75rem;
+  padding: 2rem;
+  text-align: center;
+  background: var(--hara-page, #0d1017);
+  color: var(--hara-text, #f2f5fb);
+}
+
+.showcase-status[hidden] {
+  display: none;
+}
+
+.showcase-status i {
+  width: 0.75rem;
+  height: 0.75rem;
+  margin: 0 auto;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 1.5rem currentColor;
+}
+
+.showcase-status[data-status="loading"] i {
+  animation: hara-showcase-pulse 1.2s ease-in-out infinite;
+}
+
+.showcase-status[data-status="error"] {
+  color: var(--hara-danger, #ff8f9f);
+}
+
+@keyframes hara-showcase-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
