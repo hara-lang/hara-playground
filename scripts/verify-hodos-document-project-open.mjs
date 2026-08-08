@@ -100,11 +100,7 @@ try {
   null,
   { timeout: 5_000 });
 
-  await page.locator('[data-node-id="block/intro"]').dispatchEvent("pointerdown", {
-    bubbles: true,
-    button: 0,
-    pointerId: 41,
-  });
+  await page.click('[data-node-id="block/intro"]', { position: { x: 6, y: 6 } });
   await page.waitForFunction(() =>
     document.querySelector('[data-node-id="block/intro"]')?.classList.contains("selected"),
   null,
