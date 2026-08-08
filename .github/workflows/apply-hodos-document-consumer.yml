@@ -30,6 +30,51 @@ jobs:
           compile(source, '.github/scripts/apply-hodos-document-consumer.py', 'exec')
           PY
 
+      - name: Align repeated browser-workflow migration anchors
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('.github/scripts/apply-hodos-document-consumer.py')
+          source = path.read_text(encoding='utf-8')
+          start_marker = '    for label in ("pull", "push"):\n'
+          end_marker = "    source = replace_once(\n        source,\n        '      - name: Open the complete Supersonic project"
+          start = source.find(start_marker)
+          end = source.find(end_marker, start)
+          if start < 0 or end < 0:
+              raise SystemExit('Unable to locate the browser-workflow migration block')
+
+          replacement = '''    script_anchor = '      - scripts/verify-supersonic-project-open.mjs\\n'
+              script_count = source.count(script_anchor)
+              if script_count != 2:
+                  raise SystemExit(
+                      f"Hodos Document browser script paths: expected two matches, found {script_count}"
+                  )
+              source = source.replace(
+                  script_anchor,
+                  script_anchor + '      - scripts/verify-hodos-document-project-open.mjs\\n',
+              )
+
+              sample_anchor = '      - samples/supersonic-live/**\\n'
+              sample_count = source.count(sample_anchor)
+              if sample_count != 2:
+                  raise SystemExit(
+                      f"Hodos Document sample paths: expected two matches, found {sample_count}"
+                  )
+              source = source.replace(
+                  sample_anchor,
+                  sample_anchor + '      - samples/hodos-document/**\\n',
+              )
+          '''
+          replacement = '\n'.join(
+              line[4:] if line.startswith('    ') else line
+              for line in replacement.splitlines()
+          ) + '\n'
+          source = source[:start] + replacement + source[end:]
+          compile(source, str(path), 'exec')
+          path.write_text(source, encoding='utf-8')
+          PY
+
       - name: Pin the merged Hodos 2D document host
         run: |
           git -C vendor/hodos fetch origin b5e427061d92e015cd3882b03b1d6438630fa466
