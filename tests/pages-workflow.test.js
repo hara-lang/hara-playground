@@ -82,13 +82,16 @@ test("the deployable Supersonic runtime is exercised in real Chromium", () => {
   assert.match(runtimeCi, /node scripts\/verify-live-supersonic\.mjs/);
 });
 
-test("the production workflow verifies interaction after deployment", () => {
+test("the production workflow verifies Hodos Document and Supersonic interaction after deployment", () => {
   assert.match(pages, /npm run build/);
   assert.match(pages, /actions\/upload-pages-artifact@v3/);
   assert.match(pages, /actions\/deploy-pages@v4/);
-  assert.match(pages, /Verify public Supersonic deployment/);
+  assert.match(pages, /Verify public Playground deployment/);
+  assert.match(pages, /npm run web:prepare/);
+  assert.match(pages, /node scripts\/verify-pages-deployment\.mjs/);
   assert.match(pages, /playwright@1\.53\.2/);
   assert.match(pages, /playwright install --with-deps chromium/);
+  assert.match(pages, /node scripts\/verify-live-showcase-document-edit\.mjs/);
   assert.match(pages, /node scripts\/verify-live-supersonic\.mjs/);
   assert.match(pages, /HARA_PLAYGROUND_URL:\s*\$\{\{ needs\.deploy\.outputs\.page_url \}\}/);
 });
