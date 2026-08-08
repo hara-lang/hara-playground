@@ -106,15 +106,30 @@ try {
   null,
   { timeout: 5_000 });
 
-  const intro = page.locator('[data-text-id="text/intro"]');
-  await intro.fill("Edited through the authoritative Hodos document event stream.");
+  const replacement = "Edited through the authoritative Hodos document event stream.";
+  await page.evaluate((text) => {
+    const node = document.querySelector('[data-text-id="text/intro"]');
+    if (!node) throw new Error("Hodos document intro text is missing after selection");
+    node.focus();
+    node.textContent = text;
+    node.dispatchEvent(new InputEvent("input", {
+      bubbles: true,
+      inputType: "insertText",
+      data: text,
+    }));
+  }, replacement);
 
-  await page.waitForFunction(() => {
-    const text = document.querySelector('[data-text-id="text/intro"]')?.textContent || "";
-    const revision = document.querySelector(".hodos-2d-document-toolbar span")?.textContent || "";
-    return text === "Edited through the authoritative Hodos document event stream."
-      && revision.includes("revision 1");
-  }, null, { timeout: 5_000 });
+  await page.waitForTimeout(250);
+  const postEdit = await page.evaluate(() => ({
+    current: document.querySelector('[data-text-id="text/intro"]')?.textContent || "",
+    revision: document.querySelector(".hodos-2d-document-toolbar span")?.textContent || "",
+    selectedIntro: document.querySelector('[data-node-id="block/intro"]')?.classList.contains("selected") || false,
+    activeTextId: document.activeElement?.dataset?.textId || null,
+    repl: document.querySelector("#repl-output")?.textContent || "",
+  }));
+  console.log("Hodos Document post-edit diagnostic", JSON.stringify(postEdit));
+  assert.equal(postEdit.current, replacement, `Hodos Document canonical text did not update: ${JSON.stringify(postEdit)}`);
+  assert.match(postEdit.revision, /revision 1/, `Hodos Document revision did not advance: ${JSON.stringify(postEdit)}`);
 
   assert.deepEqual(pageErrors, [], `Hodos Document page errors:\n${pageErrors.join("\n")}`);
   const errorConsole = pageConsole.filter((entry) => entry.startsWith("error:"));

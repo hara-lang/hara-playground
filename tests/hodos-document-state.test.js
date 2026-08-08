@@ -50,6 +50,13 @@ test("Document selection remains an application-owned Workspace revision", () =>
   assert.equal(next["workspace/selection"]["area/id"], "area/document");
   assert.equal(workspaceDocumentModel(next, "area/document").selection.nodeId, "block/intro");
   assert.equal(workspaceDocumentModel(original, "area/document").selection.nodeId, null);
+
+  const redundant = selectWorkspaceDocumentNode(next, {
+    areaId: "area/document",
+    documentId: "document/review",
+    nodeId: "block/intro",
+  });
+  assert.equal(redundant, next);
 });
 
 test("Document text edits preserve IDs and reject stale events", () => {
