@@ -18,9 +18,10 @@ const supersonic = {
   "workspace/customizations": {},
 };
 
-function state(view = supersonic, surfaceId = null) {
+function state(view = supersonic, surfaceId = null, presentation = null) {
   return {
     workspace: "github/hara-lang/hara-playground/samples/supersonic-live",
+    presentation,
     workspaceShell: {
       workspaceId: "github/hara-lang/hara-playground/samples/supersonic-live",
       view,
@@ -50,6 +51,7 @@ test("Playground projection synthesizes project, editor and output shell geometr
   ]);
   assert.equal(descriptor["workspace/selection"]["surface/id"], "code");
   assert.equal(descriptor["workspace/selection"]["area/id"], "area/editor");
+  assert.equal(descriptor["workspace/customizations"]["presentation/mode"], "studio");
 });
 
 test("Playground projection collapses output aliases while preserving surface identity", () => {
@@ -87,4 +89,19 @@ test("Playground projection removes component descriptors and preserves unsuppor
   const custom = descriptor["workspace/areas"].find((area) => area["area/id"] === "area/custom");
   assert.equal(custom["area/presentation"]["presentation/role"], "unsupported");
   assert.equal(layoutAreaIds(descriptor["workspace/layout"]).includes("area/custom"), true);
+});
+
+test("Showcase projection uses one declared surface and overrides carried selection", () => {
+  const descriptor = projectPlaygroundWorkspace(state(
+    supersonic,
+    "code",
+    { mode: "showcase", surfaceId: "repl" },
+  ));
+  assert.equal(descriptor["workspace/selection"]["surface/id"], "repl");
+  assert.equal(descriptor["workspace/selection"]["area/id"], "area/audio");
+  assert.deepEqual(descriptor["workspace/layout"], {
+    "layout/type": "area",
+    "layout/area": "area/audio",
+  });
+  assert.equal(descriptor["workspace/customizations"]["presentation/mode"], "showcase");
 });

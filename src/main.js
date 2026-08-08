@@ -17,8 +17,13 @@ import { disposeHodosPreview, mountHodosPreview } from "./hodos/preview.js";
 import { disposeHodosProblems, mountHodosProblems } from "./hodos/problems.js";
 import { disposeHodosRepl, mountHodosRepl } from "./hodos/repl.js";
 import { disposeHodosValueInspector, mountHodosValueInspector } from "./hodos/value-inspector.js";
+import {
+  installShowcaseHost,
+  syncShowcaseHost,
+} from "./studio/showcase-host.js";
 
 function renderPlayground() {
+  document.documentElement.dataset.presentation = state.presentation?.mode || "studio";
   disposeHodosWorkspaceShell();
   disposeHodosCatalog();
   disposeHodosEditor();
@@ -47,6 +52,7 @@ function renderPlayground() {
   mountHodosValueInspector(state);
   mountHodosWorkspaceShell(state);
   mountWorkspaceAssist();
+  syncShowcaseHost();
 
   const footer = document.querySelector(".lobby-footer");
   if (!footer || footer.querySelector("[data-greenways-open-source]")) return;
@@ -60,10 +66,44 @@ setRenderer(renderPlayground);
 setupRuntimeEvents();
 installHodosGraphConsumer();
 installAudioOutput();
+installShowcaseHost();
+
+function failShowcase(error) {
+  state.presentation = {
+    ...state.presentation,
+    error: error?.message || String(error),
+  };
+  renderPlayground();
+}
 
 async function start() {
-  await loadExamples();
-  const requestedRepository = repositoryFromStudioLocation(globalThis.location);
+  const showcase = state.presentation?.mode === "showcase";
+  if (!showcase) await loadExamples();
+
+  let requestedRepository = null;
+  try {
+    requestedRepository = repositoryFromStudioLocation(globalThis.location);
+  } catch (error) {
+    if (showcase) {
+      failShowcase(error);
+      return;
+    }
+    state.home.error = error.message;
+  }
+
+  if (showcase) {
+    if (!requestedRepository || typeof requestedRepository !== "object" || !requestedRepository.commit) {
+      failShowcase(new Error("Showcase links require repo and a 40-character immutable commit"));
+      return;
+    }
+    if (await importRepository(requestedRepository)) {
+      syncShowcaseHost();
+      return;
+    }
+    failShowcase(new Error(state.home.error || "Unable to open the immutable Showcase project"));
+    return;
+  }
+
   if (requestedRepository && await importRepository(requestedRepository)) return;
   await prepareProjectHome();
 }
