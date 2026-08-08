@@ -119,11 +119,17 @@ try {
     }));
   }, replacement);
 
-  await page.waitForFunction((text) => {
-    const current = document.querySelector('[data-text-id="text/intro"]')?.textContent || "";
-    const revision = document.querySelector(".hodos-2d-document-toolbar span")?.textContent || "";
-    return current === text && revision.includes("revision 1");
-  }, replacement, { timeout: 5_000 });
+  await page.waitForTimeout(250);
+  const postEdit = await page.evaluate(() => ({
+    current: document.querySelector('[data-text-id="text/intro"]')?.textContent || "",
+    revision: document.querySelector(".hodos-2d-document-toolbar span")?.textContent || "",
+    selectedIntro: document.querySelector('[data-node-id="block/intro"]')?.classList.contains("selected") || false,
+    activeTextId: document.activeElement?.dataset?.textId || null,
+    repl: document.querySelector("#repl-output")?.textContent || "",
+  }));
+  console.log("Hodos Document post-edit diagnostic", JSON.stringify(postEdit));
+  assert.equal(postEdit.current, replacement, `Hodos Document canonical text did not update: ${JSON.stringify(postEdit)}`);
+  assert.match(postEdit.revision, /revision 1/, `Hodos Document revision did not advance: ${JSON.stringify(postEdit)}`);
 
   assert.deepEqual(pageErrors, [], `Hodos Document page errors:\n${pageErrors.join("\n")}`);
   const errorConsole = pageConsole.filter((entry) => entry.startsWith("error:"));
