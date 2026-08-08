@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { FEATURED_PROJECTS, PLAYGROUND_NICETIES, projectDeepLink, repositoryLabel } from "../src/studio/projects.js";
 
 test("featured projects point at complete GitHub subprojects", () => {
-  assert.equal(FEATURED_PROJECTS.length, 4);
+  assert.equal(FEATURED_PROJECTS.length, 5);
   assert.ok(FEATURED_PROJECTS.every((project) => project.repository.owner === "hara-lang"));
   assert.ok(FEATURED_PROJECTS.every((project) => project.repository.repo === "hara-playground"));
   assert.ok(FEATURED_PROJECTS.every((project) => project.repository.path.startsWith("samples/")));

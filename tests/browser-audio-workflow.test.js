@@ -12,6 +12,8 @@ test("browser audio CI is path-scoped, read-only and manually runnable", async (
   assert.match(workflow, /src\/audio\/\*\*/);
   assert.match(workflow, /samples\/supersonic-live\/\*\*/);
   assert.match(workflow, /scripts\/verify-supersonic-project-open\.mjs/);
+  assert.match(workflow, /scripts\/verify-hodos-document-project-open\.mjs/);
+  assert.match(workflow, /samples\/hodos-document\/\*\*/);
   assert.match(workflow, /runtime\.lock\.json/);
   assert.match(workflow, /scripts\/install-pinned-runtime/);
   assert.doesNotMatch(workflow, /scripts\/verify-live-supersonic\.mjs/);
@@ -39,7 +41,8 @@ test("browser runner names do not match Node's default test patterns", async () 
     .map((match) => match[1]);
   assert.deepEqual(paths, [
     "scripts/verify-browser-audio.mjs",
-    "scripts/verify-supersonic-project-open.mjs"
+    "scripts/verify-supersonic-project-open.mjs",
+    "scripts/verify-hodos-document-project-open.mjs"
   ]);
   for (const path of paths) {
     assert.doesNotMatch(path, /(?:^|[\/_-])test(?:[._-]|$)|\.test\./i);

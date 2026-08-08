@@ -1,0 +1,34 @@
+.workspace-component-area {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.workspace-component-area[data-workspace-area-type="hodos.2d/document"] {
+  --hodos-2d-document-border: var(--hara-border);
+  --hodos-2d-document-control: var(--hara-surface-raised);
+  --hodos-2d-document-control-hover: var(--hara-surface-hover);
+  --hodos-2d-document-code-background: var(--hara-surface-raised);
+  --hodos-2d-document-artefact-background: var(--hara-surface-muted);
+  --hodos-2d-document-input-background: var(--hara-surface);
+  --hodos-2d-document-selection: var(--hara-spectrum-violet);
+  --hodos-2d-document-mono: var(--hara-font-mono);
+}
+
+.workspace-component-area .hodos-2d-document-host {
+  min-height: 240px;
+}
+
+.workspace-component-area .hodos-2d-document-page {
+  background:
+    radial-gradient(circle at 20% 10%, color-mix(in srgb, var(--hara-spectrum-violet) 7%, transparent), transparent 38%),
+    var(--hara-surface);
+}
+
+.workspace-component-area .hodos-2d-document-block {
+  line-height: 1.65;
+}
+
+.workspace-component-area .hodos-2d-document-heading {
+  letter-spacing: -0.025em;
+}

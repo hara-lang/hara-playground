@@ -155,3 +155,30 @@ packages, supply executable component factories, receive browser credentials or
 move raw runtime/Audio/storage authority into Hodos. The Playground strips
 manifest component descriptors from its product projection and mounts only its
 trusted packaged adapters.
+
+
+## Manifest-native Hodos components
+
+A Workspace area may carry a complete serializable `:area/component`
+descriptor. Playground preserves unknown component areas instead of
+flattening them into the fixed Project, Editor or Output roles. Registered
+Hodos component packages then mount those areas directly.
+
+```clojure
+{:area/id "area/document"
+ :area/type "hodos.2d/document"
+ :area/presentation
+ {:presentation/surface :document
+  :presentation/mode :document
+  :presentation/compact true}
+ :area/component
+ {:component/id "hodos.2d/document"
+  :component/contract "workspace.component/1"
+  :component/model {...}
+  :component/events ["document/select" "document/edit-text"]}}
+```
+
+The manifest owns serializable component state only. Playground applies
+semantic events to its application state and supplies a new canonical model
+to Hodos. Runtime evaluation, persistence, collaboration, signatures and
+privileged capabilities are not embedded in `workspace.edn`.

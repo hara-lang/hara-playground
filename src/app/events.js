@@ -13,6 +13,11 @@ import {
 } from "./context.js";
 import { isHaraSource } from "../workspace/project.js";
 import { catalogWorkspacePatch } from "../hodos/catalog-events.js";
+import { documentWorkspacePatch } from "../hodos/document-events.js";
+import {
+  editWorkspaceDocumentText,
+  selectWorkspaceDocumentNode,
+} from "../hodos/document-state.js";
 import { workspaceShellPatch } from "../hodos/workspace-shell-events.js";
 import {
   currentHodosWorkspaceDescriptor,
@@ -463,6 +468,15 @@ async function applyWorkspaceShellPatch(patch) {
   updateHodosWorkspaceShell(state);
 }
 
+async function applyDocumentWorkspacePatch(patch) {
+  const view = state.workspaceShell?.view;
+  if (!view) throw new Error("The current Workspace has no document model");
+  state.workspaceShell.view = patch.kind === "select"
+    ? selectWorkspaceDocumentNode(view, patch)
+    : editWorkspaceDocumentText(view, patch);
+  updateHodosWorkspaceShell(state);
+}
+
 async function applyCatalogWorkspacePatch(patch) {
   if (patch.kind === "select-toolset") {
     if (!selectToolset(patch.toolsetId)) {
@@ -758,6 +772,11 @@ function handleHodosWorkspaceEvent(event) {
     const shellPatch = workspaceShellPatch(event.detail, currentHodosWorkspaceDescriptor());
     if (shellPatch) {
       void applyWorkspaceShellPatch(shellPatch).catch(reportWorkspaceEventError);
+      return;
+    }
+    const documentPatch = documentWorkspacePatch(event.detail);
+    if (documentPatch) {
+      void applyDocumentWorkspacePatch(documentPatch).catch(reportWorkspaceEventError);
       return;
     }
     const catalogPatch = catalogWorkspacePatch(event.detail);
