@@ -100,12 +100,13 @@ try {
   null,
   { timeout: 5_000 });
 
-  const intro = page.locator('[data-text-id="text/intro"]');
-  await intro.click();
+  await page.click('[data-node-id="block/intro"]', { position: { x: 6, y: 6 } });
   await page.waitForFunction(() =>
     document.querySelector('[data-node-id="block/intro"]')?.classList.contains("selected"),
   null,
   { timeout: 5_000 });
+
+  const intro = page.locator('[data-text-id="text/intro"]');
   await intro.fill("Edited through the authoritative Hodos document event stream.");
 
   await page.waitForFunction(() => {
