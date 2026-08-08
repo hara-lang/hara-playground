@@ -279,7 +279,14 @@ export function projectPlaygroundWorkspace(state) {
     });
   const surfaces = [...fixedSurfaces, ...extensionSurfaces];
 
-  let surfaceId = tokenName(state?.workspaceShell?.surfaceId) || selectedSurfaceId(view);
+  const manifestSurfaceId = selectedSurfaceId(view);
+const manifestSelectedAreaId = aliases.get(selectedAreaId(view)) || selectedAreaId(view);
+const manifestSurface = surfaces.find((surface) =>
+  tokenName(surface["surface/id"]) === manifestSurfaceId
+    && surface["surface/area"] === manifestSelectedAreaId);
+let surfaceId = manifestSurface?.["surface/id"]
+  || tokenName(state?.workspaceShell?.surfaceId)
+  || manifestSurfaceId;
   if (!surfaces.some((surface) => tokenName(surface["surface/id"]) === surfaceId)) {
     const mappedSelection = aliases.get(selectedAreaId(view)) || selectedAreaId(view);
     const extension = extensionSurfaces.find((surface) => surface["surface/area"] === mappedSelection);

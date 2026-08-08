@@ -68,6 +68,34 @@ test("Playground preserves manifest components and exposes responsive document s
   assert.equal(playgroundAreaIds(descriptor).has("area/document"), true);
 });
 
+
+test("manifest-selected extension surfaces override carried fallback selections", () => {
+  const descriptor = projectPlaygroundWorkspace({
+    workspace: "workspace/document",
+    workspaceShell: {
+      workspaceId: "workspace/document",
+      status: "ready",
+      source: "workspace.edn",
+      surfaceId: "code",
+      view: {
+        "workspace/id": "workspace/document",
+        "workspace/revision": 0,
+        "workspace/layout": {
+"layout/type": "area",
+"layout/area": "area/document",
+        },
+        "workspace/areas": [documentArea],
+        "workspace/selection": {
+"area/id": "area/document",
+"surface/id": "document",
+        },
+        "workspace/customizations": {},
+      },
+    },
+  });
+  assert.equal(descriptor["workspace/selection"]["surface/id"], "document");
+  assert.equal(descriptor["workspace/selection"]["area/id"], "area/document");
+});
 test("Playground pins and registers the Hodos 2D document packages", async () => {
   const [html, shell, styles, manifest] = await Promise.all([
     read("../index.html"),
