@@ -69,22 +69,34 @@ try {
   assert.equal(initial.hasGraphDock, true);
   assert.equal(initial.selectedSource, true);
 
-  await page.locator('[data-graph-drag-handle="node/transform"]').dispatchEvent("pointerdown", { bubbles: true, button: 0, pointerId: 31 });
-  await page.waitForFunction(() => document.querySelector('[data-node-id="node/transform"]')?.classList.contains("selected"), null, { timeout: 5_000 });
+  const transformHandle = '[data-graph-drag-handle="node/transform"]';
+await page.click(transformHandle);
+await page.waitForFunction(() =>
+  document.querySelector('[data-node-id="node/transform"]')?.classList.contains("selected"),
+null,
+{ timeout: 5_000 });
 
-  const handle = page.locator('[data-graph-drag-handle="node/transform"]');
-  const box = await handle.boundingBox();
-  assert.ok(box, "graph drag handle has no bounds");
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(box.x + box.width / 2 + 90, box.y + box.height / 2 + 60, { steps: 5 });
-  await page.mouse.up();
+const handle = page.locator(transformHandle);
+const box = await handle.boundingBox();
+assert.ok(box, "graph drag handle has no bounds");
+const startX = box.x + box.width / 2;
+const startY = box.y + box.height / 2;
+await page.mouse.move(startX, startY);
+await page.mouse.down();
+await page.mouse.move(startX + 90, startY + 60, { steps: 8 });
+await page.mouse.up();
 
-  await page.waitForFunction((previousLeft) => {
-    const left = parseFloat(document.querySelector('[data-node-id="node/transform"]')?.style.left || "0");
-    const revision = document.querySelector(".hodos-2d-graph-toolbar span")?.textContent || "";
-    return left > previousLeft + 70 && revision.includes("revision 1");
-  }, initial.transformLeft, { timeout: 5_000 });
+await page.waitForTimeout(150);
+const postDrag = await page.evaluate(() => ({
+  left: parseFloat(document.querySelector('[data-node-id="node/transform"]')?.style.left || "0"),
+  revision: document.querySelector(".hodos-2d-graph-toolbar span")?.textContent || "",
+  selected: document.querySelector('[data-node-id="node/transform"]')?.classList.contains("selected") || false,
+  repl: document.querySelector("#repl-output")?.textContent || "",
+}));
+console.log("Hodos Graph post-drag diagnostic", JSON.stringify(postDrag));
+assert.equal(postDrag.selected, true, `Hodos Graph selection was lost: ${JSON.stringify(postDrag)}`);
+assert.ok(postDrag.left > initial.transformLeft + 70, `Hodos Graph node did not move: ${JSON.stringify(postDrag)}`);
+assert.match(postDrag.revision, /revision 1/, `Hodos Graph revision did not advance: ${JSON.stringify(postDrag)}`);
 
   assert.deepEqual(pageErrors, [], `Hodos Graph page errors:\n${pageErrors.join("\n")}`);
   const errorConsole = pageConsole.filter((entry) => entry.startsWith("error:"));
