@@ -100,16 +100,14 @@ try {
   null,
   { timeout: 5_000 });
 
-  await page.evaluate(() => {
-    const text = document.querySelector('[data-text-id="text/intro"]');
-    text.focus();
-    text.textContent = "Edited through the authoritative Hodos document event stream.";
-    text.dispatchEvent(new InputEvent("input", {
-      bubbles: true,
-      inputType: "insertText",
-      data: null,
-    }));
-  });
+  const intro = page.locator('[data-text-id="text/intro"]');
+  await intro.click();
+  await page.waitForFunction(() =>
+    document.querySelector('[data-node-id="block/intro"]')?.classList.contains("selected"),
+  null,
+  { timeout: 5_000 });
+  await intro.fill("Edited through the authoritative Hodos document event stream.");
+
   await page.waitForFunction(() => {
     const text = document.querySelector('[data-text-id="text/intro"]')?.textContent || "";
     const revision = document.querySelector(".hodos-2d-document-toolbar span")?.textContent || "";
