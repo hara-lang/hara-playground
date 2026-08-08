@@ -30,7 +30,7 @@ async function fixture(files) {
   return root;
 }
 
-test("the deployment contract covers Audio, HTA and the featured project catalog", () => {
+test("the deployment contract covers Hodos Workspace, Audio, HTA and the featured project catalog", () => {
   for (const path of [
     "src/main.js",
     "src/audio/integration.js",
@@ -38,12 +38,17 @@ test("the deployment contract covers Audio, HTA and the featured project catalog
     "src/audio/supersonic-provider.js",
     "src/audio/web-audio-engine.js",
     "src/audio/gw.audio.supersonic.hal",
-    "src/app/workspace-layout.js",
+    "src/hodos/workspace-shell.js",
+    "vendor/hodos/packages/workspace-ui/src/focus.js",
     "src/styles/mobile-audio.css",
     "src/studio/projects.js"
   ]) {
     assert.ok(EXACT_DEPLOYMENT_PATHS.includes(path), `missing exact deployment asset ${path}`);
   }
+  assert.ok(
+    !EXACT_DEPLOYMENT_PATHS.includes("src/app/workspace-layout.js"),
+    "the removed pre-Hodos Workspace module must not remain in the deployment contract",
+  );
   for (const path of [
     "runtime/rust/hara.wasm",
     "runtime/rust/packages/hta/index.js",
