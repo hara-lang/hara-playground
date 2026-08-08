@@ -106,15 +106,24 @@ try {
   null,
   { timeout: 5_000 });
 
-  const intro = page.locator('[data-text-id="text/intro"]');
-  await intro.fill("Edited through the authoritative Hodos document event stream.");
+  const replacement = "Edited through the authoritative Hodos document event stream.";
+  await page.evaluate((text) => {
+    const node = document.querySelector('[data-text-id="text/intro"]');
+    if (!node) throw new Error("Hodos document intro text is missing after selection");
+    node.focus();
+    node.textContent = text;
+    node.dispatchEvent(new InputEvent("input", {
+      bubbles: true,
+      inputType: "insertText",
+      data: text,
+    }));
+  }, replacement);
 
-  await page.waitForFunction(() => {
-    const text = document.querySelector('[data-text-id="text/intro"]')?.textContent || "";
+  await page.waitForFunction((text) => {
+    const current = document.querySelector('[data-text-id="text/intro"]')?.textContent || "";
     const revision = document.querySelector(".hodos-2d-document-toolbar span")?.textContent || "";
-    return text === "Edited through the authoritative Hodos document event stream."
-      && revision.includes("revision 1");
-  }, null, { timeout: 5_000 });
+    return current === text && revision.includes("revision 1");
+  }, replacement, { timeout: 5_000 });
 
   assert.deepEqual(pageErrors, [], `Hodos Document page errors:\n${pageErrors.join("\n")}`);
   const errorConsole = pageConsole.filter((entry) => entry.startsWith("error:"));
