@@ -1,0 +1,101 @@
+name: Repair manifest-selected Hodos Document surfaces
+
+on:
+  push:
+    branches: [agent/hodos-2d-document-consumer]
+    paths: [.github/workflows/fix-hodos-document-surface.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/hodos-2d-document-consumer
+          submodules: recursive
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Prefer valid manifest selection over a carried fallback surface
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/hodos/workspace-shell-state.js')
+          source = path.read_text(encoding='utf-8')
+          old = '  let surfaceId = tokenName(state?.workspaceShell?.surfaceId) || selectedSurfaceId(view);\n'
+          new = '''  const manifestSurfaceId = selectedSurfaceId(view);
+          const manifestSelectedAreaId = aliases.get(selectedAreaId(view)) || selectedAreaId(view);
+          const manifestSurface = surfaces.find((surface) =>
+            tokenName(surface["surface/id"]) === manifestSurfaceId
+              && surface["surface/area"] === manifestSelectedAreaId);
+          let surfaceId = manifestSurface?.["surface/id"]
+            || tokenName(state?.workspaceShell?.surfaceId)
+            || manifestSurfaceId;
+          '''
+          new = '\n'.join(line[8:] if line.startswith('        ') else line for line in new.splitlines()) + '\n'
+          if source.count(old) != 1:
+              raise SystemExit(f'Expected one Workspace surface selection anchor, found {source.count(old)}')
+          path.write_text(source.replace(old, new, 1), encoding='utf-8')
+
+          test_path = Path('tests/hodos-document-consumer.test.js')
+          tests = test_path.read_text(encoding='utf-8')
+          anchor = '\ntest("Playground pins and registers the Hodos 2D document packages", async () => {'
+          regression = r'''
+
+          test("manifest-selected extension surfaces override carried fallback selections", () => {
+            const descriptor = projectPlaygroundWorkspace({
+              workspace: "workspace/document",
+              workspaceShell: {
+                workspaceId: "workspace/document",
+                status: "ready",
+                source: "workspace.edn",
+                surfaceId: "code",
+                view: {
+                  "workspace/id": "workspace/document",
+                  "workspace/revision": 0,
+                  "workspace/layout": {
+                    "layout/type": "area",
+                    "layout/area": "area/document",
+                  },
+                  "workspace/areas": [documentArea],
+                  "workspace/selection": {
+                    "area/id": "area/document",
+                    "surface/id": "document",
+                  },
+                  "workspace/customizations": {},
+                },
+              },
+            });
+            assert.equal(descriptor["workspace/selection"]["surface/id"], "document");
+            assert.equal(descriptor["workspace/selection"]["area/id"], "area/document");
+          });
+          '''
+          regression = '\n'.join(line[10:] if line.startswith('          ') else line for line in regression.splitlines())
+          if tests.count(anchor) != 1:
+              raise SystemExit(f'Expected one Document consumer test anchor, found {tests.count(anchor)}')
+          test_path.write_text(tests.replace(anchor, regression + anchor, 1), encoding='utf-8')
+          PY
+
+      - name: Validate the repaired consumer
+        run: |
+          node --check src/hodos/workspace-shell-state.js
+          node --check tests/hodos-document-consumer.test.js
+          npm test
+          npm run check
+          npm run build
+
+      - name: Commit only the product regression fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/hodos/workspace-shell-state.js tests/hodos-document-consumer.test.js
+          git diff --cached --check
+          git commit -m "Honor manifest-selected Hodos document surfaces"
+          git push origin HEAD:agent/hodos-2d-document-consumer
