@@ -18,13 +18,15 @@ test("Studio uses compact editor chrome", async () => {
   assert.match(styles, /display:\s*none !important/);
 });
 
-test("output surfaces follow project presentation", async () => {
+test("normal Studio output follows project presentation without constraining Showcase", async () => {
   const main = await read("../src/main.js");
   const presentation = await read("../src/app/project-presentation.js");
   const preview = await read("../src/hodos/preview.js");
 
   assert.match(main, /syncProjectPresentation\(\{ state, store \}\)/);
-  assert.doesNotMatch(main, /mountHodosPreview\(/);
+  assert.match(main, /if \(showcase\) \{[\s\S]*mountHodosPreview\(\{ document: state\.preview, theme: state\.theme \}\)/);
+  assert.match(presentation, /const showcase = state\.presentation\?\.mode === "showcase"/);
+  assert.match(presentation, /if \(showcase\) \{[\s\S]*return presentation/);
   assert.match(presentation, /dataset\.projectPreview/);
   assert.match(presentation, /dataset\.projectAudio/);
   assert.match(preview, /previewEnabled\(\)/);
