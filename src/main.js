@@ -14,7 +14,7 @@ import {
   mountHodosWorkspaceShell,
 } from "./hodos/workspace-shell.js";
 import { installAudioOutput } from "./audio/integration.js";
-import { disposeHodosCatalog } from "./hodos/catalog.js";
+import { disposeHodosCatalog, mountHodosCatalog } from "./hodos/catalog.js";
 import { disposeHodosEditor, mountHodosEditor } from "./hodos/editor.js";
 import {
   disposeHodosExecutionHost,
@@ -44,6 +44,10 @@ function renderPlayground() {
   disposeHodosRepl();
   disposeHodosValueInspector();
   render(bindEvents);
+  // Normal Studio deliberately omits the template-insertion Catalog. Showcase
+  // keeps the original hidden Catalog hosts so its immutable Workspace mounts
+  // through the same lifecycle that was validated before the Studio cleanup.
+  if (showcase) mountHodosCatalog(state);
   mountHodosExplorer(state);
   mountHodosEditor({
     selectedPath: state.selectedPath,
