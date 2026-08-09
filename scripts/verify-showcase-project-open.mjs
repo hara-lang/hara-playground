@@ -38,6 +38,56 @@ const parentDocument = `<!doctype html>
 </body>
 </html>`;
 
+async function waitForShowcaseReady({
+  page,
+  frame,
+  pageErrors,
+  browserConsole,
+  requestFailures,
+}) {
+  try {
+    await frame.locator('html[data-presentation="showcase"][data-showcase-status="ready"]')
+      .waitFor({ state: "attached", timeout: 15_000 });
+  } catch (error) {
+    let documentState = null;
+    try {
+      documentState = await frame.locator("html").evaluate((html) => ({
+        url: location.href,
+        dataset: { ...html.dataset },
+        title: document.title,
+        bodyText: document.body?.innerText?.slice(0, 3000) || "",
+        statusText: document.querySelector("[data-hara-showcase-status]")?.textContent || "",
+        statusKind: document.querySelector("[data-hara-showcase-status]")?.dataset.status || "",
+        homeError: document.querySelector(".home-error")?.textContent || "",
+        replText: document.querySelector(".repl-output")?.textContent?.slice(-2000) || "",
+        selectedSurface: document.querySelector(".workbench-grid")?.dataset.workspaceSurfaceId || "",
+        workspaceManifestStatus: document.querySelector(".workbench-grid")?.dataset.workspaceManifestStatus || "",
+        workspaceManifestSource: document.querySelector(".workbench-grid")?.dataset.workspaceManifestSource || "",
+        documentHosts: document.querySelectorAll('[data-hodos-component="hodos.2d/document"]').length,
+        previewHosts: document.querySelectorAll("#preview.hodos-preview-root").length,
+      }));
+    } catch (diagnosticError) {
+      documentState = { diagnosticError: diagnosticError?.message || String(diagnosticError) };
+    }
+
+    let messages = [];
+    try {
+      messages = await page.evaluate(() => window.showcaseMessages || []);
+    } catch (messageError) {
+      messages = [{ diagnosticError: messageError?.message || String(messageError) }];
+    }
+
+    console.error("Showcase readiness diagnostic:\n" + JSON.stringify({
+      documentState,
+      messages,
+      pageErrors,
+      browserConsole,
+      requestFailures,
+    }, null, 2));
+    throw error;
+  }
+}
+
 try {
   server = createServer(async (request, response) => {
     try {
@@ -79,7 +129,17 @@ try {
   const context = await browser.newContext({ viewport: { width: 1000, height: 800 } });
   const page = await context.newPage();
   const pageErrors = [];
+  const browserConsole = [];
+  const requestFailures = [];
   page.on("pageerror", (error) => pageErrors.push(error.stack || error.message));
+  page.on("console", (message) => {
+    if (["error", "warning"].includes(message.type())) {
+      browserConsole.push(`${message.type()}: ${message.text()}`);
+    }
+  });
+  page.on("requestfailed", (request) => {
+    requestFailures.push(`${request.method()} ${request.url()} · ${request.failure()?.errorText || "failed"}`);
+  });
   await installGitHubFixtureRoutes(page);
 
   const showcase = new URL(`${origin}/`);
@@ -95,8 +155,7 @@ try {
   await page.goto(parent.href, { waitUntil: "domcontentloaded", timeout: 15_000 });
 
   const frame = page.frameLocator("#showcase");
-  await frame.locator('html[data-presentation="showcase"][data-showcase-status="ready"]')
-    .waitFor({ state: "attached", timeout: 15_000 });
+  await waitForShowcaseReady({ page, frame, pageErrors, browserConsole, requestFailures });
   await frame.locator('.hodos-2d-document-host[data-hodos-component="hodos.2d/document"]')
     .waitFor({ state: "visible", timeout: 15_000 });
 
@@ -151,15 +210,15 @@ try {
   const preview = await frame.locator("html").evaluate(() => {
     const output = document.querySelector(".output-panel");
     const view = document.querySelector(".preview-view.active");
-    const root = document.querySelector("#preview.hodos-preview-root");
-    const nestedFrame = root?.querySelector(":scope > .hara-web-preview");
+    const previewRoot = document.querySelector("#preview.hodos-preview-root");
+    const nestedFrame = previewRoot?.querySelector(":scope > .hara-web-preview");
     const height = (node) => node?.getBoundingClientRect().height ?? 0;
     return {
       tabs: getComputedStyle(document.querySelector(".output-tabs")).display,
       rows: getComputedStyle(output).gridTemplateRows,
       outputHeight: height(output),
       viewHeight: height(view),
-      rootHeight: height(root),
+      rootHeight: height(previewRoot),
       frameHeight: height(nestedFrame),
     };
   });
