@@ -110,6 +110,7 @@ export function createBytecodeObservationController({
 
   let runtime = null;
   let runtimePromise = null;
+  let runtimeEpoch = 0;
   let session = null;
   let sourceIdentity = null;
   let generation = 0;
@@ -171,18 +172,24 @@ export function createBytecodeObservationController({
   const ensureRuntime = async () => {
     if (runtime) return runtime;
     if (!runtimePromise) {
-      runtimePromise = Promise.resolve()
+      const epoch = runtimeEpoch;
+      const loading = Promise.resolve()
         .then(() => loadRuntime())
         .then((loaded) => {
           if (!loaded || typeof loaded.compileNamed !== "function" || typeof loaded.dispose !== "function") {
             throw new TypeError("The Hara observation loader returned an invalid runtime");
           }
+          if (epoch !== runtimeEpoch) {
+            loaded.dispose();
+            return null;
+          }
           runtime = loaded;
           return runtime;
         })
         .finally(() => {
-          runtimePromise = null;
+          if (runtimePromise === loading) runtimePromise = null;
         });
+      runtimePromise = loading;
     }
     return runtimePromise;
   };
@@ -274,6 +281,7 @@ export function createBytecodeObservationController({
         try { session.dispose(); } catch { /* best effort after failed start */ }
       }
       session = null;
+      if (startGeneration !== generation) return null;
       throw diagnostic(error, "start");
     }
   }
@@ -367,16 +375,17 @@ export function createBytecodeObservationController({
   }
 
   function markExecutionStale({ sourceId, sourceVersion } = {}) {
-    if (!session || !sourceIdentity) return false;
+    if (!sourceIdentity) return false;
     const nextSourceId = sourceId == null ? sourceIdentity.sourceId : String(sourceId);
     const nextVersion = sourceVersion == null ? sourceIdentity.sourceVersion : String(sourceVersion);
     if (nextSourceId !== sourceIdentity.sourceId || nextVersion === sourceIdentity.sourceVersion) return false;
     stale = true;
     cancelRun();
-    if (session.status === "running") {
+    generation += 1;
+    if (session?.status === "running") {
       try { session.pause(); } catch { /* staleness still wins */ }
     }
-    emit({ kind: "stale", currentSourceVersion: nextVersion });
+    emit({ kind: "stale", currentSourceVersion: nextVersion, pending: session == null });
     return true;
   }
 
@@ -386,7 +395,8 @@ export function createBytecodeObservationController({
 
   function disposeExecution(reason = "application-teardown") {
     const hadSession = disposeCurrentSession({ reason, emitUpdate: false });
-    const hadRuntime = runtime != null;
+    const hadRuntime = runtime != null || runtimePromise != null;
+    runtimeEpoch += 1;
     if (runtime) {
       try {
         runtime.dispose();
