@@ -71,9 +71,9 @@ function renderPlayground() {
   mountHodosExecution(state);
   mountHodosWorkspaceShell(state);
   mountWorkspaceAssist();
-  applyStudioChrome();
-  syncPublicLobby();
   if (!showcase) {
+    applyStudioChrome();
+    syncPublicLobby();
     void syncProjectPresentation({ state, store }).catch((error) => {
       console.error("[hara playground presentation]", error);
     });
