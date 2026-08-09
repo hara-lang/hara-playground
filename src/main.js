@@ -14,6 +14,11 @@ import {
 import { installAudioOutput } from "./audio/integration.js";
 import { disposeHodosCatalog, mountHodosCatalog } from "./hodos/catalog.js";
 import { disposeHodosEditor, mountHodosEditor } from "./hodos/editor.js";
+import {
+  disposeHodosExecutionHost,
+  installHodosExecution,
+  mountHodosExecution,
+} from "./hodos/execution.js";
 import { disposeHodosExplorer, mountHodosExplorer } from "./hodos/explorer.js";
 import { disposeHodosPreview, mountHodosPreview } from "./hodos/preview.js";
 import { disposeHodosProblems, mountHodosProblems } from "./hodos/problems.js";
@@ -29,6 +34,7 @@ function renderPlayground() {
   disposeHodosWorkspaceShell();
   disposeHodosCatalog();
   disposeHodosEditor();
+  disposeHodosExecutionHost();
   disposeHodosExplorer();
   disposeHodosPreview();
   disposeHodosProblems();
@@ -52,6 +58,7 @@ function renderPlayground() {
   mountHodosProblems(state);
   mountHodosRepl(state);
   mountHodosValueInspector(state);
+  mountHodosExecution(state);
   mountHodosWorkspaceShell(state);
   mountWorkspaceAssist();
   if (state.presentation?.mode !== "showcase") mountGreenwaysAiAssistant();
@@ -67,6 +74,7 @@ function renderPlayground() {
 
 setRenderer(renderPlayground);
 setupRuntimeEvents();
+installHodosExecution({ state, render: renderPlayground });
 installHodosGraphConsumer();
 installAudioOutput();
 new PlaygroundAiHost({ runtime });
