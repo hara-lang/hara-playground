@@ -4,11 +4,25 @@
   const app = document.querySelector("#app");
   if (!app || document.querySelector("script[data-hara-identity-client]")) return;
 
-  const testing = location.hostname === "playground.testing.hara-lang.org"
-    || location.hostname.endsWith(".testing.hara-lang.org");
-  const identityOrigin = testing
-    ? "https://id.testing.hara-lang.org"
-    : "https://id.hara-lang.org";
+  const productionOrigin = "https://id.hara-lang.org";
+  const testingOrigin = "https://id.testing.hara-lang.org";
+  const allowedOrigins = new Set([productionOrigin, testingOrigin]);
+  const configuredOrigin = document
+    .querySelector('meta[name="hara-identity-origin"]')
+    ?.getAttribute("content")
+    ?.trim();
+  const identityOrigin = configuredOrigin
+    ? (allowedOrigins.has(configuredOrigin) ? configuredOrigin : null)
+    : location.hostname === "playground.hara-lang.org"
+      ? productionOrigin
+      : location.hostname === "playground.testing.hara-lang.org"
+        || location.hostname.endsWith(".testing.hara-lang.org")
+        ? testingOrigin
+        : null;
+
+  // Local and unknown hosts stay self-contained unless a test explicitly
+  // supplies one of the two trusted Identity origins above.
+  if (!identityOrigin) return;
   let mountedRoot = null;
 
   function mountIdentity() {
