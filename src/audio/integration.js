@@ -1,4 +1,4 @@
-import { runtime, state, store } from "../app/context.js";
+import { capabilities, runtime, state, store } from "../app/context.js";
 import { detectProjectConfiguration } from "../workspace/project.js";
 import {
   AUDIO_OBSERVER_OPTIONS,
@@ -239,6 +239,7 @@ export function installAudioOutput(applicationRoot = document.querySelector("#ap
   root = applicationRoot;
   runtime.setBootContextProvider(async ({ generation, signal } = {}) => {
     const project = detectProjectConfiguration(await store.files());
+    capabilities.replaceGrants(["studio/eval", ...project.capabilities]);
     await audio.configure(project.capabilities, store.workspace, { generation, signal });
     return { capabilities: project.capabilities };
   });

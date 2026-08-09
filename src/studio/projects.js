@@ -1,5 +1,18 @@
 export const FEATURED_PROJECTS = Object.freeze([
   Object.freeze({
+    id: "greenways-ai",
+    title: "Greenways OS AI capability",
+    eyebrow: "AI · HOST CAPABILITY",
+    description: "Call a provider through a project-declared Hara capability while credentials remain in Greenways OS.",
+    repository: Object.freeze({ owner: "hara-lang", repo: "hara-playground", branch: "main", path: "samples/greenways-ai" }),
+    sourceUrl: "https://github.com/hara-lang/hara-playground/tree/main/samples/greenways-ai",
+    entry: "src/main.hal",
+    capabilities: Object.freeze(["gw.ai", "model/generate", "No embedded keys"]),
+    action: "Open AI example",
+    primary: true,
+    field: "ai"
+  }),
+  Object.freeze({
     id: "supersonic",
     title: "Supersonic live coding",
     eyebrow: "AUDIO · LIVE GRAPH",
@@ -9,7 +22,6 @@ export const FEATURED_PROJECTS = Object.freeze([
     entry: "src/main.hal",
     capabilities: Object.freeze(["Supersonic", "Web Audio", "Live controls"]),
     action: "Open Supersonic",
-    primary: true,
     field: "audio"
   }),
   Object.freeze({

@@ -5,6 +5,8 @@ import {
   CanonicalHaraRuntime,
   CanonicalRuntimeUnavailableError,
   detectNamespace,
+  createAiHostServices,
+  hasCanonicalAiHostContract,
   hasCanonicalSupersonicHostContract
 } from "../src/runtime/canonical.js";
 
@@ -32,6 +34,30 @@ test("canonical adapter owns a persistent browser kernel", async () => {
     ["eval", "STUDIO", "(ns app.core)\n(+ 40 2)"]
   ]);
   assert.equal(runtime.currentNamespace, "app.core");
+});
+
+test("the canonical AI adapter converts HTA maps and results", async () => {
+  const calls = [];
+  const services = createAiHostServices({
+    status: async () => ({ available: true }),
+    generate: async (request) => {
+      calls.push(request);
+      return { output: "42", usage: { totalTokens: 3 } };
+    }
+  });
+  const request = new Map([
+    ["profile-id", "openai.primary"],
+    ["messages", [new Map([["role", "user"], ["content", "Answer"]])]]
+  ]);
+  const result = await services["gw.ai/generate"](request);
+  assert.deepEqual(calls, [{
+    "profile-id": "openai.primary",
+    messages: [{ role: "user", content: "Answer" }]
+  }]);
+  assert.deepEqual(result, new Map([
+    ["output", "42"],
+    ["usage", new Map([["totalTokens", 3]])]
+  ]));
 });
 
 test("canonical adapter preloads browser HAL namespaces before project code", async () => {
@@ -116,6 +142,22 @@ test("the local Supersonic HAL is bootstrap-safe and uses the v1 host contract",
   for (const method of ["start", "update", "status", "stop"]) {
     assert.ok(
       source.includes(`Host/call "gw.audio.supersonic" "${method}"`),
+      `missing direct Host/call for ${method}`
+    );
+  }
+});
+
+test("the local gw.ai HAL is bootstrap-safe and uses typed host operations", async () => {
+  const source = await readFile(
+    new URL("../src/ai/gw.ai.hal", import.meta.url),
+    "utf8"
+  );
+  assert.equal(hasCanonicalAiHostContract(source), true);
+  assert.match(source, /\(:config\s+\{[^}]*:blank\s+true[^}]*\}\)/s);
+  assert.doesNotMatch(source, /api[-_]?key|authorization|headers|https?:\/\//i);
+  for (const method of ["status", "generate"]) {
+    assert.ok(
+      source.includes(`Host/call "gw.ai" "${method}"`),
       `missing direct Host/call for ${method}`
     );
   }

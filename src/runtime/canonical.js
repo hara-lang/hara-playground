@@ -6,6 +6,8 @@ const SUPERSONIC_NAMESPACE = "gw.audio.supersonic";
 const SUPERSONIC_METHODS = Object.freeze(["start", "update", "status", "stop"]);
 const BLANK_NAMESPACE_CONFIG = /\(:config\s+\{[^}]*:blank\s+true[^}]*\}\)/s;
 const SUPERSONIC_UPDATE_OMISSION = /\(:refer-clojure\s+:exclude\s+\[[^\]]*\bupdate\b[^\]]*\]\)/s;
+const AI_NAMESPACE = "gw.ai";
+const AI_METHODS = Object.freeze(["status", "generate"]);
 
 export class CanonicalRuntimeUnavailableError extends Error {
   constructor(message, cause) {
@@ -71,6 +73,7 @@ export async function createCanonicalRuntime(options = {}) {
     grantsForSession: options.grantsForSession,
     supersonic: options.supersonic
   });
+  Object.assign(hostCalls, createAiHostServices(options.ai));
   const broker = brokerModule.createBrowserBroker({
     workerUrl,
     sharedWorkerUrl,
@@ -84,12 +87,49 @@ export async function createCanonicalRuntime(options = {}) {
   // visible to every child kernel's first ns/require evaluation. Preloading the
   // exact same source into STUDIO gives project code a concrete namespace while
   // retaining the broker resource for future runtime implementations/sessions.
-  const bootstrapSources = supersonicSource
-    ? [{ namespace: SUPERSONIC_NAMESPACE, source: supersonicSource }]
-    : [];
+  const aiSource = await loadAiResource(root, options);
+  const bootstrapSources = [
+    supersonicSource ? { namespace: SUPERSONIC_NAMESPACE, source: supersonicSource } : null,
+    aiSource ? { namespace: AI_NAMESPACE, source: aiSource } : null
+  ].filter(Boolean);
   const runtime = new CanonicalHaraRuntime({ broker, options, bootstrapSources });
   await runtime.initialise();
   return runtime;
+}
+
+async function loadAiResource(root, options) {
+  const candidates = [
+    new URL("../ai/gw.ai.hal", import.meta.url),
+    new URL("rust/studio/hal/ai.hal", root)
+  ];
+  for (const url of candidates) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) continue;
+      const source = await response.text();
+      if (hasCanonicalAiHostContract(source)) return source;
+      options.onDiagnostic?.(`Ignoring non-bootstrap-safe AI HAL resource at ${url}`);
+    } catch {
+      // Try the next source. The Playground ships a local compatibility copy.
+    }
+  }
+  options.onDiagnostic?.("gw.ai HAL resource is unavailable; AI projects cannot load");
+  return "";
+}
+
+export function hasCanonicalAiHostContract(source) {
+  const text = String(source || "");
+  return text.includes(`(ns ${AI_NAMESPACE}`)
+    && BLANK_NAMESPACE_CONFIG.test(text)
+    && AI_METHODS.every((method) => text.includes(`Host/call "${AI_NAMESPACE}" "${method}"`));
+}
+
+export function createAiHostServices(ai) {
+  if (!ai) return {};
+  return {
+    "gw.ai/status": async () => toHta(await ai.status()),
+    "gw.ai/generate": async (request) => toHta(await ai.generate(toPlain(request)))
+  };
 }
 
 async function loadSupersonicResource(root, options) {
@@ -211,6 +251,26 @@ function normalizeBootstrapSources(resources) {
     .filter((resource) => resource
       && typeof resource.source === "string"
       && resource.source.trim());
+}
+
+function toPlain(value) {
+  if (value instanceof Map) {
+    return Object.fromEntries([...value].map(([key, entry]) => [
+      key?.constructor?.name === "HtaKeyword" ? key.name : String(key),
+      toPlain(entry)
+    ]));
+  }
+  if (Array.isArray(value)) return value.map(toPlain);
+  return value;
+}
+
+function toHta(value) {
+  if (Array.isArray(value)) return value.map(toHta);
+  if (value instanceof Map) return value;
+  if (value !== null && typeof value === "object") {
+    return new Map(Object.entries(value).map(([key, entry]) => [key, toHta(entry)]));
+  }
+  return value;
 }
 
 export function detectNamespace(source) {

@@ -1,0 +1,11 @@
+(ns gw.ai
+  (:config {:blank true}))
+
+;; This portable browser namespace reaches the Playground host capability.
+;; Provider credentials remain in Greenways OS and never enter Hara values.
+
+(defn status []
+  @(Host/call "gw.ai" "status" []))
+
+(defn generate [request]
+  @(Host/call "gw.ai" "generate" [request]))

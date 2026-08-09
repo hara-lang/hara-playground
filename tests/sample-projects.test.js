@@ -18,6 +18,7 @@ test("every featured GitHub sample is a complete workspace.edn-first Hara projec
     ]);
     assert.match(descriptor, /:hara\/type\s+:project/);
     assert.match(descriptor, /:studio\/eval/);
+    if (project.id === "greenways-ai") assert.match(descriptor, /:model\/generate/);
     assert.match(workspace, /:hara\/type\s+:workspace/);
     assert.match(workspace, /:workspace\/layout/);
     assert.match(workspace, /:layout\/type\s+:split/);

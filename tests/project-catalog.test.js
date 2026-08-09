@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { FEATURED_PROJECTS, PLAYGROUND_NICETIES, projectDeepLink, repositoryLabel } from "../src/studio/projects.js";
 
 test("featured projects point at complete GitHub subprojects", () => {
-  assert.equal(FEATURED_PROJECTS.length, 6);
+  assert.equal(FEATURED_PROJECTS.length, 7);
   assert.ok(FEATURED_PROJECTS.every((project) => project.repository.owner === "hara-lang"));
   assert.ok(FEATURED_PROJECTS.every((project) => project.repository.repo === "hara-playground"));
   assert.ok(FEATURED_PROJECTS.every((project) => project.repository.path.startsWith("samples/")));
@@ -16,6 +16,13 @@ test("Supersonic is a featured audio project", () => {
   assert.ok(project);
   assert.equal(project.repository.path, "samples/supersonic-live");
   assert.ok(project.capabilities.includes("Supersonic"));
+});
+
+test("Greenways AI is a featured capability-declared project", () => {
+  const project = FEATURED_PROJECTS.find((candidate) => candidate.id === "greenways-ai");
+  assert.ok(project);
+  assert.equal(project.repository.path, "samples/greenways-ai");
+  assert.ok(project.capabilities.includes("model/generate"));
   assert.equal(project.primary, true);
 });
 
@@ -27,7 +34,8 @@ test("Hodos Graph is a featured manifest-native project", () => {
 });
 
 test("project links carry branch and project path", () => {
-  const link = projectDeepLink(FEATURED_PROJECTS[2], "/");
+  const project = FEATURED_PROJECTS.find((candidate) => candidate.id === "interface");
+  const link = projectDeepLink(project, "/");
   assert.match(link, /^\/\?/);
   assert.match(link, /repo=hara-lang%2Fhara-playground/);
   assert.match(link, /branch=main/);
