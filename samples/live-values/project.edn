@@ -7,4 +7,5 @@
  :project/extension-paths ["extensions"]
  :project/main samples.live-values
  :project/capabilities
- #{:studio/eval}}
+ #{:studio/eval
+   :preview/hta}}

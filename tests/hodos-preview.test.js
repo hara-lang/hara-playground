@@ -22,9 +22,10 @@ test("Playground pins and publishes the Hodos Workspace packages", async () => {
   ]) assert.match(page, new RegExp(packageName.replace("/", "\\/")));
 });
 
-test("Preview is mounted as a HAL-shaped Hodos Workspace area", async () => {
-  const [integration, main] = await Promise.all([
+test("Preview is mounted as a capability-gated HAL-shaped Hodos Workspace area", async () => {
+  const [integration, presentation, main] = await Promise.all([
     text("src/hodos/preview.js"),
+    text("src/app/project-presentation.js"),
     text("src/main.js"),
   ]);
   assert.match(integration, /createWorkspaceAreaHost/);
@@ -32,6 +33,8 @@ test("Preview is mounted as a HAL-shaped Hodos Workspace area", async () => {
   assert.match(integration, /registerHodosDevUi/);
   assert.match(integration, /createPreviewHost/);
   assert.match(integration, /document: sourceDocument/);
+  assert.match(integration, /previewEnabled\(\)/);
   assert.match(main, /disposeHodosPreview\(\)/);
-  assert.match(main, /mountHodosPreview\(\{ document: state\.preview, theme: state\.theme \}\)/);
+  assert.match(main, /syncProjectPresentation\(\{ state, store \}\)/);
+  assert.match(presentation, /mountHodosPreview\(\{ document: state\.preview, theme: state\.theme \}\)/);
 });
