@@ -1,0 +1,153 @@
+/* Keep the editor, project tree and relevant outputs primary. */
+
+.editor-panel {
+  grid-template-rows: 42px 27px minmax(0, 1fr) 26px;
+  overflow: visible;
+}
+
+.editor-header {
+  position: relative;
+  z-index: 20;
+  overflow: visible;
+}
+
+.lisp-toolbar,
+.toolset-strip,
+.catalog-activity-slot,
+.instarepl-rail {
+  display: none !important;
+}
+
+.editor-wrap,
+.editor-wrap.with-instarepl {
+  grid-template-columns: 46px minmax(0, 1fr);
+}
+
+.project-panel {
+  grid-template-rows: 40px auto minmax(90px, 1fr);
+}
+
+.editor-meta #instarepl-summary {
+  color: var(--hara-muted);
+}
+
+.editor-options {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.editor-options > summary {
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  color: var(--hara-muted);
+  background: var(--hara-surface-solid);
+  border: 1px solid var(--hara-line);
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: .68rem;
+  font-weight: 680;
+  list-style: none;
+  user-select: none;
+}
+
+.editor-options > summary::-webkit-details-marker {
+  display: none;
+}
+
+.editor-options > summary::after {
+  margin-left: 7px;
+  content: "⌄";
+  color: var(--hara-faint);
+  font-family: var(--hara-font-mono);
+}
+
+.editor-options[open] > summary,
+.editor-options > summary:hover,
+.editor-options > summary:focus-visible {
+  color: var(--hara-text);
+  border-color: var(--hara-line-strong);
+}
+
+.editor-options-menu {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 7px);
+  right: 0;
+  width: min(280px, calc(100vw - 28px));
+  display: grid;
+  gap: 6px;
+  padding: 9px;
+  color: var(--hara-text);
+  background: color-mix(in srgb, var(--hara-surface-solid) 96%, transparent);
+  border: 1px solid var(--hara-line-strong);
+  border-radius: var(--hara-radius-sm);
+  box-shadow: var(--hara-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.editor-options-menu .mode-chip {
+  width: 100%;
+  min-height: 32px;
+  justify-content: flex-start;
+  padding-inline: 10px;
+}
+
+.editor-options-menu small {
+  padding: 5px 4px 2px;
+  color: var(--hara-faint);
+  font: 500 .56rem/1.45 var(--hara-font-mono);
+}
+
+html:not([data-project-preview="true"]) [data-output-tab="preview"],
+html:not([data-project-preview="true"]) .preview-view,
+html:not([data-project-audio="true"]) [data-output-tab="audio"],
+html:not([data-project-audio="true"]) .audio-view,
+[data-output-tab][hidden],
+.preview-view[hidden],
+.audio-view[hidden],
+.hodos-workspace-dock-item[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 1000px) {
+  .editor-panel {
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+  }
+
+  .editor-wrap,
+  .editor-wrap.with-instarepl {
+    grid-template-columns: 32px minmax(0, 1fr) !important;
+  }
+
+  .hodos-workspace-dock {
+    display: flex !important;
+    grid-template-columns: none !important;
+  }
+
+  .hodos-workspace-dock-item {
+    min-width: 54px;
+    flex: 1 1 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .editor-options > summary {
+    width: 34px;
+    justify-content: center;
+    padding: 0;
+    overflow: hidden;
+    color: transparent;
+  }
+
+  .editor-options > summary::before {
+    content: "⋯";
+    color: var(--hara-muted);
+    font: 700 1rem var(--hara-font-mono);
+  }
+
+  .editor-options > summary::after {
+    display: none;
+  }
+}

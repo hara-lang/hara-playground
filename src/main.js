@@ -1,7 +1,9 @@
 import { repositoryFromStudioLocation } from "./github/importer.js";
-import { runtime, setRenderer, state } from "./app/context.js";
+import { runtime, setRenderer, state, store } from "./app/context.js";
 import { importRepository, loadExamples, prepareProjectHome } from "./app/actions.js";
 import { bindEvents, setupRuntimeEvents } from "./app/events.js";
+import { syncProjectPresentation } from "./app/project-presentation.js";
+import { applyStudioChrome, syncPublicLobby } from "./app/studio-chrome.js";
 import { render } from "./app/view.js";
 import { mountWorkspaceAssist } from "./app/workspace-assist.js";
 import { mountGreenwaysAiAssistant } from "./ai/assistant.js";
@@ -12,10 +14,15 @@ import {
   mountHodosWorkspaceShell,
 } from "./hodos/workspace-shell.js";
 import { installAudioOutput } from "./audio/integration.js";
-import { disposeHodosCatalog, mountHodosCatalog } from "./hodos/catalog.js";
+import { disposeHodosCatalog } from "./hodos/catalog.js";
 import { disposeHodosEditor, mountHodosEditor } from "./hodos/editor.js";
+import {
+  disposeHodosExecutionHost,
+  installHodosExecution,
+  mountHodosExecution,
+} from "./hodos/execution.js";
 import { disposeHodosExplorer, mountHodosExplorer } from "./hodos/explorer.js";
-import { disposeHodosPreview, mountHodosPreview } from "./hodos/preview.js";
+import { disposeHodosPreview } from "./hodos/preview.js";
 import { disposeHodosProblems, mountHodosProblems } from "./hodos/problems.js";
 import { disposeHodosRepl, mountHodosRepl } from "./hodos/repl.js";
 import { disposeHodosValueInspector, mountHodosValueInspector } from "./hodos/value-inspector.js";
@@ -29,13 +36,13 @@ function renderPlayground() {
   disposeHodosWorkspaceShell();
   disposeHodosCatalog();
   disposeHodosEditor();
+  disposeHodosExecutionHost();
   disposeHodosExplorer();
   disposeHodosPreview();
   disposeHodosProblems();
   disposeHodosRepl();
   disposeHodosValueInspector();
   render(bindEvents);
-  mountHodosCatalog(state);
   mountHodosExplorer(state);
   mountHodosEditor({
     selectedPath: state.selectedPath,
@@ -48,12 +55,17 @@ function renderPlayground() {
     rainbow: state.editor.rainbow,
     instaRepl: state.instarepl.enabled,
   });
-  mountHodosPreview({ document: state.preview, theme: state.theme });
   mountHodosProblems(state);
   mountHodosRepl(state);
   mountHodosValueInspector(state);
+  mountHodosExecution(state);
   mountHodosWorkspaceShell(state);
   mountWorkspaceAssist();
+  applyStudioChrome();
+  syncPublicLobby();
+  void syncProjectPresentation({ state, store }).catch((error) => {
+    console.error("[hara playground presentation]", error);
+  });
   if (state.presentation?.mode !== "showcase") mountGreenwaysAiAssistant();
   syncShowcaseHost();
 
@@ -67,6 +79,7 @@ function renderPlayground() {
 
 setRenderer(renderPlayground);
 setupRuntimeEvents();
+installHodosExecution({ state, render: renderPlayground });
 installHodosGraphConsumer();
 installAudioOutput();
 new PlaygroundAiHost({ runtime });

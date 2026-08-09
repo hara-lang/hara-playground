@@ -4,6 +4,7 @@ import { DEFAULT_WORKSPACE, WorkspaceStore } from "../workspace/store.js";
 import { previewDocument } from "../ui/hta.js";
 import { createProblemsState } from "../hodos/problems-state.js";
 import { createExplorerState } from "../hodos/explorer-state.js";
+import { createPlaygroundExecutionState } from "../hodos/execution-state.js";
 import { showcasePresentationFromLocation } from "../studio/showcase.js";
 import {
   DEFAULT_ACTIVITY_ID,
@@ -74,6 +75,7 @@ valueInspector: {
   error: ""
 },
   problems: createProblemsState(),
+  execution: createPlaygroundExecutionState(),
   workspaceShell: {
     workspaceId: null,
     status: "idle",
@@ -86,7 +88,7 @@ valueInspector: {
   importBusy: false, importProgress: "", examples: [], exampleBusy: false,
   theme: initialTheme === "light" ? "light" : "dark",
   home: { error: "", resume: null },
-  outputTab: ["preview", "repl", "value", "problems"].includes(initialOutput) ? initialOutput : "preview",
+  outputTab: ["preview", "repl", "value", "problems", "execution"].includes(initialOutput) ? initialOutput : "preview",
   toolsetId: initialToolsetId,
   activityId: initialActivity?.id || DEFAULT_ACTIVITY_ID,
   activityRun: { status: "idle", checks: [], message: "" },

@@ -9,6 +9,10 @@ registerHodosDevUi(registry, { createPreviewHost });
 
 let areaHost = null;
 
+function previewEnabled() {
+  return globalThis.document?.documentElement?.dataset.projectPreview === "true";
+}
+
 function previewArea(sourceDocument, theme) {
   return createPreviewArea({
     id: "preview/main",
@@ -36,6 +40,7 @@ export function disposeHodosPreview() {
 
 export function mountHodosPreview({ document: sourceDocument, theme = "system" } = {}) {
   disposeHodosPreview();
+  if (!previewEnabled()) return false;
   const root = previewContainer();
   if (!root) return false;
 
@@ -53,6 +58,10 @@ export function mountHodosPreview({ document: sourceDocument, theme = "system" }
 }
 
 export function updateHodosPreview({ document: sourceDocument, theme = "system" } = {}) {
+  if (!previewEnabled()) {
+    disposeHodosPreview();
+    return false;
+  }
   if (!areaHost) return mountHodosPreview({ document: sourceDocument, theme });
   areaHost.update(previewArea(sourceDocument, theme));
   return true;
