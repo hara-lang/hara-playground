@@ -226,7 +226,9 @@ export function applyExecutionControllerUpdate(state, update) {
     result: value.result ?? (startsTrace ? null : current.result),
     generation: Number.isSafeInteger(value.generation) ? value.generation : current.generation,
   };
-  const status = value.session?.status ?? model.session.status;
+  const status = value.kind === "stale"
+    ? "connected"
+    : value.session?.status ?? model.session.status;
   next.model = rebuildModel(next, {
     model,
     status,
@@ -246,7 +248,10 @@ export function markPlaygroundExecutionStale(state, currentSourceVersion = null)
       "Playground Execution current source version",
     ),
   };
-  next.model = rebuildModel(next, { metadata: metadataValue(next) });
+  next.model = rebuildModel(next, {
+    status: "connected",
+    metadata: metadataValue(next),
+  });
   return freezeState(next);
 }
 
