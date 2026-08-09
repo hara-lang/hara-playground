@@ -2,6 +2,7 @@
 @import url("./styles/playground.css");
 @import url("./styles/editor.css");
 @import url("./audio/audio.css");
+@import url("./ai/greenways-ai.css");
 @import url("./styles/responsive.css");
 @import url("../vendor/hodos/packages/workspace-ui/src/shell.css");
 @import url("../vendor/hodos/packages/2d-ui/src/document.css");
