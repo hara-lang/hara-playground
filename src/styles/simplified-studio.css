@@ -1,42 +1,44 @@
-/* Keep the editor, project tree and relevant outputs primary. */
+/* Keep the editor, project tree and relevant outputs primary in normal Studio.
+   Showcase owns a separate immutable surface projection and retains its
+   previously validated Hodos geometry. */
 
-.editor-panel {
+html:not([data-presentation="showcase"]) .editor-panel {
   grid-template-rows: 42px 27px minmax(0, 1fr) 26px;
   overflow: visible;
 }
 
-.editor-header {
+html:not([data-presentation="showcase"]) .editor-header {
   position: relative;
   z-index: 20;
   overflow: visible;
 }
 
-.lisp-toolbar,
-.toolset-strip,
-.catalog-activity-slot,
-.instarepl-rail {
+html:not([data-presentation="showcase"]) .lisp-toolbar,
+html:not([data-presentation="showcase"]) .toolset-strip,
+html:not([data-presentation="showcase"]) .catalog-activity-slot,
+html:not([data-presentation="showcase"]) .instarepl-rail {
   display: none !important;
 }
 
-.editor-wrap,
-.editor-wrap.with-instarepl {
+html:not([data-presentation="showcase"]) .editor-wrap,
+html:not([data-presentation="showcase"]) .editor-wrap.with-instarepl {
   grid-template-columns: 46px minmax(0, 1fr);
 }
 
-.project-panel {
+html:not([data-presentation="showcase"]) .project-panel {
   grid-template-rows: 40px auto minmax(90px, 1fr);
 }
 
-.editor-meta #instarepl-summary {
+html:not([data-presentation="showcase"]) .editor-meta #instarepl-summary {
   color: var(--hara-muted);
 }
 
-.editor-options {
+html:not([data-presentation="showcase"]) .editor-options {
   position: relative;
   flex: 0 0 auto;
 }
 
-.editor-options > summary {
+html:not([data-presentation="showcase"]) .editor-options > summary {
   height: 32px;
   display: inline-flex;
   align-items: center;
@@ -52,25 +54,25 @@
   user-select: none;
 }
 
-.editor-options > summary::-webkit-details-marker {
+html:not([data-presentation="showcase"]) .editor-options > summary::-webkit-details-marker {
   display: none;
 }
 
-.editor-options > summary::after {
+html:not([data-presentation="showcase"]) .editor-options > summary::after {
   margin-left: 7px;
   content: "⌄";
   color: var(--hara-faint);
   font-family: var(--hara-font-mono);
 }
 
-.editor-options[open] > summary,
-.editor-options > summary:hover,
-.editor-options > summary:focus-visible {
+html:not([data-presentation="showcase"]) .editor-options[open] > summary,
+html:not([data-presentation="showcase"]) .editor-options > summary:hover,
+html:not([data-presentation="showcase"]) .editor-options > summary:focus-visible {
   color: var(--hara-text);
   border-color: var(--hara-line-strong);
 }
 
-.editor-options-menu {
+html:not([data-presentation="showcase"]) .editor-options-menu {
   position: absolute;
   z-index: 60;
   top: calc(100% + 7px);
@@ -87,53 +89,53 @@
   backdrop-filter: blur(18px);
 }
 
-.editor-options-menu .mode-chip {
+html:not([data-presentation="showcase"]) .editor-options-menu .mode-chip {
   width: 100%;
   min-height: 32px;
   justify-content: flex-start;
   padding-inline: 10px;
 }
 
-.editor-options-menu small {
+html:not([data-presentation="showcase"]) .editor-options-menu small {
   padding: 5px 4px 2px;
   color: var(--hara-faint);
   font: 500 .56rem/1.45 var(--hara-font-mono);
 }
 
-html:not([data-project-preview="true"]) [data-output-tab="preview"],
-html:not([data-project-preview="true"]) .preview-view,
-html:not([data-project-audio="true"]) [data-output-tab="audio"],
-html:not([data-project-audio="true"]) .audio-view,
-[data-output-tab][hidden],
-.preview-view[hidden],
-.audio-view[hidden],
-.hodos-workspace-dock-item[hidden] {
+html:not([data-presentation="showcase"]):not([data-project-preview="true"]) [data-output-tab="preview"],
+html:not([data-presentation="showcase"]):not([data-project-preview="true"]) .preview-view,
+html:not([data-presentation="showcase"]):not([data-project-audio="true"]) [data-output-tab="audio"],
+html:not([data-presentation="showcase"]):not([data-project-audio="true"]) .audio-view,
+html:not([data-presentation="showcase"]) [data-output-tab][hidden],
+html:not([data-presentation="showcase"]) .preview-view[hidden],
+html:not([data-presentation="showcase"]) .audio-view[hidden],
+html:not([data-presentation="showcase"]) .hodos-workspace-dock-item[hidden] {
   display: none !important;
 }
 
 @media (max-width: 1000px) {
-  .editor-panel {
+  html:not([data-presentation="showcase"]) .editor-panel {
     grid-template-rows: auto auto minmax(0, 1fr) auto;
   }
 
-  .editor-wrap,
-  .editor-wrap.with-instarepl {
+  html:not([data-presentation="showcase"]) .editor-wrap,
+  html:not([data-presentation="showcase"]) .editor-wrap.with-instarepl {
     grid-template-columns: 32px minmax(0, 1fr) !important;
   }
 
-  .hodos-workspace-dock {
+  html:not([data-presentation="showcase"]) .hodos-workspace-dock {
     display: flex !important;
     grid-template-columns: none !important;
   }
 
-  .hodos-workspace-dock-item {
+  html:not([data-presentation="showcase"]) .hodos-workspace-dock-item {
     min-width: 54px;
     flex: 1 1 0;
   }
 }
 
 @media (max-width: 520px) {
-  .editor-options > summary {
+  html:not([data-presentation="showcase"]) .editor-options > summary {
     width: 34px;
     justify-content: center;
     padding: 0;
@@ -141,13 +143,13 @@ html:not([data-project-audio="true"]) .audio-view,
     color: transparent;
   }
 
-  .editor-options > summary::before {
+  html:not([data-presentation="showcase"]) .editor-options > summary::before {
     content: "⋯";
     color: var(--hara-muted);
     font: 700 1rem var(--hara-font-mono);
   }
 
-  .editor-options > summary::after {
+  html:not([data-presentation="showcase"]) .editor-options > summary::after {
     display: none;
   }
 }
