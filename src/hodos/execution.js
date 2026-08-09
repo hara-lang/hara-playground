@@ -159,7 +159,7 @@ function synchronizeExecutionEnvironment(state) {
   const environment = sourceEnvironment(state);
   const live = currentController().inspect();
 
-  if (live.sessionActive && live.sourceIdentity) {
+  if (live.sourceIdentity) {
     const leavesWorkspace = state.screen !== "workspace";
     const workspaceChanged = environment.workspaceId !== live.sourceIdentity.workspaceId;
     const sourceChanged = environment.currentSourceId !== live.sourceIdentity.sourceId;
@@ -303,12 +303,13 @@ function handleWorkspaceEvent(event) {
     if (
       value?.["component/id"] === "hodos.dev/editor"
       && eventType(value) === "editor/change"
-      && stateRef?.execution?.model?.session?.id
     ) {
+      const live = currentController().inspect();
       const environment = sourceEnvironment(stateRef);
       if (
-        environment.currentSourceId === stateRef.execution.sourceId
-        && environment.currentSourceVersion !== stateRef.execution.sourceVersion
+        live.sourceIdentity
+        && environment.currentSourceId === live.sourceIdentity.sourceId
+        && environment.currentSourceVersion !== live.sourceIdentity.sourceVersion
       ) {
         currentController().markExecutionStale({
           sourceId: environment.currentSourceId,
