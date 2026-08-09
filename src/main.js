@@ -22,7 +22,7 @@ import {
   mountHodosExecution,
 } from "./hodos/execution.js";
 import { disposeHodosExplorer, mountHodosExplorer } from "./hodos/explorer.js";
-import { disposeHodosPreview } from "./hodos/preview.js";
+import { disposeHodosPreview, mountHodosPreview } from "./hodos/preview.js";
 import { disposeHodosProblems, mountHodosProblems } from "./hodos/problems.js";
 import { disposeHodosRepl, mountHodosRepl } from "./hodos/repl.js";
 import { disposeHodosValueInspector, mountHodosValueInspector } from "./hodos/value-inspector.js";
@@ -32,7 +32,8 @@ import {
 } from "./studio/showcase-host.js";
 
 function renderPlayground() {
-  document.documentElement.dataset.presentation = state.presentation?.mode || "studio";
+  const showcase = state.presentation?.mode === "showcase";
+  document.documentElement.dataset.presentation = showcase ? "showcase" : "studio";
   disposeHodosWorkspaceShell();
   disposeHodosCatalog();
   disposeHodosEditor();
@@ -55,6 +56,13 @@ function renderPlayground() {
     rainbow: state.editor.rainbow,
     instaRepl: state.instarepl.enabled,
   });
+  // Showcase is an explicit immutable surface projection. Keep its complete
+  // declared surface set available; normal Studio output is capability-gated
+  // after the project files have been inspected.
+  if (showcase) {
+    document.documentElement.dataset.projectPreview = "true";
+    mountHodosPreview({ document: state.preview, theme: state.theme });
+  }
   mountHodosProblems(state);
   mountHodosRepl(state);
   mountHodosValueInspector(state);
@@ -66,7 +74,7 @@ function renderPlayground() {
   void syncProjectPresentation({ state, store }).catch((error) => {
     console.error("[hara playground presentation]", error);
   });
-  if (state.presentation?.mode !== "showcase") mountGreenwaysAiAssistant();
+  if (!showcase) mountGreenwaysAiAssistant();
   syncShowcaseHost();
 
   const footer = document.querySelector(".lobby-footer");
