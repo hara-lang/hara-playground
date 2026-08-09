@@ -13,7 +13,9 @@ target.searchParams.set("surface", "document");
 target.searchParams.set("theme", "light");
 target.searchParams.set("smoke", String(Date.now()));
 
-const originalText = "Edit this sentence. The stable text identity survives each Hodos update.";
+// Keep this exact value paired with the immutable Hodos commit above. The
+// smoke test verifies the published commit-pinned document before editing it.
+const originalText = "Edit this sentence. Stable text identity survives each canonical update.";
 const suffix = "XYZ";
 let browser = null;
 let page = null;
