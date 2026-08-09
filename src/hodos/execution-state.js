@@ -3,7 +3,7 @@ import {
   createExecutionState,
   ingestExecutionEvidence,
   selectExecutionState,
-} from "@greenways/hodos-dev";
+} from "../../vendor/hodos/packages/dev/src/index.js";
 
 export const PLAYGROUND_EXECUTION_AREA_ID = "execution/main";
 export const PLAYGROUND_EXECUTION_LIMITS = Object.freeze({
