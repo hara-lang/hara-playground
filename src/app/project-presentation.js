@@ -2,6 +2,7 @@ import { disposeHodosPreview, mountHodosPreview } from "../hodos/preview.js";
 import { outputSurfaceAvailable, projectPresentation } from "../workspace/presentation.js";
 
 const OUTPUT_SETTING = "hara-playground-output";
+const EMPTY_PRESENTATION = Object.freeze({ preview: false, audio: false, learn: false });
 
 let generation = 0;
 let observedRoot = null;
@@ -93,7 +94,7 @@ function applyOutputAvailability(state, presentation) {
 
 function observeLateOutputMounts() {
   const root = globalThis.document?.querySelector("#app");
-  if (!root || root === observedRoot) return;
+  if (!root || root === observedRoot || typeof MutationObserver !== "function") return;
   observer?.disconnect();
   observedRoot = root;
   observer = new MutationObserver(() => {
@@ -105,9 +106,20 @@ function observeLateOutputMounts() {
 
 export async function syncProjectPresentation({ state, store } = {}) {
   if (!state || !store || typeof store.files !== "function") return null;
+  const workspace = state.workspace;
   const request = ++generation;
+
+  if (state.projectPresentationWorkspace !== workspace) {
+    state.projectPresentationWorkspace = workspace;
+    state.projectPresentation = EMPTY_PRESENTATION;
+    currentPresentation = EMPTY_PRESENTATION;
+    currentState = state;
+    applyOutputAvailability(state, EMPTY_PRESENTATION);
+    disposeHodosPreview();
+  }
+
   const files = await store.files();
-  if (request !== generation) return null;
+  if (request !== generation || state.workspace !== workspace) return null;
 
   const presentation = projectPresentation(files);
   state.projectPresentation = presentation;
