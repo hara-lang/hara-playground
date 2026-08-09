@@ -282,7 +282,9 @@ export function createBytecodeObservationController({
       }
       session = null;
       if (startGeneration !== generation) return null;
-      throw diagnostic(error, "start");
+      const failure = diagnostic(error, "start");
+      disposeCurrentSession({ reason: "start-failed", emitUpdate: true });
+      throw failure;
     }
   }
 
@@ -375,7 +377,7 @@ export function createBytecodeObservationController({
   }
 
   function markExecutionStale({ sourceId, sourceVersion } = {}) {
-    if (!sourceIdentity) return false;
+    if (!sourceIdentity || stale) return false;
     const nextSourceId = sourceId == null ? sourceIdentity.sourceId : String(sourceId);
     const nextVersion = sourceVersion == null ? sourceIdentity.sourceVersion : String(sourceVersion);
     if (nextSourceId !== sourceIdentity.sourceId || nextVersion === sourceIdentity.sourceVersion) return false;
