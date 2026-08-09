@@ -118,7 +118,11 @@ test("Playground Execution state is serializable and delegates evidence to Hodos
 
   assert.equal(state.model.session.id, "session/1");
   assert.equal(state.model.session.traceId, "trace/1");
-  assert.equal(state.model.evidence.events.length, 1);
+  assert.equal(state.model.evidence.events.length, 2);
+  assert.deepEqual(
+    state.model.evidence.events.map((event) => event.id),
+    ["trace/1/event/0", "trace/1/event/1"],
+  );
   assert.equal(state.model.evidence.trace.length, 1);
   assert.equal(state.model.capabilities.step, true);
   assert.equal(executionStateIsSerializable(state), true);
