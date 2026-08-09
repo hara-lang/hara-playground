@@ -8,13 +8,17 @@ const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const checkouts = [
   {
     path: "vendor/hara-ui",
-    marker: "vendor/hara-ui/packages/web-runtime/src/client.js",
+    markers: ["vendor/hara-ui/packages/web-runtime/src/client.js"],
     label: "pinned hara-lang/hara-ui packages",
   },
   {
     path: "vendor/hodos",
-    marker: "vendor/hodos/packages/dev-ui/src/index.js",
-    label: "pinned greenways-ai/hodos Workspace packages",
+    markers: [
+      "vendor/hodos/packages/dev/src/index.js",
+      "vendor/hodos/packages/dev-ui/src/index.js",
+      "vendor/hodos/packages/dev-ui/src/execution.css",
+    ],
+    label: "pinned greenways-ai/hodos Workspace and Execution packages",
   },
 ];
 
@@ -27,9 +31,17 @@ async function present(relative) {
   }
 }
 
+async function missingMarkers(checkout) {
+  const missing = [];
+  for (const marker of checkout.markers) {
+    if (!await present(marker)) missing.push(marker);
+  }
+  return missing;
+}
+
 const missing = [];
 for (const checkout of checkouts) {
-  if (!await present(checkout.marker)) missing.push(checkout);
+  if ((await missingMarkers(checkout)).length) missing.push(checkout);
 }
 
 if (missing.length) {
@@ -44,7 +56,8 @@ if (missing.length) {
 }
 
 for (const checkout of checkouts) {
-  if (!await present(checkout.marker)) {
-    throw new Error(`${checkout.label} does not contain the required browser package source`);
+  const absent = await missingMarkers(checkout);
+  if (absent.length) {
+    throw new Error(`${checkout.label} is missing required package files: ${absent.join(", ")}`);
   }
 }
