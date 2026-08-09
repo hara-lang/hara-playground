@@ -185,6 +185,31 @@ function synchronizeExecutionEnvironment(state) {
   return environment;
 }
 
+function synchronizeEditedSource(expectedPath) {
+  if (!stateRef || stateRef.selectedPath !== expectedPath) return false;
+  const live = currentController().inspect();
+  const environment = sourceEnvironment(stateRef);
+  if (
+    !live.sourceIdentity
+    || environment.currentSourceId !== live.sourceIdentity.sourceId
+    || environment.currentSourceVersion === live.sourceIdentity.sourceVersion
+  ) {
+    return false;
+  }
+
+  const changed = currentController().markExecutionStale({
+    sourceId: environment.currentSourceId,
+    sourceVersion: environment.currentSourceVersion,
+  });
+  stateRef.execution = markPlaygroundExecutionStale(
+    stateRef.execution,
+    environment.currentSourceVersion,
+  );
+  stateRef.execution = withExecutionEnvironment(stateRef.execution, environment);
+  updateExecutionHost();
+  return changed;
+}
+
 function selectExecutionOutput() {
   if (!stateRef || stateRef.screen !== "workspace") return;
   stateRef.outputTab = "execution";
@@ -304,24 +329,14 @@ function handleWorkspaceEvent(event) {
       value?.["component/id"] === "hodos.dev/editor"
       && eventType(value) === "editor/change"
     ) {
-      const live = currentController().inspect();
-      const environment = sourceEnvironment(stateRef);
-      if (
-        live.sourceIdentity
-        && environment.currentSourceId === live.sourceIdentity.sourceId
-        && environment.currentSourceVersion !== live.sourceIdentity.sourceVersion
-      ) {
-        currentController().markExecutionStale({
-          sourceId: environment.currentSourceId,
-          sourceVersion: environment.currentSourceVersion,
-        });
-        stateRef.execution = markPlaygroundExecutionStale(
-          stateRef.execution,
-          environment.currentSourceVersion,
-        );
-        stateRef.execution = withExecutionEnvironment(stateRef.execution, environment);
-        updateExecutionHost();
-      }
+      const expectedPath = stateRef?.selectedPath ?? null;
+      queueMicrotask(() => {
+        try {
+          synchronizeEditedSource(expectedPath);
+        } catch (error) {
+          reportExecutionError(error, "source-staleness");
+        }
+      });
       return;
     }
 
