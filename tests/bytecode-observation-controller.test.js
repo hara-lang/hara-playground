@@ -148,6 +148,44 @@ test("the observation runtime remains lazy and private", async () => {
   assert.equal(runtime.sessions[0].disposed, true);
 });
 
+test("editing during a lazy load cancels the pending compile", async () => {
+  const runtime = new FakeRuntime();
+  let resolveRuntime;
+  const loading = new Promise((resolve) => { resolveRuntime = resolve; });
+  const updates = [];
+  const controller = createBytecodeObservationController({
+    loadRuntime: () => loading,
+    publish: (update) => updates.push(update),
+  });
+  const source = "(+ 1 (* 2 3))";
+  const starting = controller.startExecution({ source, sourceId: "main.hal" });
+  await Promise.resolve();
+  assert.equal(controller.inspect().sourceIdentity.sourceId, "main.hal");
+  assert.equal(controller.markExecutionStale({
+    sourceId: "main.hal",
+    sourceVersion: executionSourceVersion(`${source} `),
+  }), true);
+  resolveRuntime(runtime);
+  assert.equal(await starting, null);
+  assert.equal(runtime.sessions.length, 0);
+  assert.equal(controller.inspect().stale, true);
+  assert.equal(updates.at(-1).pending, true);
+});
+
+test("disposing during a lazy load disposes the late runtime", async () => {
+  const runtime = new FakeRuntime();
+  let resolveRuntime;
+  const loading = new Promise((resolve) => { resolveRuntime = resolve; });
+  const controller = createBytecodeObservationController({ loadRuntime: () => loading });
+  const starting = controller.startExecution({ source: "(+ 20 22)", sourceId: "main.hal" });
+  await Promise.resolve();
+  assert.equal(controller.disposeExecution("leave-workspace"), true);
+  resolveRuntime(runtime);
+  assert.equal(await starting, null);
+  assert.equal(runtime.disposed, true);
+  assert.equal(controller.inspect().runtimeLoaded, false);
+});
+
 test("Step publishes one delta while Run stays bounded and yields", async () => {
   const runtime = new FakeRuntime();
   const updates = [];
