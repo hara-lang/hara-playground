@@ -1,0 +1,10 @@
+{:hara/type :project
+ :hara/version "1.0.0"
+ :project/id playground.greenways-ai
+ :project/version "0.1.0"
+ :project/source-paths ["src"]
+ :project/test-paths ["test"]
+ :project/extension-paths ["extensions"]
+ :project/main example.ai
+ :project/capabilities
+ #{:studio/eval :model/generate}}

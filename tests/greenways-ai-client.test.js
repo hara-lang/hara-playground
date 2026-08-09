@@ -97,3 +97,18 @@ test("fails locally rather than posting credentials or requests to another origi
   assert.equal(windowRef.sent.length, 0);
   client.destroy();
 });
+
+test("rejects the .io origin and production lookalikes without posting", async () => {
+  for (const origin of [
+    "https://playground.hara-lang.io",
+    "https://playground.hara-lang.org.attacker.example",
+    "https://hara-lang.org",
+    "http://playground.hara-lang.org",
+  ]) {
+    const windowRef = new FakeWindow(origin);
+    const client = new GreenwaysAiClient({ windowRef });
+    await assert.rejects(() => client.status(), (error) => error.code === "BRIDGE_UNAVAILABLE");
+    assert.equal(windowRef.sent.length, 0, origin);
+    client.destroy();
+  }
+});

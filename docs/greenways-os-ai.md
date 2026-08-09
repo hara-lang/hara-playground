@@ -25,6 +25,50 @@ The page sends only these operations through `greenways-playground-ai/1`:
 
 The page cannot choose a provider endpoint, HTTP method, authorization header, or arbitrary payload. It receives public provider-profile metadata and normalized text results, never the provider key.
 
+## Calling AI from Hara
+
+Hara projects must explicitly declare the host authority in `project.edn`:
+
+```clojure
+:project/capabilities #{:studio/eval :model/generate}
+```
+
+The portable namespace provides status and non-streaming generation calls:
+
+```clojure
+(ns example.ai
+  (:require [gw.ai :as ai]))
+
+(ai/status)
+
+(ai/generate
+ {:profile-id "openai.primary.example"
+  :model "gpt-5"
+  :messages [{:role "user" :content "Explain this Hara form."}]
+  :max-output-tokens 1024})
+```
+
+The project constructs every message explicitly. `gw.ai` never attaches the
+current buffer, workspace, repository, or files. It accepts only a public
+profile ID, model ID, typed messages, and generation limits; URLs, HTTP
+methods, headers, credentials, and arbitrary provider bodies are rejected
+locally.
+
+To run the example:
+
+1. Install or load Greenways OS with the Hara Playground bridge.
+2. Load a provider credential into a session-only provider profile.
+3. Open `https://playground.hara-lang.org`, then install and approve Hara Playground in Greenways OS.
+4. Grant `model/generate` and approve the selected provider's exact network origin.
+5. Open the **Greenways OS AI capability** sample, replace its public profile and model IDs, and evaluate `(ask)`.
+
+Without Greenways OS, on a non-production origin, or without an active grant
+or provider network permission, the call fails with a capability or bridge
+unavailable error. It never reports that the Hara program is missing an API
+key because the program does not own one. Projects that omit
+`:model/generate` fail locally with
+`capability/not-granted:model/generate` before a bridge request is sent.
+
 ## Current limits
 
-The first integration is non-streaming and displays the response for review and copying. Applying generated patches, model discovery, durable cost budgets, signed AI receipts, and the Hara-level `gw.ai` namespace are follow-on work.
+The first integration is non-streaming. Applying generated patches, model discovery, durable cost budgets, and signed AI receipts are follow-on work.

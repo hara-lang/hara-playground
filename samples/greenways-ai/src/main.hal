@@ -1,0 +1,22 @@
+(ns example.ai
+  (:require [gw.ai :as ai]))
+
+(def request
+  {:profile-id "replace-with-profile-id"
+   :model "replace-with-model-id"
+   :messages
+   [{:role "user"
+     :content "Explain what mapv does in Hara."}]
+   :max-output-tokens 1024})
+
+(defn ask []
+  (ai/generate request))
+
+(defn view []
+  [:main {:class "preview-shell"}
+   [:article {:class "card"}
+    [:span {:class "eyebrow"} "GREENWAYS OS AI"]
+    [:h1 "Portable model capability"]
+    [:p "Update the public profile and model IDs, then evaluate (ask)."]]])
+
+(view)

@@ -47,7 +47,7 @@ export const store = new WorkspaceStore();
 export const capabilities = new WebCapabilityRegistry({ grants: ["studio/eval"] });
 export const runtime = new RuntimeClient(
   new URL("../runtime/worker.js", import.meta.url),
-  { hostRegistry: capabilities }
+  { hostRegistry: capabilities, hostCallTimeout: 130_000 }
 );
 
 export const state = {

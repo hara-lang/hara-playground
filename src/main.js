@@ -1,10 +1,11 @@
 import { repositoryFromStudioLocation } from "./github/importer.js";
-import { setRenderer, state } from "./app/context.js";
+import { runtime, setRenderer, state } from "./app/context.js";
 import { importRepository, loadExamples, prepareProjectHome } from "./app/actions.js";
 import { bindEvents, setupRuntimeEvents } from "./app/events.js";
 import { render } from "./app/view.js";
 import { mountWorkspaceAssist } from "./app/workspace-assist.js";
 import { mountGreenwaysAiAssistant } from "./ai/assistant.js";
+import { PlaygroundAiHost } from "./ai/host.js";
 import { installHodosGraphConsumer } from "./hodos/graph-consumer.js";
 import {
   disposeHodosWorkspaceShell,
@@ -68,6 +69,7 @@ setRenderer(renderPlayground);
 setupRuntimeEvents();
 installHodosGraphConsumer();
 installAudioOutput();
+new PlaygroundAiHost({ runtime });
 installShowcaseHost();
 
 function failShowcase(error) {

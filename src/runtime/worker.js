@@ -3,7 +3,7 @@ import { createRuntimeHost } from "./host.js";
 import { isHaraSource } from "../workspace/project.js";
 import { isHtaTree, toPlainHta } from "./hta-value.js";
 
-const AVAILABLE_CAPABILITIES = new Set(["studio/eval", "audio/playback"]);
+const AVAILABLE_CAPABILITIES = new Set(["studio/eval", "audio/playback", "model/generate"]);
 
 let activeRequestId = null;
 let values = new Map();
@@ -28,11 +28,17 @@ const supersonic = {
   stop: (graphId) => callPageHost("gw.audio.supersonic/stop", [graphId])
 };
 
+const ai = {
+  status: () => callPageHost("gw.ai/status", []),
+  generate: (request) => callPageHost("gw.ai/generate", [request])
+};
+
 const host = await createRuntimeHost({
   capabilities: [...AVAILABLE_CAPABILITIES],
   grantedCapabilities: ["studio/eval"],
   grantsForSession: () => [...grantedCapabilities],
   supersonic,
+  ai,
   onStdout(text) {
     postMessage({ type: "stdout", id: activeRequestId, text });
   },
@@ -87,6 +93,10 @@ async function handle(request) {
       if (grantedCapabilities.has("audio/playback") && host.kind !== "canonical-wasm") {
         const reason = startupDiagnostics[0] || "The canonical Hara runtime is unavailable";
         throw new Error(`audio/playback requires canonical-wasm. ${reason}`);
+      }
+      if (grantedCapabilities.has("model/generate") && host.kind !== "canonical-wasm") {
+        const reason = startupDiagnostics[0] || "The canonical Hara runtime is unavailable";
+        throw new Error(`model/generate requires canonical-wasm. ${reason}`);
       }
       await runtime.reset();
       for (const file of request.files || []) {
