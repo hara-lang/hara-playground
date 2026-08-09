@@ -108,6 +108,24 @@ export async function syncProjectPresentation({ state, store } = {}) {
   if (!state || !store || typeof store.files !== "function") return null;
   const workspace = state.workspace;
   const request = ++generation;
+  const showcase = state.presentation?.mode === "showcase";
+
+  // Showcase is already bounded by an immutable commit and an explicit surface
+  // selector. Do not hide or redirect those declared surfaces while the project
+  // is loading; the normal Studio capability gate is deliberately separate.
+  if (showcase) {
+    observer?.disconnect();
+    observer = null;
+    observedRoot = null;
+    currentPresentation = null;
+    currentState = null;
+    const files = await store.files();
+    if (request !== generation || state.workspace !== workspace) return null;
+    const presentation = projectPresentation(files);
+    state.projectPresentationWorkspace = workspace;
+    state.projectPresentation = presentation;
+    return presentation;
+  }
 
   if (state.projectPresentationWorkspace !== workspace) {
     state.projectPresentationWorkspace = workspace;
