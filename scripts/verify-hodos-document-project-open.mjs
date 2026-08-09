@@ -5,6 +5,7 @@ import { readFile, stat } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { installAnonymousIdentityFixture } from "./browser-fixture-routes.mjs";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const sampleRoot = "samples/hodos-document";
@@ -59,6 +60,7 @@ try {
   page.on("pageerror", (error) => pageErrors.push(error.stack || error.message));
   page.on("console", (message) => pageConsole.push(`${message.type()}: ${message.text()}`));
 
+  await installAnonymousIdentityFixture(page);
   await installGitHubFixtureRoutes(page);
   const url = new URL(`http://127.0.0.1:${address.port}/`);
   url.searchParams.set("repo", "hara-lang/hara-playground");

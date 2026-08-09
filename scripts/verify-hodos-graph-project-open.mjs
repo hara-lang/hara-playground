@@ -5,6 +5,7 @@ import { readFile, stat } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { installAnonymousIdentityFixture } from "./browser-fixture-routes.mjs";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const sampleRoot = "samples/hodos-graph";
@@ -39,6 +40,7 @@ try {
   const pageConsole = [];
   page.on("pageerror", (error) => pageErrors.push(error.stack || error.message));
   page.on("console", (message) => pageConsole.push(`${message.type()}: ${message.text()}`));
+  await installAnonymousIdentityFixture(page);
   await installGitHubFixtureRoutes(page);
   const url = new URL(`http://127.0.0.1:${address.port}/`);
   url.searchParams.set("repo", "hara-lang/hara-playground");
@@ -70,33 +72,33 @@ try {
   assert.equal(initial.selectedSource, true);
 
   const transformHandle = '[data-graph-drag-handle="node/transform"]';
-await page.click(transformHandle);
-await page.waitForFunction(() =>
-  document.querySelector('[data-node-id="node/transform"]')?.classList.contains("selected"),
-null,
-{ timeout: 5_000 });
+  await page.click(transformHandle);
+  await page.waitForFunction(() =>
+    document.querySelector('[data-node-id="node/transform"]')?.classList.contains("selected"),
+  null,
+  { timeout: 5_000 });
 
-const handle = page.locator(transformHandle);
-const box = await handle.boundingBox();
-assert.ok(box, "graph drag handle has no bounds");
-const startX = box.x + box.width / 2;
-const startY = box.y + box.height / 2;
-await page.mouse.move(startX, startY);
-await page.mouse.down();
-await page.mouse.move(startX + 90, startY + 60, { steps: 8 });
-await page.mouse.up();
+  const handle = page.locator(transformHandle);
+  const box = await handle.boundingBox();
+  assert.ok(box, "graph drag handle has no bounds");
+  const startX = box.x + box.width / 2;
+  const startY = box.y + box.height / 2;
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + 90, startY + 60, { steps: 8 });
+  await page.mouse.up();
 
-await page.waitForTimeout(150);
-const postDrag = await page.evaluate(() => ({
-  left: parseFloat(document.querySelector('[data-node-id="node/transform"]')?.style.left || "0"),
-  revision: document.querySelector(".hodos-2d-graph-toolbar span")?.textContent || "",
-  selected: document.querySelector('[data-node-id="node/transform"]')?.classList.contains("selected") || false,
-  repl: document.querySelector("#repl-output")?.textContent || "",
-}));
-console.log("Hodos Graph post-drag diagnostic", JSON.stringify(postDrag));
-assert.equal(postDrag.selected, true, `Hodos Graph selection was lost: ${JSON.stringify(postDrag)}`);
-assert.ok(postDrag.left > initial.transformLeft + 70, `Hodos Graph node did not move: ${JSON.stringify(postDrag)}`);
-assert.match(postDrag.revision, /revision 1/, `Hodos Graph revision did not advance: ${JSON.stringify(postDrag)}`);
+  await page.waitForTimeout(150);
+  const postDrag = await page.evaluate(() => ({
+    left: parseFloat(document.querySelector('[data-node-id="node/transform"]')?.style.left || "0"),
+    revision: document.querySelector(".hodos-2d-graph-toolbar span")?.textContent || "",
+    selected: document.querySelector('[data-node-id="node/transform"]')?.classList.contains("selected") || false,
+    repl: document.querySelector("#repl-output")?.textContent || "",
+  }));
+  console.log("Hodos Graph post-drag diagnostic", JSON.stringify(postDrag));
+  assert.equal(postDrag.selected, true, `Hodos Graph selection was lost: ${JSON.stringify(postDrag)}`);
+  assert.ok(postDrag.left > initial.transformLeft + 70, `Hodos Graph node did not move: ${JSON.stringify(postDrag)}`);
+  assert.match(postDrag.revision, /revision 1/, `Hodos Graph revision did not advance: ${JSON.stringify(postDrag)}`);
 
   assert.deepEqual(pageErrors, [], `Hodos Graph page errors:\n${pageErrors.join("\n")}`);
   const errorConsole = pageConsole.filter((entry) => entry.startsWith("error:"));
