@@ -7,6 +7,7 @@
 @import url("../vendor/hodos/packages/workspace-ui/src/shell.css");
 @import url("../vendor/hodos/packages/2d-ui/src/document.css");
 @import url("../vendor/hodos/packages/2d-ui/src/graph.css");
+@import url("../vendor/hodos/packages/dev-ui/src/execution.css");
 @import url("./styles/workspace-layout.css");
 @import url("./styles/mobile-audio.css");
 @import url("./styles/hodos-preview.css");
@@ -16,4 +17,5 @@
 @import url("./styles/hodos-value-inspector.css");
 @import url("./styles/hodos-document.css");
 @import url("./styles/hodos-graph.css");
+@import url("./styles/hodos-execution.css");
 @import url("./styles/showcase.css");
