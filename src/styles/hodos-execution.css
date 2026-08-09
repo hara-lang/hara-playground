@@ -1,0 +1,53 @@
+.execution-view {
+  min-width: 0;
+  min-height: 0;
+  display: none;
+  overflow: auto;
+  background: var(--hara-code-ground);
+}
+
+.execution-view.active {
+  display: block;
+}
+
+.execution-view[data-area-id="execution/main"] {
+  container-type: inline-size;
+}
+
+.execution-view .hodos-dev-execution {
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.execution-output-tab > span {
+  color: var(--hara-spectrum-cyan);
+  font-family: var(--hara-font-mono);
+  font-size: .78rem;
+  line-height: 1;
+}
+
+.execution-output-tab[data-execution-status="running"] > span {
+  animation: hara-execution-pulse 1.1s ease-in-out infinite;
+}
+
+.execution-output-tab[aria-label*="stale"] > span {
+  color: var(--hara-danger);
+}
+
+@container (max-width: 520px) {
+  .execution-view .hodos-dev-execution-header,
+  .execution-view .hodos-dev-execution-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@keyframes hara-execution-pulse {
+  0%, 100% { opacity: .45; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .execution-output-tab[data-execution-status="running"] > span {
+    animation: none;
+  }
+}
