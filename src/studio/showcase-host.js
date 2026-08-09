@@ -158,6 +158,13 @@ export function syncShowcaseHost() {
     return false;
   }
 
+  // Ordinary Studio imports rewrite their URL to the repository shorthand.
+  // An immutable Showcase must retain its commit, presentation, theme and
+  // requested surface even before the runtime and Workspace manifest are ready.
+  if (state.metadata?.source === "github") {
+    syncShowcaseLocation(state.metadata, state.presentation);
+  }
+
   const descriptor = currentHodosWorkspaceDescriptor();
   const immutableProjectReady = state.metadata?.source === "github"
     && /^[0-9a-f]{40}$/.test(state.metadata?.commit || "")
