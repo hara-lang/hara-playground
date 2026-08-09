@@ -23,14 +23,7 @@ let server = null;
 
 const parentDocument = `<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Packages Showcase fixture</title>
-  <style>
-    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
-    #showcase { display: block; width: 100%; height: 100%; border: 0; }
-  </style>
-</head>
+<head><meta charset="utf-8"><title>Packages Showcase fixture</title></head>
 <body>
   <iframe id="showcase" title="Hara package Showcase"></iframe>
   <script>
@@ -83,7 +76,7 @@ try {
   const origin = `http://127.0.0.1:${address.port}`;
 
   browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ viewport: { width: 1200, height: 800 } });
+  const context = await browser.newContext({ viewport: { width: 1000, height: 800 } });
   const page = await context.newPage();
   const pageErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.stack || error.message));
@@ -132,6 +125,13 @@ try {
   assert.equal(initial.statusbar, "none");
   assert.equal(initial.layoutAreas, 1);
   assert.equal(initial.selectedSurface, "document");
+
+  await page.locator("#showcase").evaluate((showcaseFrame) => {
+    showcaseFrame.style.display = "block";
+    showcaseFrame.style.width = "960px";
+    showcaseFrame.style.height = "700px";
+    showcaseFrame.style.border = "0";
+  });
 
   await page.evaluate(() => {
     document.querySelector("#showcase").contentWindow.postMessage({
