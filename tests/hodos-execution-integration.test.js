@@ -19,6 +19,14 @@ test("Execution composes the pinned Hodos host instead of defining a Playground 
   assert.match(main, /mountHodosExecution\(state\)/);
 });
 
+test("editor staleness is observed after the authoritative editor patch", async () => {
+  const integration = await read("src/hodos/execution.js");
+  assert.match(
+    integration,
+    /eventType\(value\) === "editor\/change"[\s\S]*queueMicrotask\(\(\) => \{[\s\S]*synchronizeEditedSource\(expectedPath\)/,
+  );
+});
+
 test("the observation host is lazy and absent from serializable application state", async () => {
   const [controller, context] = await Promise.all([
     read("src/runtime/bytecode-observation-controller.js"),
