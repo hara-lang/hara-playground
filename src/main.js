@@ -61,6 +61,8 @@ function renderPlayground() {
   // after the project files have been inspected.
   if (showcase) {
     document.documentElement.dataset.projectPreview = "true";
+    document.documentElement.dataset.projectAudio = "true";
+    document.documentElement.dataset.projectLearn = "true";
     mountHodosPreview({ document: state.preview, theme: state.theme });
   }
   mountHodosProblems(state);
