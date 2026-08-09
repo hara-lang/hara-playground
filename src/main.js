@@ -73,10 +73,12 @@ function renderPlayground() {
   mountWorkspaceAssist();
   applyStudioChrome();
   syncPublicLobby();
-  void syncProjectPresentation({ state, store }).catch((error) => {
-    console.error("[hara playground presentation]", error);
-  });
-  if (!showcase) mountGreenwaysAiAssistant();
+  if (!showcase) {
+    void syncProjectPresentation({ state, store }).catch((error) => {
+      console.error("[hara playground presentation]", error);
+    });
+    mountGreenwaysAiAssistant();
+  }
   syncShowcaseHost();
 
   const footer = document.querySelector(".lobby-footer");
