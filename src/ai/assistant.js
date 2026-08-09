@@ -61,7 +61,9 @@ function profileAccess(profile) {
 function selectAvailableProfile() {
   const profiles = publicProfiles();
   const selected = profiles.find(({ id }) => id === assistant.profileId);
-  const next = selected ?? profiles.find(profileAccess) ?? profiles[0] ?? null;
+  const next = selected && profileAccess(selected)
+    ? selected
+    : profiles.find(profileAccess) ?? selected ?? profiles[0] ?? null;
   assistant.profileId = next?.id ?? "";
   if (next) assistant.model = storageGet(`${MODEL_STORAGE_PREFIX}${next.id}`);
   return next;
@@ -186,7 +188,8 @@ function renderPanel() {
   const view = connectionView();
   const profiles = publicProfiles();
   const profile = selectedProfile();
-  const ready = view.tone === "good" && profile && profileAccess(profile);
+  const canChooseProfile = view.tone === "good" && profiles.length > 0;
+  const ready = canChooseProfile && profile && profileAccess(profile);
   const generating = assistant.generation === "generating";
   const hasBuffer = Boolean(state.selectedPath);
 
@@ -207,7 +210,7 @@ function renderPanel() {
 
     <form class="greenways-ai-form" data-greenways-ai-form>
       <div class="greenways-ai-fields">
-        <label><span>Provider profile</span><select data-greenways-profile ${ready && !generating ? "" : "disabled"}>${renderProfileOptions(profiles)}</select></label>
+        <label><span>Provider profile</span><select data-greenways-profile ${canChooseProfile && !generating ? "" : "disabled"}>${renderProfileOptions(profiles)}</select></label>
         <label><span>Model ID</span><input data-greenways-model value="${escapeHtml(assistant.model)}" placeholder="Enter a model ID" maxlength="160" autocomplete="off" spellcheck="false" ${ready && !generating ? "" : "disabled"}></label>
       </div>
       <label class="greenways-ai-prompt"><span>Ask about the project</span><textarea data-greenways-prompt rows="5" maxlength="12000" placeholder="Explain this form, find a bug, or propose a change…" ${ready && !generating ? "" : "disabled"}>${escapeHtml(assistant.prompt)}</textarea></label>
