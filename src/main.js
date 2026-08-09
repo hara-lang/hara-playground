@@ -4,6 +4,7 @@ import { importRepository, loadExamples, prepareProjectHome } from "./app/action
 import { bindEvents, setupRuntimeEvents } from "./app/events.js";
 import { render } from "./app/view.js";
 import { mountWorkspaceAssist } from "./app/workspace-assist.js";
+import { mountGreenwaysAiAssistant } from "./ai/assistant.js";
 import { installHodosGraphConsumer } from "./hodos/graph-consumer.js";
 import {
   disposeHodosWorkspaceShell,
@@ -52,6 +53,7 @@ function renderPlayground() {
   mountHodosValueInspector(state);
   mountHodosWorkspaceShell(state);
   mountWorkspaceAssist();
+  mountGreenwaysAiAssistant();
   syncShowcaseHost();
 
   const footer = document.querySelector(".lobby-footer");
