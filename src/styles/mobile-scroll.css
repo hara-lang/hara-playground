@@ -1,0 +1,114 @@
+/* Mobile viewport and scroll ownership.
+   The public lobby owns document scrolling; Studio owns a fixed viewport and
+   delegates scrolling only to the active editor, tree, REPL, or output area. */
+
+html,
+body,
+#app,
+.project-lobby,
+.playground-shell,
+.workbench-grid,
+.project-panel,
+.editor-panel,
+.output-panel {
+  max-width: 100%;
+}
+
+.project-lobby {
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
+.lobby-header,
+.lobby-main,
+.lobby-footer,
+.lobby-hero,
+.lobby-hero__copy,
+.lobby-hero__artifact,
+.project-grid,
+.project-card {
+  min-width: 0;
+}
+
+.editor-panel {
+  overflow: hidden;
+}
+
+@media (max-width: 1000px) {
+  html[data-screen="workspace"],
+  html[data-screen="workspace"] body,
+  html[data-screen="workspace"] #app {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  html[data-screen="workspace"] body {
+    touch-action: manipulation;
+  }
+
+  html[data-screen="workspace"] .playground-shell {
+    width: 100%;
+    height: 100svh;
+    height: 100dvh;
+    min-height: 0;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+
+  html[data-screen="workspace"] .workbench-grid.hodos-workspace-shell,
+  html[data-screen="workspace"] .hodos-workspace-layout,
+  html[data-screen="workspace"] .hodos-workspace-compact-viewport,
+  html[data-screen="workspace"] .hodos-workspace-area,
+  html[data-screen="workspace"] .project-panel,
+  html[data-screen="workspace"] .editor-panel,
+  html[data-screen="workspace"] .output-panel,
+  html[data-screen="workspace"] .editor-wrap,
+  html[data-screen="workspace"] .editor-code-layer {
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  html[data-screen="workspace"] #editor,
+  html[data-screen="workspace"] .file-tree,
+  html[data-screen="workspace"] .repl-output,
+  html[data-screen="workspace"] .mobile-instarepl-body,
+  html[data-screen="workspace"] .workspace-unsupported-area,
+  html[data-screen="workspace"] .hodos-problems-list,
+  html[data-screen="workspace"] .hodos-value-inspector-body {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  html[data-screen="workspace"] .editor-options-menu {
+    max-height: min(320px, calc(100dvh - 96px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+@media (max-width: 680px) {
+  .lobby-header,
+  .lobby-main,
+  .lobby-footer {
+    width: calc(100% - 24px);
+  }
+
+  .lobby-nav {
+    max-width: 100%;
+    scrollbar-width: none;
+  }
+
+  .lobby-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .lobby-hero__artifact pre {
+    max-width: 100%;
+    overscroll-behavior-inline: contain;
+  }
+}
