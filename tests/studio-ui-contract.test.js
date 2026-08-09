@@ -4,13 +4,14 @@ import test from "node:test";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-test("Studio uses compact editor chrome", async () => {
+test("Studio uses compact editor chrome without mounting the template Catalog", async () => {
   const main = await read("../src/main.js");
   const chrome = await read("../src/app/studio-chrome.js");
   const styles = await read("../src/styles/simplified-studio.css");
 
   assert.match(main, /applyStudioChrome\(\)/);
-  assert.doesNotMatch(main, /mountHodosCatalog\(state\)/);
+  assert.match(main, /if \(showcase\) mountHodosCatalog\(state\)/);
+  assert.doesNotMatch(main, /if \(!showcase\) mountHodosCatalog\(state\)/);
   assert.match(chrome, /editor-options-menu/);
   assert.match(chrome, /toolset-strip/);
   assert.match(chrome, /catalog-activity-slot/);
