@@ -148,6 +148,37 @@ test("the observation runtime remains lazy and private", async () => {
   assert.equal(runtime.sessions[0].disposed, true);
 });
 
+test("a failed replacement Start clears obsolete session authority", async () => {
+  const runtime = new FakeRuntime();
+  const compile = runtime.compileNamed.bind(runtime);
+  let failCompile = false;
+  runtime.compileNamed = (...args) => {
+    if (failCompile) throw new Error("compile failed");
+    return compile(...args);
+  };
+  const updates = [];
+  const diagnostics = [];
+  const controller = createBytecodeObservationController({
+    loadRuntime: async () => runtime,
+    publish: (update) => updates.push(update),
+    reportDiagnostic: (diagnostic) => diagnostics.push(diagnostic),
+  });
+
+  await controller.startExecution({ source: "(+ 20 22)", sourceId: "main.hal" });
+  failCompile = true;
+  await assert.rejects(
+    controller.startExecution({ source: "(+ 1", sourceId: "main.hal" }),
+    /compile failed/,
+  );
+
+  assert.equal(runtime.sessions[0].disposed, true);
+  assert.equal(controller.inspect().sessionActive, false);
+  assert.equal(controller.inspect().sourceIdentity, null);
+  assert.equal(controller.inspect().runtimeLoaded, true);
+  assert.deepEqual(updates.slice(-2).map((update) => update.kind), ["diagnostic", "session-disposed"]);
+  assert.equal(diagnostics.at(-1).sourceId, "main.hal");
+});
+
 test("editing during a lazy load cancels the pending compile", async () => {
   const runtime = new FakeRuntime();
   let resolveRuntime;
@@ -246,6 +277,12 @@ test("source changes retain evidence but fence execution until Start", async () 
     sourceId: "main.hal",
     sourceVersion: executionSourceVersion(`${source} `),
   }), true);
+  const staleGeneration = controller.inspect().generation;
+  assert.equal(controller.markExecutionStale({
+    sourceId: "main.hal",
+    sourceVersion: executionSourceVersion(`${source}  `),
+  }), false);
+  assert.equal(controller.inspect().generation, staleGeneration);
   assert.equal(controller.inspect().stale, true);
   await assert.rejects(controller.stepExecution(), /stale/);
   await controller.requestExecutionTrace();
