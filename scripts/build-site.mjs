@@ -27,7 +27,14 @@ await copyIfPresent("public/og-hara-playground.jpg", "og-hara-playground.jpg");
 // source adapters and import map. Published npm packages can replace these
 // checkouts later without changing the Workspace component contracts.
 await copyIfPresent("vendor/hara-ui/packages", "vendor/hara-ui/packages");
-await copyIfPresent("vendor/hodos/packages", "vendor/hodos/packages");
+const hodosPackagesCopied = await copyIfPresent("vendor/hodos/packages", "vendor/hodos/packages");
+if (!hodosPackagesCopied) {
+  throw new Error("The pinned Hodos package tree is required for the static Playground build");
+}
+const executionStyles = resolve(output, "vendor/hodos/packages/dev-ui/src/execution.css");
+if (!await exists(executionStyles)) {
+  throw new Error("The pinned Hodos build is missing packages/dev-ui/src/execution.css");
+}
 
 // Source examples make local builds useful. A downloaded canonical runtime may
 // then overlay this directory with the richer Starter/Game/Music catalog.
