@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
+import { register } from "node:module";
 import test from "node:test";
-import {
+
+register("./support/hodos-import-loader.mjs", import.meta.url);
+
+const {
   applyExecutionControllerUpdate,
   createPlaygroundExecutionState,
   executionAreaFromPlayground,
@@ -8,7 +12,7 @@ import {
   markPlaygroundExecutionStale,
   selectPlaygroundExecution,
   withExecutionEnvironment,
-} from "../src/hodos/execution-state.js";
+} = await import("../src/hodos/execution-state.js");
 
 const metrics = (traceId, sequence = 1, status = "running") => ({
   schema: "hal.bytecode-metrics/v1",
