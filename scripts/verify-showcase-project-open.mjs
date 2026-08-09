@@ -23,7 +23,14 @@ let server = null;
 
 const parentDocument = `<!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><title>Packages Showcase fixture</title></head>
+<head>
+  <meta charset="utf-8">
+  <title>Packages Showcase fixture</title>
+  <style>
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    #showcase { display: block; width: 100%; height: 100%; border: 0; }
+  </style>
+</head>
 <body>
   <iframe id="showcase" title="Hara package Showcase"></iframe>
   <script>
@@ -76,7 +83,7 @@ try {
   const origin = `http://127.0.0.1:${address.port}`;
 
   browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ viewport: { width: 1000, height: 800 } });
+  const context = await browser.newContext({ viewport: { width: 1200, height: 800 } });
   const page = await context.newPage();
   const pageErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.stack || error.message));
@@ -130,6 +137,46 @@ try {
     document.querySelector("#showcase").contentWindow.postMessage({
       type: "hara.showcase/select-surface",
       version: 1,
+      surfaceId: "preview",
+    }, location.origin);
+  });
+  await page.waitForFunction(() =>
+    window.showcaseMessages.some((message) =>
+      message?.type === "hara.showcase/selection"
+      && message?.ok === true
+      && message?.surfaceId === "preview"));
+  await frame.locator("#preview.hodos-preview-root > .hara-web-preview")
+    .waitFor({ state: "visible", timeout: 5_000 });
+
+  const preview = await frame.locator("html").evaluate(() => {
+    const output = document.querySelector(".output-panel");
+    const view = document.querySelector(".preview-view.active");
+    const root = document.querySelector("#preview.hodos-preview-root");
+    const nestedFrame = root?.querySelector(":scope > .hara-web-preview");
+    const height = (node) => node?.getBoundingClientRect().height ?? 0;
+    return {
+      tabs: getComputedStyle(document.querySelector(".output-tabs")).display,
+      rows: getComputedStyle(output).gridTemplateRows,
+      outputHeight: height(output),
+      viewHeight: height(view),
+      rootHeight: height(root),
+      frameHeight: height(nestedFrame),
+    };
+  });
+  assert.equal(preview.tabs, "none");
+  assert.ok(preview.outputHeight > 500, `Showcase output collapsed to ${preview.outputHeight}px`);
+  assert.ok(preview.viewHeight > 500, `Showcase preview view collapsed to ${preview.viewHeight}px`);
+  assert.ok(preview.rootHeight > 500, `Hodos preview root collapsed to ${preview.rootHeight}px`);
+  assert.ok(preview.frameHeight > 500, `Nested Hara preview iframe collapsed to ${preview.frameHeight}px`);
+  assert.ok(
+    Math.abs(preview.rootHeight - preview.frameHeight) < 1,
+    `Nested preview did not fill its root: ${preview.frameHeight}px of ${preview.rootHeight}px`,
+  );
+
+  await page.evaluate(() => {
+    document.querySelector("#showcase").contentWindow.postMessage({
+      type: "hara.showcase/select-surface",
+      version: 1,
       surfaceId: "code",
     }, location.origin);
   });
@@ -157,7 +204,7 @@ try {
     .getAttribute("data-workspace-surface-id");
   assert.equal(finalSurface, "code");
   assert.deepEqual(pageErrors, [], `Showcase page errors:\n${pageErrors.join("\n")}`);
-  console.log("Verified immutable embedded Showcase mounting and declared surface selection in Chromium.");
+  console.log("Verified immutable embedded Showcase mounting, full-height preview, and declared surface selection in Chromium.");
 } finally {
   await browser?.close().catch(() => {});
   if (server) await new Promise((resolveClose) => server.close(resolveClose));
