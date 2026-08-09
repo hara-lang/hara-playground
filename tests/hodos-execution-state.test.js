@@ -149,6 +149,7 @@ test("staleness retains evidence while disabling bytecode control", () => {
   });
   state = markPlaygroundExecutionStale(state, "v2");
   assert.equal(state.stale, true);
+  assert.equal(state.model.session.status, "connected");
   assert.equal(state.model.evidence.trace.length, 1);
   assert.equal(state.model.capabilities.step, false);
   assert.equal(state.model.capabilities.run, false);
