@@ -1,0 +1,206 @@
+/* Public Playground shell projected directly from the Hara visual language. */
+
+.project-lobby {
+  background: var(--hara-bg);
+}
+
+.lobby-header,
+.lobby-main,
+.lobby-footer {
+  width: min(var(--hara-content), calc(100% - 2 * var(--hara-space-page)));
+}
+
+.lobby-header {
+  min-height: 64px;
+  border-bottom-color: var(--hara-line);
+}
+
+.lobby-nav {
+  gap: clamp(.8rem, 2vw, 1.8rem);
+}
+
+.lobby-nav > a {
+  color: var(--hara-muted);
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+.lobby-main {
+  padding-top: clamp(72px, 9vw, 126px);
+}
+
+.lobby-hero {
+  min-height: min(720px, calc(100svh - 120px));
+  grid-template-columns: minmax(0, 1.05fr) minmax(380px, .8fr);
+  gap: clamp(40px, 7vw, 92px);
+}
+
+.lobby-hero h1 {
+  margin: .35em 0 .35em;
+  font-size: clamp(3.2rem, 7vw, 7rem);
+  font-weight: 680;
+  letter-spacing: -.065em;
+  line-height: .88;
+}
+
+.lobby-hero h1 i {
+  color: var(--hara-muted);
+  background: none;
+  font-family: inherit;
+  font-style: normal;
+  font-weight: 440;
+  -webkit-text-fill-color: currentColor;
+}
+
+.lobby-lede {
+  max-width: 650px;
+  color: var(--hara-muted);
+  font-size: clamp(1.02rem, 1.55vw, 1.24rem);
+  line-height: 1.62;
+}
+
+.repository-open-form label {
+  border-radius: var(--hara-radius-md);
+  background: var(--hara-surface-solid);
+  box-shadow: var(--hara-shadow);
+}
+
+.project-lobby .primary-action {
+  border-color: var(--hara-signal);
+  border-radius: 999px;
+  background: var(--hara-signal);
+  box-shadow: none;
+}
+
+.project-lobby .primary-action:hover {
+  box-shadow: none;
+}
+
+.kernel-promise__dot,
+.import-progress-card i {
+  background: var(--hara-success);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--hara-success) 10%, transparent);
+}
+
+.lobby-hero__artifact {
+  border: 1px solid var(--hara-line);
+  border-radius: var(--hara-radius-lg);
+  background: var(--hara-bg-clean);
+  box-shadow: var(--hara-shadow);
+  transform: none;
+}
+
+.lobby-hero__artifact::before {
+  display: none;
+}
+
+.artifact-header,
+.artifact-result {
+  background: var(--hara-surface-raised);
+}
+
+.artifact-result {
+  color: var(--hara-signal);
+}
+
+.project-collection {
+  padding-top: clamp(86px, 10vw, 140px);
+}
+
+.project-grid {
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--hara-line);
+  border-radius: var(--hara-radius-lg);
+  background: var(--hara-line);
+}
+
+.project-card {
+  min-height: 330px;
+  border: 0;
+  border-radius: 0;
+  background: var(--hara-surface-solid);
+  box-shadow: none;
+}
+
+.project-card::before,
+.project-card__signal {
+  display: none;
+}
+
+.project-card:hover {
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
+  background: var(--hara-surface-raised);
+}
+
+.project-card .hara-kicker,
+.project-card li,
+.nicety-grid article > span {
+  color: var(--hara-signal);
+}
+
+.project-card li {
+  border-color: var(--hara-line);
+}
+
+.project-card__actions .primary-action {
+  border-radius: 999px;
+}
+
+.lisp-niceties {
+  border-radius: var(--hara-radius-lg);
+  background: var(--hara-surface-solid);
+  box-shadow: none;
+}
+
+.lisp-niceties::after {
+  display: none;
+}
+
+.nicety-grid {
+  border: 1px solid var(--hara-line);
+  background: var(--hara-line);
+}
+
+.nicety-grid article {
+  background: var(--hara-bg-clean);
+}
+
+.local-project-cta .secondary-action {
+  border-radius: 999px;
+}
+
+@media (max-width: 900px) {
+  .lobby-hero {
+    min-height: 0;
+    grid-template-columns: 1fr;
+  }
+
+  .lobby-hero__artifact {
+    transform: none;
+  }
+
+  .project-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .lobby-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: .65rem;
+    padding-block: .8rem;
+  }
+
+  .lobby-nav {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .repository-open-form {
+    grid-template-columns: 1fr;
+  }
+}
