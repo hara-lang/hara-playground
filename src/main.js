@@ -53,7 +53,7 @@ function renderPlayground() {
   mountHodosValueInspector(state);
   mountHodosWorkspaceShell(state);
   mountWorkspaceAssist();
-  mountGreenwaysAiAssistant();
+  if (state.presentation?.mode !== "showcase") mountGreenwaysAiAssistant();
   syncShowcaseHost();
 
   const footer = document.querySelector(".lobby-footer");
