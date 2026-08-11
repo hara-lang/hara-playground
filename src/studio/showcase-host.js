@@ -1,4 +1,4 @@
-import { state } from "../app/context.js";
+import { runtime, state } from "../app/context.js";
 import {
   currentHodosWorkspaceDescriptor,
   updateHodosWorkspaceShell,
@@ -20,6 +20,7 @@ import {
 let installed = false;
 let readySignature = "";
 let errorSignature = "";
+let runtimePhases = [];
 
 function active() {
   return state.presentation?.mode === SHOWCASE_PRESENTATION;
@@ -58,7 +59,30 @@ function statusElement() {
   return element;
 }
 
+function projectStatusEvidence() {
+  const root = globalThis.document?.documentElement;
+  if (!root?.dataset) return;
+  root.dataset.showcaseRuntimeStatus = state.runtimeStatus || "idle";
+  root.dataset.showcaseWorkspaceStatus = state.workspaceShell?.status || "idle";
+  root.dataset.showcaseWorkspaceSource = state.workspaceShell?.source || "fallback";
+  root.dataset.showcaseCommit = state.metadata?.commit || "";
+  if (runtimePhases.length) root.dataset.showcaseRuntimePhases = runtimePhases.join("|");
+  else delete root.dataset.showcaseRuntimePhases;
+  if (state.workspaceShell?.error) root.dataset.showcaseWorkspaceError = state.workspaceShell.error;
+  else delete root.dataset.showcaseWorkspaceError;
+}
+
+function recordRuntimePhase(event) {
+  if (!active()) return;
+  const text = String(event.detail?.text || "");
+  if (!text.startsWith("showcase-runtime/")) return;
+  runtimePhases = [...runtimePhases, text.slice("showcase-runtime/".length)]
+    .slice(-16);
+  projectStatusEvidence();
+}
+
 function showStatus(kind, message) {
+  projectStatusEvidence();
   const element = statusElement();
   if (!element) return;
   element.hidden = false;
@@ -68,6 +92,7 @@ function showStatus(kind, message) {
 }
 
 function hideStatus() {
+  projectStatusEvidence();
   const element = globalThis.document?.querySelector("[data-hara-showcase-status]");
   if (element) element.hidden = true;
   if (globalThis.document?.documentElement?.dataset) {
@@ -139,6 +164,7 @@ function onMessage(event) {
 export function installShowcaseHost() {
   if (installed) return;
   installed = true;
+  runtime.addEventListener("diagnostic", recordRuntimePhase);
   globalThis.addEventListener?.("message", onMessage);
 }
 
@@ -152,6 +178,15 @@ export function syncShowcaseHost() {
   if (document?.documentElement?.dataset) {
     document.documentElement.dataset.presentation = SHOWCASE_PRESENTATION;
   }
+
+  // The immutable Showcase URL is part of the host contract, not ordinary
+  // Studio navigation. Repository import briefly projects a branch-oriented
+  // location; restore the commit, presentation and selected surface as soon as
+  // metadata exists, including while the runtime and manifest are still loading.
+  if (state.metadata?.source === "github") {
+    syncShowcaseLocation(state.metadata, state.presentation);
+  }
+  projectStatusEvidence();
 
   if (state.presentation.error) {
     publishError(state.presentation.error);

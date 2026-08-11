@@ -168,6 +168,10 @@ jobs:
         run: |
           npm install --no-save --ignore-scripts --package-lock=false playwright@1.53.2
           npx playwright install --with-deps chromium
+      - name: Exercise the public Peacock Ballroom provider
+        env:
+          HARA_PLAYGROUND_URL: ${{ needs.deploy.outputs.page_url }}
+        run: node scripts/verify-live-provider-world.mjs
       - name: Exercise the public Hodos Document Showcase
         env:
           HARA_PLAYGROUND_URL: ${{ needs.deploy.outputs.page_url }}
