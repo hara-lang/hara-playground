@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  ALUMBRA_PAGES_HOST,
+  ALUMBRA_PROVIDER_HOST,
   ALUMBRA_PROVIDER_ID,
   PEACOCK_BALLROOM_ACTIVITY_ID,
   PEACOCK_BALLROOM_PACKAGE,
@@ -47,12 +47,18 @@ test("builds the semantic Playground route and installed provider URL", () => {
   assert.equal(route.hash, "");
 
   const provider = new URL(peacockBallroomProviderUrl("ballroom/gallery-overlook"));
-  assert.equal(provider.href.startsWith(ALUMBRA_PAGES_HOST), true);
+  assert.equal(provider.href.startsWith(ALUMBRA_PROVIDER_HOST), true);
+  assert.equal(provider.origin, "https://oss.greenways.ai");
+  assert.equal(provider.pathname, "/hodos/alumbra/apps/lab/peacock-ballroom.html");
   assert.equal(provider.searchParams.get("state"), "ballroom/gallery-overlook");
   assert.equal(provider.searchParams.get("embed"), "playground");
   assert.throws(
     () => peacockBallroomProviderUrl("ballroom/day", "https://example.test/world"),
-    /installed Greenways Pages origin/,
+    /installed Hodos Greenways origin/,
+  );
+  assert.throws(
+    () => peacockBallroomProviderUrl("ballroom/day", "https://oss.greenways.ai/visual-language/world"),
+    /installed Hodos Greenways origin/,
   );
 });
 
