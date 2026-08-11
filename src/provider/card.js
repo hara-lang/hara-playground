@@ -5,7 +5,7 @@ import {
 
 export function peacockBallroomPlaygroundUrl(location = globalThis.location) {
   if (!location?.href) throw new TypeError("Peacock Ballroom project link requires a location");
-  const url = new URL(location.href);
+  const url = new URL("./provider.html", location.href);
   url.search = "";
   url.hash = "";
   url.searchParams.set("provider", ALUMBRA_PROVIDER_ID);
@@ -59,6 +59,9 @@ export function installPeacockBallroomProjectCard({
 }
 
 if (globalThis.document?.querySelector && globalThis.window?.addEventListener) {
-  const installation = installPeacockBallroomProjectCard();
-  window.addEventListener("pagehide", () => installation.disconnect(), {once: true});
+  const query = new URL(globalThis.location.href).searchParams;
+  if (query.get("presentation") !== "showcase") {
+    const installation = installPeacockBallroomProjectCard();
+    window.addEventListener("pagehide", () => installation.disconnect(), {once: true});
+  }
 }
