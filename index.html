@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#050608" />
-    <meta name="description" content="Hara Playground — open GitHub projects in a persistent browser kernel with InstaREPL, rainbow parens, Paredit and kernel completion." />
+    <meta name="description" content="Hara Playground — open GitHub projects and installed provider worlds in a persistent browser kernel." />
     <meta name="hara-identity-mode" content="popup" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Hara Playground" />
@@ -26,15 +26,19 @@
     <title>Hara Playground — Live kernel editor</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23050608'/%3E%3Cpath fill='%23f4f6f8' d='M10 8h13v18h18V8h13v48H41V38H23v18H10z'/%3E%3Cpath fill='%232f7cff' d='M27 8h10v10H27z'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="./src/styles.css" />
+    <link rel="stylesheet" href="./src/provider/provider.css" />
     <script type="importmap">
       {
         "imports": {
+          "@greenways/hodos-core": "./vendor/hodos/packages/core/src/index.js",
           "@greenways/hodos-web": "./vendor/hodos/packages/web/src/index.js",
           "@greenways/hodos-workspace-ui": "./vendor/hodos/packages/workspace-ui/src/index.js",
           "@greenways/hodos-2d": "./vendor/hodos/packages/2d/src/index.js",
           "@greenways/hodos-2d-ui": "./vendor/hodos/packages/2d-ui/src/index.js",
           "@greenways/hodos-dev": "./vendor/hodos/packages/dev/src/index.js",
-          "@greenways/hodos-dev-ui": "./vendor/hodos/packages/dev-ui/src/index.js"
+          "@greenways/hodos-dev-ui": "./vendor/hodos/packages/dev-ui/src/index.js",
+          "@greenways/hodos-source-github": "./vendor/hodos/packages/source-github/src/index.js",
+          "@greenways/hodos-viewer/providers": "./vendor/hodos/packages/viewer/src/world-provider-host.js"
         }
       }
     </script>
@@ -42,6 +46,6 @@
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" src="./src/main.js"></script>
+    <script type="module" src="./src/bootstrap.js"></script>
   </body>
 </html>
