@@ -40,6 +40,7 @@ class FakeRoot {
 test("builds the semantic Playground route and installed provider URL", () => {
   const route = new URL(peacockBallroomPlaygroundUrl({href: "https://playground.hara-lang.org/?repo=old#fragment"}));
   assert.equal(route.origin, "https://playground.hara-lang.org");
+  assert.equal(route.pathname, "/provider.html");
   assert.equal(route.searchParams.get("provider"), ALUMBRA_PROVIDER_ID);
   assert.equal(route.searchParams.get("world"), "https://github.com/greenways-ai/alumbra");
   assert.equal(route.searchParams.get("state"), "ballroom/day");
