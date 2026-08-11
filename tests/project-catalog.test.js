@@ -2,13 +2,35 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { FEATURED_PROJECTS, PLAYGROUND_NICETIES, projectDeepLink, repositoryLabel } from "../src/studio/projects.js";
 
-test("featured projects point at complete GitHub subprojects", () => {
-  assert.equal(FEATURED_PROJECTS.length, 8);
-  assert.ok(FEATURED_PROJECTS.every((project) => project.repository.owner === "hara-lang"));
-  assert.ok(FEATURED_PROJECTS.every((project) => project.repository.repo === "hara-playground"));
-  assert.ok(FEATURED_PROJECTS.every((project) => project.repository.path.startsWith("samples/")));
-  const liveValues = FEATURED_PROJECTS.find((project) => project.id === "live-values");
+test("featured projects declare one explicit launch boundary", () => {
+  const ids = new Set(FEATURED_PROJECTS.map((project) => project.id));
+  assert.equal(ids.size, FEATURED_PROJECTS.length);
+  assert.ok(FEATURED_PROJECTS.every((project) => Boolean(project.repository) !== Boolean(project.href)));
+});
+
+test("repository-backed projects point at complete GitHub subprojects", () => {
+  const projects = FEATURED_PROJECTS.filter((project) => project.repository);
+  assert.ok(projects.length > 0);
+  assert.ok(projects.every((project) => project.repository.owner === "hara-lang"));
+  assert.ok(projects.every((project) => project.repository.repo === "hara-playground"));
+  assert.ok(projects.every((project) => project.repository.path.startsWith("samples/")));
+  const liveValues = projects.find((project) => project.id === "live-values");
   assert.equal(repositoryLabel(liveValues.repository), "hara-lang/hara-playground/samples/live-values");
+});
+
+test("Peacock Ballroom is a provider-backed world project", () => {
+  const project = FEATURED_PROJECTS.find((candidate) => candidate.id === "peacock-ballroom");
+  assert.ok(project);
+  assert.equal(project.repository, undefined);
+  assert.equal(project.entry, undefined);
+  assert.equal(project.field, "worlds");
+  assert.equal(project.sourceUrl, "https://github.com/greenways-ai/alumbra");
+
+  const link = new URL(projectDeepLink(project, "/"), "https://playground.hara-lang.org/");
+  assert.equal(link.pathname, "/provider.html");
+  assert.equal(link.searchParams.get("provider"), "alumbra/world");
+  assert.equal(link.searchParams.get("world"), "https://github.com/greenways-ai/alumbra");
+  assert.equal(link.searchParams.get("state"), "ballroom/day");
 });
 
 test("Living Tank is the primary active-runtime project", () => {
