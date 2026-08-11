@@ -4,3 +4,6 @@
 [submodule "vendor/hodos"]
 	path = vendor/hodos
 	url = https://github.com/greenways-ai/hodos.git
+[submodule "vendor/hodos-provider"]
+	path = vendor/hodos-provider
+	url = https://github.com/greenways-ai/hodos.git
