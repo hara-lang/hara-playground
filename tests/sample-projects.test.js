@@ -8,7 +8,11 @@ import { scanHara } from "../src/editor/lisp.js";
 const root = new URL("..", import.meta.url).pathname;
 
 test("every featured GitHub sample is a complete workspace.edn-first Hara project", async () => {
-  for (const project of FEATURED_PROJECTS) {
+  const projects = FEATURED_PROJECTS.filter((project) => project.repository);
+  assert.ok(projects.length > 0);
+
+  for (const project of projects) {
+    assert.equal(typeof project.entry, "string", `${project.id} does not declare a Hara entry`);
     const relative = project.repository.path;
     const directory = join(root, relative);
     const [descriptor, workspace, source] = await Promise.all([
