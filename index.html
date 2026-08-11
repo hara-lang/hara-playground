@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#050608" />
-    <meta name="description" content="Hara Playground — open GitHub projects and installed provider worlds in a persistent browser kernel." />
+    <meta name="description" content="Hara Playground — open GitHub projects in a persistent browser kernel with InstaREPL, rainbow parens, Paredit and kernel completion." />
     <meta name="hara-identity-mode" content="popup" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Hara Playground" />
@@ -43,11 +43,5 @@
   <body>
     <div id="app"></div>
     <script type="module" src="./src/main.js"></script>
-    <script type="module">
-      const query = new URL(location.href).searchParams;
-      if (query.get("presentation") !== "showcase") {
-        void import("./src/provider/card.js");
-      }
-    </script>
   </body>
 </html>
