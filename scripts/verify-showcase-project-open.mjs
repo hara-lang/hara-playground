@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
-import { createServer } from "node:http";
-import { readFile, stat } from "node:fs/promises";
-import { extname, resolve, sep } from "node:path";
+import { spawn } from "node:child_process";
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
@@ -16,12 +16,18 @@ const samplePaths = [
 ];
 const commit = "c".repeat(40);
 const readyTimeout = Number(process.env.HARA_SHOWCASE_READY_TIMEOUT || 45_000);
+const port = Number(process.env.HARA_SHOWCASE_PORT || 4178);
 if (!Number.isFinite(readyTimeout) || readyTimeout < 5_000 || readyTimeout > 120_000) {
   throw new Error("HARA_SHOWCASE_READY_TIMEOUT must be between 5000 and 120000 milliseconds");
 }
+if (!Number.isInteger(port) || port < 1024 || port > 65_535) {
+  throw new Error("HARA_SHOWCASE_PORT must be an integer between 1024 and 65535");
+}
+const origin = `http://127.0.0.1:${port}`;
 const sampleFiles = new Map(await Promise.all(
   samplePaths.map(async (path) => [path, await readFile(resolve(root, path), "utf8")]),
 ));
+
 let browser = null;
 let server = null;
 let page = null;
@@ -29,62 +35,16 @@ const pageErrors = [];
 const consoleErrors = [];
 const failedRequests = [];
 
-const parentDocument = `<!doctype html>
-<html lang="en">
-<head><meta charset="utf-8"><title>Packages Showcase fixture</title></head>
-<body>
-  <iframe id="showcase" title="Hara package Showcase"></iframe>
-  <script>
-    window.showcaseMessages = [];
-    const frame = document.querySelector("#showcase");
-    const source = new URL(location.href).searchParams.get("source");
-    frame.src = source;
-    window.addEventListener("message", (event) => {
-      if (event.source === frame.contentWindow) window.showcaseMessages.push(event.data);
-    });
-  </script>
-</body>
-</html>`;
-
 try {
-  server = createServer(async (request, response) => {
-    try {
-      const url = new URL(request.url || "/", "http://127.0.0.1");
-      if (url.pathname === "/showcase-fixture.html") {
-        response.writeHead(200, {
-          "content-type": "text/html; charset=utf-8",
-          "cache-control": "no-store",
-        });
-        response.end(parentDocument);
-        return;
-      }
-      const target = safeTarget(url.pathname === "/" ? "/index.html" : url.pathname);
-      const metadata = await stat(target);
-      if (!metadata.isFile()) throw Object.assign(new Error("not a file"), { code: "ENOENT" });
-      response.writeHead(200, {
-        "content-type": contentType(target),
-        "cache-control": "no-store",
-        "x-content-type-options": "nosniff",
-      });
-      response.end(await readFile(target));
-    } catch (error) {
-      response.writeHead(error?.code === "ENOENT" ? 404 : 400, {
-        "content-type": "text/plain; charset=utf-8",
-        "cache-control": "no-store",
-      });
-      response.end(error?.message || String(error));
-    }
+  server = spawn(process.execPath, ["scripts/dev-server.mjs"], {
+    cwd: root,
+    env: {...process.env, PORT: String(port)},
+    stdio: ["ignore", "pipe", "pipe"],
   });
-  await new Promise((resolveListen, rejectListen) => {
-    server.once("error", rejectListen);
-    server.listen(0, "127.0.0.1", resolveListen);
-  });
-  const address = server.address();
-  assert.ok(address && typeof address === "object");
-  const origin = `http://127.0.0.1:${address.port}`;
+  await waitForServer(server, origin);
 
-  browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ viewport: { width: 1000, height: 800 } });
+  browser = await chromium.launch({headless: true});
+  const context = await browser.newContext({viewport: {width: 1000, height: 800}});
   page = await context.newPage();
   page.on("pageerror", (error) => pageErrors.push(error.stack || error.message));
   page.on("console", (message) => {
@@ -105,15 +65,20 @@ try {
   showcase.searchParams.set("presentation", "showcase");
   showcase.searchParams.set("surface", "document");
 
-  const parent = new URL(`${origin}/showcase-fixture.html`);
+  const parent = new URL(`${origin}/scripts/showcase-fixture.html`);
   parent.searchParams.set("source", showcase.href);
-  await page.goto(parent.href, { waitUntil: "domcontentloaded", timeout: readyTimeout });
+  const response = await page.goto(parent.href, {
+    waitUntil: "domcontentloaded",
+    timeout: readyTimeout,
+  });
+  assert.ok(response?.ok(), `Showcase fixture returned HTTP ${response?.status() ?? "unknown"}`);
+  assert.equal(await page.evaluate(() => crossOriginIsolated), true);
 
   const frame = page.frameLocator("#showcase");
   await frame.locator('html[data-presentation="showcase"][data-showcase-status="ready"]')
-    .waitFor({ state: "attached", timeout: readyTimeout });
+    .waitFor({state: "attached", timeout: readyTimeout});
   await frame.locator('.hodos-2d-document-host[data-hodos-component="hodos.2d/document"]')
-    .waitFor({ state: "visible", timeout: readyTimeout });
+    .waitFor({state: "visible", timeout: readyTimeout});
 
   await page.waitForFunction(() =>
     window.showcaseMessages.some((message) =>
@@ -125,6 +90,9 @@ try {
     url: location.href,
     presentation: html.dataset.presentation,
     status: html.dataset.showcaseStatus,
+    runtimeStatus: html.dataset.showcaseRuntimeStatus,
+    workspaceStatus: html.dataset.showcaseWorkspaceStatus,
+    crossOriginIsolated,
     header: getComputedStyle(document.querySelector(".workbench-header")).display,
     statusbar: getComputedStyle(document.querySelector(".statusbar")).display,
     layoutAreas: [...document.querySelectorAll(".hodos-workspace-area")].length,
@@ -136,6 +104,9 @@ try {
   assert.equal(initialUrl.searchParams.get("surface"), "document");
   assert.equal(initial.presentation, "showcase");
   assert.equal(initial.status, "ready");
+  assert.equal(initial.runtimeStatus, "ready");
+  assert.equal(initial.workspaceStatus, "ready");
+  assert.equal(initial.crossOriginIsolated, true);
   assert.equal(initial.header, "none");
   assert.equal(initial.statusbar, "none");
   assert.equal(initial.layoutAreas, 1);
@@ -161,7 +132,7 @@ try {
       && message?.ok === true
       && message?.surfaceId === "preview"), null, {timeout: readyTimeout});
   await frame.locator("#preview.hodos-preview-root > .hara-web-preview")
-    .waitFor({ state: "visible", timeout: 10_000 });
+    .waitFor({state: "visible", timeout: 10_000});
 
   const preview = await frame.locator("html").evaluate(() => {
     const output = document.querySelector(".output-panel");
@@ -200,7 +171,7 @@ try {
       message?.type === "hara.showcase/selection"
       && message?.ok === true
       && message?.surfaceId === "code"), null, {timeout: readyTimeout});
-  await frame.locator(".editor-panel").waitFor({ state: "visible", timeout: 10_000 });
+  await frame.locator(".editor-panel").waitFor({state: "visible", timeout: 10_000});
 
   await page.evaluate(() => {
     document.querySelector("#showcase").contentWindow.postMessage({
@@ -219,6 +190,8 @@ try {
     .getAttribute("data-workspace-surface-id");
   assert.equal(finalSurface, "code");
   assert.deepEqual(pageErrors, [], `Showcase page errors:\n${pageErrors.join("\n")}`);
+  assert.deepEqual(consoleErrors, [], `Showcase console errors:\n${consoleErrors.join("\n")}`);
+  assert.deepEqual(failedRequests, [], `Showcase failed requests:\n${failedRequests.join("\n")}`);
   console.log("Verified immutable embedded Showcase mounting, full-height preview, and declared surface selection in Chromium.");
 } catch (error) {
   let childState = null;
@@ -229,6 +202,7 @@ try {
     parentState = await page.evaluate(() => ({
       url: location.href,
       title: document.title,
+      crossOriginIsolated,
       messages: window.showcaseMessages || [],
       bodyTail: (document.body?.innerText || "").slice(-1_500),
     })).catch((stateError) => ({captureError: stateError?.message || String(stateError)}));
@@ -238,6 +212,7 @@ try {
       childState = await child.evaluate(() => ({
         url: location.href,
         title: document.title,
+        crossOriginIsolated,
         htmlDataset: {...document.documentElement.dataset},
         bodyDataset: {...(document.body?.dataset || {})},
         homeError: document.querySelector(".home-error")?.textContent?.trim() || "",
@@ -270,11 +245,41 @@ try {
   throw new Error("Embedded Showcase browser verification failed; see the check annotation.");
 } finally {
   await browser?.close().catch(() => {});
-  if (server) await new Promise((resolveClose) => server.close(resolveClose));
+  if (server && server.exitCode == null) {
+    server.kill("SIGTERM");
+    await new Promise((resolveExit) => {
+      const timeout = setTimeout(resolveExit, 2_000);
+      server.once("exit", () => {
+        clearTimeout(timeout);
+        resolveExit();
+      });
+    });
+  }
+}
+
+async function waitForServer(child, url) {
+  let output = "";
+  child.stdout?.on("data", (chunk) => { output += chunk; });
+  child.stderr?.on("data", (chunk) => { output += chunk; });
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if (child.exitCode != null) throw new Error(`Playground server exited early:\n${output}`);
+    try {
+      const response = await fetch(url, {cache: "no-store"});
+      if (response.ok) return;
+    } catch {
+      // The server may still be starting.
+    }
+    await new Promise((resolveWait) => setTimeout(resolveWait, 100));
+  }
+  throw new Error(`Playground server did not become ready:\n${output}`);
 }
 
 async function installGitHubFixtureRoutes(page) {
-  const cors = { "access-control-allow-origin": "*", "cache-control": "no-store" };
+  const headers = {
+    "access-control-allow-origin": "*",
+    "cache-control": "no-store",
+    "cross-origin-resource-policy": "cross-origin",
+  };
   await page.route("https://api.github.com/**", async (route) => {
     const url = new URL(route.request().url());
     let body = null;
@@ -293,10 +298,10 @@ async function installGitHubFixtureRoutes(page) {
         })),
       };
     }
-    if (!body) return route.fulfill({ status: 404, headers: cors, body: "not found" });
+    if (!body) return route.fulfill({status: 404, headers, body: "not found"});
     await route.fulfill({
       status: 200,
-      headers: { ...cors, "content-type": "application/json" },
+      headers: {...headers, "content-type": "application/json"},
       body: JSON.stringify(body),
     });
   });
@@ -304,49 +309,15 @@ async function installGitHubFixtureRoutes(page) {
     const url = new URL(route.request().url());
     const prefix = `/hara-lang/hara-playground/${commit}/`;
     if (!url.pathname.startsWith(prefix)) {
-      return route.fulfill({ status: 404, headers: cors, body: "not found" });
+      return route.fulfill({status: 404, headers, body: "not found"});
     }
     const path = url.pathname.slice(prefix.length).split("/").map(decodeURIComponent).join("/");
     const content = sampleFiles.get(path);
-    if (content == null) return route.fulfill({ status: 404, headers: cors, body: "not found" });
+    if (content == null) return route.fulfill({status: 404, headers, body: "not found"});
     await route.fulfill({
       status: 200,
-      headers: { ...cors, "content-type": "text/plain; charset=utf-8" },
+      headers: {...headers, "content-type": "text/plain; charset=utf-8"},
       body: content,
     });
   });
-}
-
-function safeTarget(pathname) {
-  const decoded = decodeURIComponent(pathname);
-  const parts = decoded.split("/").filter(Boolean);
-  if (parts.some((part) =>
-    part === "."
-    || part === ".."
-    || part.includes("\\")
-    || part.includes("\0"))) {
-    throw new Error("unsafe request path");
-  }
-  const target = resolve(root, ...parts);
-  if (target !== root && !target.startsWith(`${root}${sep}`)) {
-    throw new Error("request escaped repository root");
-  }
-  return target;
-}
-
-function contentType(path) {
-  return ({
-    ".html": "text/html; charset=utf-8",
-    ".js": "text/javascript; charset=utf-8",
-    ".mjs": "text/javascript; charset=utf-8",
-    ".css": "text/css; charset=utf-8",
-    ".json": "application/json; charset=utf-8",
-    ".hal": "text/plain; charset=utf-8",
-    ".edn": "text/plain; charset=utf-8",
-    ".md": "text/markdown; charset=utf-8",
-    ".svg": "image/svg+xml",
-    ".png": "image/png",
-    ".jpg": "image/jpeg",
-    ".wasm": "application/wasm",
-  })[extname(path)] || "application/octet-stream";
 }
