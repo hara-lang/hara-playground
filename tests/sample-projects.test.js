@@ -29,7 +29,12 @@ test("every featured GitHub sample is a complete workspace.edn-first Hara projec
     assert.match(workspace, /:responsive\/breakpoint/);
     assert.ok(workspace.includes(project.entry), `${project.id} workspace.edn does not name ${project.entry}`);
     assert.match(source, /\(ns\s+[A-Za-z]/);
-    assert.match(source, /\(view\)\s*$/);
+    if (/:playground\/active-loop/.test(descriptor)) {
+      assert.match(descriptor, /:active\/entry\s+controller/);
+      assert.match(source, /\(defn\s+controller\s+\[/);
+    } else {
+      assert.match(source, /\(view\)\s*$/);
+    }
     assert.equal(scanHara(source).unmatched.size, 0, `${project.id} contains unbalanced syntax`);
   }
 });

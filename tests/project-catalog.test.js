@@ -3,12 +3,24 @@ import assert from "node:assert/strict";
 import { FEATURED_PROJECTS, PLAYGROUND_NICETIES, projectDeepLink, repositoryLabel } from "../src/studio/projects.js";
 
 test("featured projects point at complete GitHub subprojects", () => {
-  assert.equal(FEATURED_PROJECTS.length, 7);
+  assert.equal(FEATURED_PROJECTS.length, 8);
   assert.ok(FEATURED_PROJECTS.every((project) => project.repository.owner === "hara-lang"));
   assert.ok(FEATURED_PROJECTS.every((project) => project.repository.repo === "hara-playground"));
   assert.ok(FEATURED_PROJECTS.every((project) => project.repository.path.startsWith("samples/")));
   const liveValues = FEATURED_PROJECTS.find((project) => project.id === "live-values");
   assert.equal(repositoryLabel(liveValues.repository), "hara-lang/hara-playground/samples/live-values");
+});
+
+test("Living Tank is the primary active-runtime project", () => {
+  const project = FEATURED_PROJECTS.find((candidate) => candidate.id === "active-loop-tank");
+  assert.ok(project);
+  assert.equal(project.repository.path, "samples/active-loop-tank");
+  assert.ok(project.capabilities.includes("Resident compiler"));
+  assert.equal(project.field, "simulation");
+  assert.deepEqual(
+    FEATURED_PROJECTS.filter((candidate) => candidate.primary).map((candidate) => candidate.id),
+    ["active-loop-tank"],
+  );
 });
 
 test("Supersonic is a featured audio project", () => {
@@ -23,7 +35,6 @@ test("Greenways AI is a featured capability-declared project", () => {
   assert.ok(project);
   assert.equal(project.repository.path, "samples/greenways-ai");
   assert.ok(project.capabilities.includes("model/generate"));
-  assert.equal(project.primary, true);
 });
 
 test("Hodos Graph is a featured manifest-native project", () => {
