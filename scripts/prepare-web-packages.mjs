@@ -20,6 +20,15 @@ const checkouts = [
     ],
     label: "pinned greenways-ai/hodos Workspace and Execution packages",
   },
+  {
+    path: "vendor/hodos-provider",
+    markers: [
+      "vendor/hodos-provider/packages/core/src/index.js",
+      "vendor/hodos-provider/packages/source-github/src/world-provider.js",
+      "vendor/hodos-provider/packages/viewer/src/world-provider-host.js",
+    ],
+    label: "pinned greenways-ai/hodos world-provider packages",
+  },
 ];
 
 async function present(relative) {
