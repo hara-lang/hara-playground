@@ -3,6 +3,8 @@ import {
   PEACOCK_BALLROOM_DEFAULT_STATE,
 } from "./alumbra.js";
 
+const PROVIDER_STYLESHEET = "./src/provider/provider.css";
+
 export function peacockBallroomPlaygroundUrl(location = globalThis.location) {
   if (!location?.href) throw new TypeError("Peacock Ballroom project link requires a location");
   const url = new URL("./provider.html", location.href);
@@ -12,6 +14,15 @@ export function peacockBallroomPlaygroundUrl(location = globalThis.location) {
   url.searchParams.set("world", "https://github.com/greenways-ai/alumbra");
   url.searchParams.set("state", PEACOCK_BALLROOM_DEFAULT_STATE);
   return url.href;
+}
+
+function installStylesheet(document) {
+  if (document.querySelector?.("link[data-playground-provider-styles]")) return;
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = PROVIDER_STYLESHEET;
+  link.dataset.playgroundProviderStyles = "true";
+  (document.head ?? document.documentElement)?.append?.(link);
 }
 
 function createCard(document = globalThis.document, location = globalThis.location) {
@@ -40,6 +51,7 @@ export function installPeacockBallroomProjectCard({
   if (!document || typeof document.createElement !== "function" || !root) {
     throw new TypeError("Peacock Ballroom project card requires the Playground document and application root");
   }
+  installStylesheet(document);
 
   const install = () => {
     const grid = root.querySelector?.(".project-grid");
@@ -59,9 +71,6 @@ export function installPeacockBallroomProjectCard({
 }
 
 if (globalThis.document?.querySelector && globalThis.window?.addEventListener) {
-  const query = new URL(globalThis.location.href).searchParams;
-  if (query.get("presentation") !== "showcase") {
-    const installation = installPeacockBallroomProjectCard();
-    window.addEventListener("pagehide", () => installation.disconnect(), {once: true});
-  }
+  const installation = installPeacockBallroomProjectCard();
+  window.addEventListener("pagehide", () => installation.disconnect(), {once: true});
 }
