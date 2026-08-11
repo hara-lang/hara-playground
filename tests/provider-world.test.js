@@ -9,7 +9,7 @@ import {
   createAlumbraWorldProviderRegistration,
   peacockBallroomProviderUrl,
 } from "../src/provider/alumbra.js";
-import {peacockBallroomPlaygroundUrl} from "../src/provider/card.js";
+import {featuredProject, projectDeepLink} from "../src/studio/projects.js";
 
 class FakeElement {
   constructor(tagName) {
@@ -38,7 +38,9 @@ class FakeRoot {
 }
 
 test("builds the semantic Playground route and installed provider URL", () => {
-  const route = new URL(peacockBallroomPlaygroundUrl({href: "https://playground.hara-lang.org/?repo=old#fragment"}));
+  const project = featuredProject("peacock-ballroom");
+  assert.ok(project);
+  const route = new URL(projectDeepLink(project), "https://playground.hara-lang.org/");
   assert.equal(route.origin, "https://playground.hara-lang.org");
   assert.equal(route.pathname, "/provider.html");
   assert.equal(route.searchParams.get("provider"), ALUMBRA_PROVIDER_ID);
