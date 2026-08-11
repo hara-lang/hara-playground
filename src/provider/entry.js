@@ -33,7 +33,7 @@ const escapeHtml = (value) => String(value)
   .replaceAll("'", "&#039;");
 
 function playgroundHomeUrl() {
-  const url = new URL(location.href);
+  const url = new URL("./", location.href);
   url.search = "";
   url.hash = "";
   return url.href;
