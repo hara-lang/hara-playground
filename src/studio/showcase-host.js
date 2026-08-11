@@ -1,4 +1,4 @@
-import { state } from "../app/context.js";
+import { runtime, state } from "../app/context.js";
 import {
   currentHodosWorkspaceDescriptor,
   updateHodosWorkspaceShell,
@@ -20,6 +20,7 @@ import {
 let installed = false;
 let readySignature = "";
 let errorSignature = "";
+let runtimePhases = [];
 
 function active() {
   return state.presentation?.mode === SHOWCASE_PRESENTATION;
@@ -65,8 +66,19 @@ function projectStatusEvidence() {
   root.dataset.showcaseWorkspaceStatus = state.workspaceShell?.status || "idle";
   root.dataset.showcaseWorkspaceSource = state.workspaceShell?.source || "fallback";
   root.dataset.showcaseCommit = state.metadata?.commit || "";
+  if (runtimePhases.length) root.dataset.showcaseRuntimePhases = runtimePhases.join("|");
+  else delete root.dataset.showcaseRuntimePhases;
   if (state.workspaceShell?.error) root.dataset.showcaseWorkspaceError = state.workspaceShell.error;
   else delete root.dataset.showcaseWorkspaceError;
+}
+
+function recordRuntimePhase(event) {
+  if (!active()) return;
+  const text = String(event.detail?.text || "");
+  if (!text.startsWith("showcase-runtime/")) return;
+  runtimePhases = [...runtimePhases, text.slice("showcase-runtime/".length)]
+    .slice(-16);
+  projectStatusEvidence();
 }
 
 function showStatus(kind, message) {
@@ -152,6 +164,7 @@ function onMessage(event) {
 export function installShowcaseHost() {
   if (installed) return;
   installed = true;
+  runtime.addEventListener("diagnostic", recordRuntimePhase);
   globalThis.addEventListener?.("message", onMessage);
 }
 
