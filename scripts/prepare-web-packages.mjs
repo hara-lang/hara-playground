@@ -17,8 +17,10 @@ const checkouts = [
       "vendor/hodos/packages/dev/src/index.js",
       "vendor/hodos/packages/dev-ui/src/index.js",
       "vendor/hodos/packages/dev-ui/src/execution.css",
+      "vendor/hodos/packages/source-github/src/world-provider.js",
+      "vendor/hodos/packages/viewer/src/world-provider-host.js",
     ],
-    label: "pinned greenways-ai/hodos Workspace and Execution packages",
+    label: "pinned greenways-ai/hodos Workspace, Execution and world-provider packages",
   },
 ];
 
