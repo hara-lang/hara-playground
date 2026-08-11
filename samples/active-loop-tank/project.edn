@@ -1,0 +1,26 @@
+{:hara/type :project
+ :hara/version "1.0.0"
+ :project/id playground.active-loop-tank
+ :project/version "0.1.0"
+ :project/source-paths ["src"]
+ :project/test-paths ["test"]
+ :project/extension-paths ["extensions"]
+ :project/main samples.active-loop-tank
+ :project/capabilities
+ #{:studio/eval
+   :preview/hta}
+
+ ;; The Playground reads this small extension after the Hara kernel boots.
+ ;; The worker creates the clocked activity first, then stages this file as a
+ ;; replaceable controller inside that already-running loop.
+ :playground/active-loop
+ {:active/id "tank/controller"
+  :active/kind :tank
+  :active/path "src/main.hal"
+  :active/entry controller
+  :active/rate-hz 8
+  :active/initial-level 78
+  :active/target 68
+  :active/leak-rate 1.6
+  :active/fill-rate 10
+  :active/auto-start true}}

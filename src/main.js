@@ -30,6 +30,10 @@ import {
   installShowcaseHost,
   syncShowcaseHost,
 } from "./studio/showcase-host.js";
+import {
+  installActiveLoopDemo,
+  syncActiveLoopDemo,
+} from "./active/integration.js";
 
 function renderPlayground() {
   document.documentElement.dataset.presentation = state.presentation?.mode || "studio";
@@ -63,6 +67,7 @@ function renderPlayground() {
   mountWorkspaceAssist();
   applyStudioChrome();
   syncPublicLobby();
+  syncActiveLoopDemo();
   void syncProjectPresentation({ state, store }).catch((error) => {
     console.error("[hara playground presentation]", error);
   });
@@ -79,6 +84,7 @@ function renderPlayground() {
 
 setRenderer(renderPlayground);
 setupRuntimeEvents();
+installActiveLoopDemo();
 installHodosExecution({ state, render: renderPlayground });
 installHodosGraphConsumer();
 installAudioOutput();

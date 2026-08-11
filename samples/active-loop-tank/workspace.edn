@@ -1,0 +1,58 @@
+{:hara/type :workspace
+ :hara/version "1.0.0"
+ :workspace/id :playground-active-loop-tank
+ :workspace/layout
+ {:layout/type :split
+  :layout/id "layout/root"
+  :layout/direction :horizontal
+  :layout/ratio 0.20
+  :layout/first
+  {:layout/type :area
+   :layout/area "area/project"}
+  :layout/second
+  {:layout/type :split
+   :layout/id "layout/work"
+   :layout/direction :horizontal
+   :layout/ratio 0.56
+   :layout/first
+   {:layout/type :area
+    :layout/area "area/editor"}
+   :layout/second
+   {:layout/type :area
+    :layout/area "area/preview"}}}
+ :workspace/documents
+ [{:document/id "document/main"
+   :document/path "src/main.hal"
+   :document/title "main.hal"
+   :document/language :hal
+   :document/dirty? false}]
+ :workspace/areas
+ [{:area/id "area/project"
+   :area/type :project
+   :area/title "Project"
+   :area/presentation
+   {:presentation/role :project
+    :presentation/label "Files"}}
+  {:area/id "area/editor"
+   :area/type :code-editor
+   :area/title "Controller"
+   :area/presentation
+   {:presentation/role :editor
+    :presentation/label "Controller"}}
+  {:area/id "area/preview"
+   :area/type :output
+   :area/title "Living Tank"
+   :area/presentation
+   {:presentation/role :output
+    :presentation/label "Active loop"}}]
+ :workspace/nodes []
+ :workspace/connections []
+ :workspace/links []
+ :workspace/selection
+ {:area/id "area/editor"
+  :document/id "document/main"}
+ :workspace/customizations
+ {:responsive/breakpoint 1000}
+ :workspace/extensions []
+ :workspace/pending []
+ :workspace/audit []}

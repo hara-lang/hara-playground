@@ -2,6 +2,7 @@ import { formatValue } from "./evaluator.js";
 import { createRuntimeHost } from "./host.js";
 import { isHaraSource } from "../workspace/project.js";
 import { isHtaTree, toPlainHta } from "./hta-value.js";
+import { createActiveLoopController } from "./active-loop.js";
 
 const AVAILABLE_CAPABILITIES = new Set(["studio/eval", "audio/playback", "model/generate"]);
 
@@ -10,6 +11,7 @@ let values = new Map();
 let valueSequence = 0;
 let hostSequence = 0;
 let grantedCapabilities = new Set(["studio/eval"]);
+let runtimeQueue = Promise.resolve();
 const pendingHostCalls = new Map();
 
 function callPageHost(operation, args) {
@@ -54,6 +56,21 @@ const startupDiagnostics = Array.isArray(host.startupDiagnostics)
   ? host.startupDiagnostics
   : [];
 
+function enqueueRuntime(operation) {
+  const result = runtimeQueue.then(operation, operation);
+  runtimeQueue = result.catch(() => {});
+  return result;
+}
+
+const activeLoop = createActiveLoopController({
+  evaluate(source, namespace) {
+    return enqueueRuntime(() => runtime.evaluateSource(source, namespace));
+  },
+  publish(effect) {
+    postMessage({ type: "effect", id: null, effect });
+  }
+});
+
 function maybeEmitPreview(value) {
   if (!isHtaTree(value)) return false;
   postMessage({ type: "effect", id: activeRequestId, effect: { type: "render", tree: toPlainHta(value) } });
@@ -88,6 +105,7 @@ async function handle(request) {
   activeRequestId = request.id || null;
   switch (request.type) {
     case "boot": {
+      activeLoop.reset();
       installGrants(request.capabilities);
       replayStartupDiagnostics();
       if (grantedCapabilities.has("audio/playback") && host.kind !== "canonical-wasm") {
@@ -98,17 +116,19 @@ async function handle(request) {
         const reason = startupDiagnostics[0] || "The canonical Hara runtime is unavailable";
         throw new Error(`model/generate requires canonical-wasm. ${reason}`);
       }
-      await runtime.reset();
-      for (const file of request.files || []) {
-        if (isHaraSource(file.path)) {
-          const value = await runtime.evaluateSource(file.content, request.namespace || "user");
-          maybeEmitPreview(value);
+      await enqueueRuntime(async () => {
+        await runtime.reset();
+        for (const file of request.files || []) {
+          if (isHaraSource(file.path)) {
+            const value = await runtime.evaluateSource(file.content, request.namespace || "user");
+            maybeEmitPreview(value);
+          }
         }
-      }
-      if (request.namespace) {
-        if (typeof runtime.setNamespace === "function") runtime.setNamespace(request.namespace);
-        else await runtime.evaluateSource(`(ns ${request.namespace})`, request.namespace);
-      }
+        if (request.namespace) {
+          if (typeof runtime.setNamespace === "function") runtime.setNamespace(request.namespace);
+          else await runtime.evaluateSource(`(ns ${request.namespace})`, request.namespace);
+        }
+      });
       return {
         type: "ready",
         id: request.id,
@@ -118,7 +138,8 @@ async function handle(request) {
       };
     }
     case "eval": {
-      const result = await runtime.evaluateSource(request.source, request.namespace || runtime.currentNamespace);
+      const result = await enqueueRuntime(() =>
+        runtime.evaluateSource(request.source, request.namespace || runtime.currentNamespace));
       maybeEmitPreview(result);
       return {
         type: "result",
@@ -129,7 +150,8 @@ async function handle(request) {
       };
     }
     case "load-file": {
-      const result = await runtime.evaluateSource(request.source, request.namespace || runtime.currentNamespace);
+      const result = await enqueueRuntime(() =>
+        runtime.evaluateSource(request.source, request.namespace || runtime.currentNamespace));
       maybeEmitPreview(result);
       return {
         type: "file-loaded",
@@ -142,7 +164,11 @@ async function handle(request) {
     }
     case "complete": {
       const items = typeof runtime.complete === "function"
-        ? await runtime.complete(request.prefix || "", request.namespace || runtime.currentNamespace, request.source || "")
+        ? await enqueueRuntime(() => runtime.complete(
+          request.prefix || "",
+          request.namespace || runtime.currentNamespace,
+          request.source || ""
+        ))
         : [];
       return {
         type: "completions",
@@ -156,8 +182,24 @@ async function handle(request) {
       const value = values.get(request.valueId);
       return { type: "inspection", id: request.id, valueId: request.valueId, display: formatValue(value), value };
     }
+    case "active-create": {
+      const state = activeLoop.create(request);
+      return { type: "active-loop-state", id: request.id, activeLoop: state };
+    }
+    case "active-install": {
+      const state = await activeLoop.install(request);
+      return { type: "active-loop-state", id: request.id, activeLoop: state };
+    }
+    case "active-command": {
+      const { loopId, command, ...options } = request;
+      const state = activeLoop.command(loopId, command, options);
+      return { type: "active-loop-state", id: request.id, activeLoop: state };
+    }
+    case "active-status":
+      return { type: "active-loop-state", id: request.id, activeLoop: activeLoop.inspect() };
     case "reset":
-      await runtime.reset();
+      activeLoop.reset();
+      await enqueueRuntime(() => runtime.reset());
       values = new Map();
       return {
         type: "ready",

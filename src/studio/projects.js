@@ -1,5 +1,18 @@
 export const FEATURED_PROJECTS = Object.freeze([
   Object.freeze({
+    id: "active-loop-tank",
+    title: "The Living Tank",
+    eyebrow: "ACTIVE RUNTIME · DIGITAL TWIN",
+    description: "Install and replace a Hara controller inside a worker-owned simulation while the loop identity, tick and world state continue.",
+    repository: Object.freeze({ owner: "hara-lang", repo: "hara-playground", branch: "main", path: "samples/active-loop-tank" }),
+    sourceUrl: "https://github.com/hara-lang/hara-playground/tree/main/samples/active-loop-tank",
+    entry: "src/main.hal",
+    capabilities: Object.freeze(["Resident compiler", "State-preserving activation", "Safe replacement"]),
+    action: "Open Living Tank",
+    primary: true,
+    field: "simulation"
+  }),
+  Object.freeze({
     id: "greenways-ai",
     title: "Greenways OS AI capability",
     eyebrow: "AI · HOST CAPABILITY",
@@ -9,7 +22,6 @@ export const FEATURED_PROJECTS = Object.freeze([
     entry: "src/main.hal",
     capabilities: Object.freeze(["gw.ai", "model/generate", "No embedded keys"]),
     action: "Open AI example",
-    primary: true,
     field: "ai"
   }),
   Object.freeze({
