@@ -8,6 +8,8 @@ const entry = readFileSync(new URL("../src/provider/entry.js", import.meta.url),
 const adapter = readFileSync(new URL("../src/provider/alumbra.js", import.meta.url), "utf8");
 const card = readFileSync(new URL("../src/provider/card.js", import.meta.url), "utf8");
 const build = readFileSync(new URL("../scripts/build-site.mjs", import.meta.url), "utf8");
+const prepare = readFileSync(new URL("../scripts/prepare-web-packages.mjs", import.meta.url), "utf8");
+const submodules = readFileSync(new URL("../.gitmodules", import.meta.url), "utf8");
 
 test("preserves the ordinary editor and completely isolates embedded Showcase startup", () => {
   assert.match(page, /src="\.\/src\/main\.js"/);
@@ -20,14 +22,16 @@ test("preserves the ordinary editor and completely isolates embedded Showcase st
   assert.match(card, /PROVIDER_STYLESHEET = "\.\/src\/provider\/provider\.css"/);
 });
 
-test("loads provider worlds from a dedicated application document", () => {
+test("loads provider worlds from a dedicated application document and Hodos pin", () => {
   assert.match(providerPage, /src="\.\/src\/provider\/entry\.js"/);
   assert.doesNotMatch(providerPage, /src="\.\/src\/main\.js"/);
-  assert.match(providerPage, /"@greenways\/hodos-core": "\.\/vendor\/hodos\/packages\/core\/src\/index\.js"/);
-  assert.match(providerPage, /"@greenways\/hodos-source-github": "\.\/vendor\/hodos\/packages\/source-github\/src\/index\.js"/);
-  assert.match(providerPage, /"@greenways\/hodos-viewer\/providers": "\.\/vendor\/hodos\/packages\/viewer\/src\/world-provider-host\.js"/);
+  assert.match(providerPage, /"@greenways\/hodos-core": "\.\/vendor\/hodos-provider\/packages\/core\/src\/index\.js"/);
+  assert.match(providerPage, /"@greenways\/hodos-source-github": "\.\/vendor\/hodos-provider\/packages\/source-github\/src\/index\.js"/);
+  assert.match(providerPage, /"@greenways\/hodos-viewer\/providers": "\.\/vendor\/hodos-provider\/packages\/viewer\/src\/world-provider-host\.js"/);
   assert.match(providerPage, /href="\.\/src\/provider\/provider\.css"/);
-  assert.match(build, /provider\.html/);
+  assert.match(build, /vendor\/hodos-provider\/packages/);
+  assert.match(prepare, /path: "vendor\/hodos-provider"/);
+  assert.match(submodules, /\[submodule "vendor\/hodos-provider"\]/);
 });
 
 test("resolves the repository manifest before allocating the installed provider", () => {
