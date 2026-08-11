@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Packages Showcase fixture</title>
+</head>
+<body>
+  <iframe id="showcase" title="Hara package Showcase"></iframe>
+  <script>
+    window.showcaseMessages = [];
+    const frame = document.querySelector("#showcase");
+    const source = new URL(location.href).searchParams.get("source");
+    frame.src = source;
+    window.addEventListener("message", (event) => {
+      if (event.source === frame.contentWindow) window.showcaseMessages.push(event.data);
+    });
+  </script>
+</body>
+</html>
