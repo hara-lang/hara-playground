@@ -30,6 +30,20 @@ test("output surfaces follow project presentation", async () => {
   assert.match(preview, /previewEnabled\(\)/);
 });
 
+test("provider documents bypass repository-card interception", async () => {
+  const page = await read("../index.html");
+  const navigation = await read("../src/studio/provider-navigation.js");
+  const mainEntry = page.indexOf('src="./src/main.js"');
+  const providerEntry = page.indexOf('src="./src/studio/provider-navigation.js"');
+
+  assert.ok(mainEntry >= 0 && providerEntry > mainEntry);
+  assert.match(navigation, /addEventListener\("click", onClick, true\)/);
+  assert.match(navigation, /stopImmediatePropagation\(\)/);
+  assert.match(navigation, /target\.pathname === providerDocument\.pathname/);
+  assert.match(navigation, /searchParams\.has\("provider"\)/);
+  assert.match(navigation, /location\.assign/);
+});
+
 test("the project lobby uses visual-language tokens", async () => {
   const styles = await read("../src/styles/public-shell.css");
   assert.match(styles, /var\(--hara-bg\)/);
