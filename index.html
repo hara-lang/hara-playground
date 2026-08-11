@@ -26,7 +26,6 @@
     <title>Hara Playground — Live kernel editor</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23050608'/%3E%3Cpath fill='%23f4f6f8' d='M10 8h13v18h18V8h13v48H41V38H23v18H10z'/%3E%3Cpath fill='%232f7cff' d='M27 8h10v10H27z'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="./src/styles.css" />
-    <link rel="stylesheet" href="./src/provider/provider.css" />
     <script type="importmap">
       {
         "imports": {
@@ -44,6 +43,11 @@
   <body>
     <div id="app"></div>
     <script type="module" src="./src/main.js"></script>
-    <script type="module" src="./src/provider/card.js"></script>
+    <script type="module">
+      const query = new URL(location.href).searchParams;
+      if (query.get("presentation") !== "showcase") {
+        void import("./src/provider/card.js");
+      }
+    </script>
   </body>
 </html>
