@@ -6,20 +6,19 @@ const page = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const providerPage = readFileSync(new URL("../provider.html", import.meta.url), "utf8");
 const entry = readFileSync(new URL("../src/provider/entry.js", import.meta.url), "utf8");
 const adapter = readFileSync(new URL("../src/provider/alumbra.js", import.meta.url), "utf8");
-const card = readFileSync(new URL("../src/provider/card.js", import.meta.url), "utf8");
+const projects = readFileSync(new URL("../src/studio/projects.js", import.meta.url), "utf8");
 const build = readFileSync(new URL("../scripts/build-site.mjs", import.meta.url), "utf8");
 const prepare = readFileSync(new URL("../scripts/prepare-web-packages.mjs", import.meta.url), "utf8");
 const submodules = readFileSync(new URL("../.gitmodules", import.meta.url), "utf8");
 
-test("preserves the ordinary editor and completely isolates embedded Showcase startup", () => {
+test("preserves the exact ordinary editor and embedded Showcase document", () => {
   assert.match(page, /src="\.\/src\/main\.js"/);
-  assert.match(page, /query\.get\("presentation"\) !== "showcase"/);
-  assert.match(page, /import\("\.\/src\/provider\/card\.js"\)/);
-  assert.doesNotMatch(page, /src="\.\/src\/provider\/card\.js"/);
-  assert.doesNotMatch(page, /href="\.\/src\/provider\/provider\.css"/);
+  assert.doesNotMatch(page, /src\/provider/);
+  assert.doesNotMatch(page, /provider\.css/);
   assert.doesNotMatch(page, /src="\.\/src\/bootstrap\.js"/);
-  assert.match(card, /data-playground-provider-styles/);
-  assert.match(card, /PROVIDER_STYLESHEET = "\.\/src\/provider\/provider\.css"/);
+  assert.match(projects, /id: "peacock-ballroom"/);
+  assert.match(projects, /href: "\.\/provider\.html\?provider=alumbra%2Fworld/);
+  assert.match(projects, /Open Peacock Ballroom/);
 });
 
 test("loads provider worlds from a dedicated application document and Hodos pin", () => {
@@ -44,11 +43,10 @@ test("resolves the repository manifest before allocating the installed provider"
   assert.match(entry, /consumer: "hara-playground"/);
 });
 
-test("adds one provider-backed world card without importing Alumbra code", () => {
-  assert.match(card, /dataset\.providerProject = "alumbra-hara\/peacock-ballroom"/);
-  assert.match(card, /new URL\("\.\/provider\.html", location\.href\)/);
-  assert.match(card, /world", "https:\/\/github\.com\/greenways-ai\/alumbra"/);
-  assert.match(card, /Open world/);
+test("adds one provider-backed world project without importing Alumbra code", () => {
+  assert.match(projects, /field: "worlds"/);
+  assert.match(projects, /world=https%3A%2F%2Fgithub\.com%2Fgreenways-ai%2Falumbra/);
+  assert.match(projects, /sourceUrl: "https:\/\/github\.com\/greenways-ai\/alumbra"/);
   assert.match(adapter, /https:\/\/oss\.greenways\.ai/);
   assert.match(adapter, /\/hodos\/alumbra\/apps\/lab\/peacock-ballroom\.html/);
   assert.doesNotMatch(entry, /@greenways\/alumbra/);
