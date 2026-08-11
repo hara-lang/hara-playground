@@ -30,15 +30,12 @@
     <script type="importmap">
       {
         "imports": {
-          "@greenways/hodos-core": "./vendor/hodos/packages/core/src/index.js",
           "@greenways/hodos-web": "./vendor/hodos/packages/web/src/index.js",
           "@greenways/hodos-workspace-ui": "./vendor/hodos/packages/workspace-ui/src/index.js",
           "@greenways/hodos-2d": "./vendor/hodos/packages/2d/src/index.js",
           "@greenways/hodos-2d-ui": "./vendor/hodos/packages/2d-ui/src/index.js",
           "@greenways/hodos-dev": "./vendor/hodos/packages/dev/src/index.js",
-          "@greenways/hodos-dev-ui": "./vendor/hodos/packages/dev-ui/src/index.js",
-          "@greenways/hodos-source-github": "./vendor/hodos/packages/source-github/src/index.js",
-          "@greenways/hodos-viewer/providers": "./vendor/hodos/packages/viewer/src/world-provider-host.js"
+          "@greenways/hodos-dev-ui": "./vendor/hodos/packages/dev-ui/src/index.js"
         }
       }
     </script>
@@ -46,6 +43,7 @@
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" src="./src/bootstrap.js"></script>
+    <script type="module" src="./src/main.js"></script>
+    <script type="module" src="./src/provider/card.js"></script>
   </body>
 </html>
