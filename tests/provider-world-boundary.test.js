@@ -45,7 +45,8 @@ test("adds one provider-backed world card without importing Alumbra code", () =>
   assert.match(card, /new URL\("\.\/provider\.html", location\.href\)/);
   assert.match(card, /world", "https:\/\/github\.com\/greenways-ai\/alumbra"/);
   assert.match(card, /Open world/);
-  assert.match(adapter, /https:\/\/greenways-ai\.github\.io/);
+  assert.match(adapter, /https:\/\/oss\.greenways\.ai/);
+  assert.match(adapter, /\/hodos\/alumbra\/apps\/lab\/peacock-ballroom\.html/);
   assert.doesNotMatch(entry, /@greenways\/alumbra/);
   assert.doesNotMatch(adapter, /@greenways\/alumbra/);
   assert.doesNotMatch(adapter, /mesh|shader|canonicalChunk|PlayCanvas/);
