@@ -13,6 +13,17 @@ export const FEATURED_PROJECTS = Object.freeze([
     field: "simulation"
   }),
   Object.freeze({
+    id: "peacock-ballroom",
+    title: "Peacock Ballroom",
+    eyebrow: "HARA ARCHITECTURAL WORLD",
+    description: "Enter an ivory, teal-glass and gold world generated in Hara and projected by the installed Alumbra provider.",
+    href: "./provider.html?provider=alumbra%2Fworld&world=https%3A%2F%2Fgithub.com%2Fgreenways-ai%2Falumbra&state=ballroom%2Fday",
+    sourceUrl: "https://github.com/greenways-ai/alumbra",
+    capabilities: Object.freeze(["48 canonical chunks", "Sunlight and chandelier emission", "Playable editing and undo"]),
+    action: "Open Peacock Ballroom",
+    field: "worlds"
+  }),
+  Object.freeze({
     id: "greenways-ai",
     title: "Greenways OS AI capability",
     eyebrow: "AI · HOST CAPABILITY",
@@ -116,6 +127,7 @@ export function repositoryLabel(repository) {
 }
 
 export function projectDeepLink(project, pathname = "./") {
+  if (project?.href) return project.href;
   if (!project?.repository) return pathname;
   const query = new URLSearchParams({ repo: `${project.repository.owner}/${project.repository.repo}`, branch: project.repository.branch || "main" });
   if (project.repository.path) query.set("path", project.repository.path);
