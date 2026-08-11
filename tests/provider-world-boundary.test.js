@@ -35,7 +35,7 @@ test("resolves the repository manifest before allocating the installed provider"
 });
 
 test("adds one provider-backed world card without importing Alumbra code", () => {
-  assert.match(card, /data\.providerProject = "alumbra-hara\/peacock-ballroom"/);
+  assert.match(card, /dataset\.providerProject = "alumbra-hara\/peacock-ballroom"/);
   assert.match(card, /world", "https:\/\/github\.com\/greenways-ai\/alumbra"/);
   assert.match(card, /Open world/);
   assert.match(adapter, /https:\/\/greenways-ai\.github\.io/);
