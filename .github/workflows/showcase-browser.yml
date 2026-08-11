@@ -5,8 +5,8 @@ on:
     paths:
       - ".github/workflows/showcase-browser.yml"
       - "docs/showcase-host.md"
+      - "index.html"
       - "provider.html"
-      - "runtime.lock.json"
       - "scripts/build-site.mjs"
       - "scripts/prepare-web-packages.mjs"
       - "scripts/verify-showcase-project-open.mjs"
@@ -15,9 +15,11 @@ on:
       - "src/github/**"
       - "src/hodos/**"
       - "src/provider/**"
+      - "src/studio/provider-navigation.js"
       - "src/studio/showcase*.js"
       - "src/styles/**"
       - "src/styles.css"
+      - "tests/provider-navigation.test.js"
       - "tests/provider-world*.test.js"
       - "tests/showcase*.test.js"
       - "vendor/hodos"
@@ -27,8 +29,8 @@ on:
     paths:
       - ".github/workflows/showcase-browser.yml"
       - "docs/showcase-host.md"
+      - "index.html"
       - "provider.html"
-      - "runtime.lock.json"
       - "scripts/build-site.mjs"
       - "scripts/prepare-web-packages.mjs"
       - "scripts/verify-showcase-project-open.mjs"
@@ -37,9 +39,11 @@ on:
       - "src/github/**"
       - "src/hodos/**"
       - "src/provider/**"
+      - "src/studio/provider-navigation.js"
       - "src/studio/showcase*.js"
       - "src/styles/**"
       - "src/styles.css"
+      - "tests/provider-navigation.test.js"
       - "tests/provider-world*.test.js"
       - "tests/showcase*.test.js"
       - "vendor/hodos"
@@ -52,7 +56,12 @@ permissions:
 jobs:
   showcase:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
+    env:
+      # Showcase must exercise the same runtime boundary deployed by Pages.
+      # The v0.1.4 release predates current Workspace manifest inspection.
+      HARA_RUNTIME_SOURCE_REF: c3c345f0e0d18d499c39d82b8f4bcb98e4ebb4f6
+      HARA_UI_SOURCE_REF: 145a9acc728f71f9aa215868a22774ea07d466d4
     steps:
       - uses: actions/checkout@v4
         with:
@@ -68,13 +77,105 @@ jobs:
           npm run check
           npm run build
 
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Check out verified Hara runtime source
+        uses: actions/checkout@v4
+        with:
+          repository: hara-lang/hara
+          ref: ${{ env.HARA_RUNTIME_SOURCE_REF }}
+          path: .hara-runtime-source
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Check out the pinned Hara UI build input
+        uses: actions/checkout@v4
+        with:
+          repository: hara-lang/hara-ui
+          ref: ${{ env.HARA_UI_SOURCE_REF }}
+          path: .hara-runtime-source/website/vendor/hara-ui
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Build and install verified Hara runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ACTUAL_REF=$(git -C .hara-runtime-source rev-parse HEAD)
+          if [ "$ACTUAL_REF" != "$HARA_RUNTIME_SOURCE_REF" ]; then
+            echo "Hara checkout resolved to $ACTUAL_REF, expected $HARA_RUNTIME_SOURCE_REF" >&2
+            exit 1
+          fi
+          ACTUAL_UI_REF=$(git -C .hara-runtime-source/website/vendor/hara-ui rev-parse HEAD)
+          if [ "$ACTUAL_UI_REF" != "$HARA_UI_SOURCE_REF" ]; then
+            echo "Hara UI checkout resolved to $ACTUAL_UI_REF, expected $HARA_UI_SOURCE_REF" >&2
+            exit 1
+          fi
+
+          OUT="$RUNNER_TEMP/hara-studio-runtime"
+          BUILD_LOG="$RUNNER_TEMP/hara-studio-runtime-build.log"
+          set +e
+          HARA_STUDIO_RUNTIME_OUT="$OUT" \
+            .hara-runtime-source/scripts/build-studio-runtime ci 2>&1 | tee "$BUILD_LOG"
+          BUILD_STATUS=${PIPESTATUS[0]}
+          set -e
+          if [ "$BUILD_STATUS" -ne 0 ]; then
+            echo "::group::Hara Studio runtime failure tail"
+            tail -n 60 "$BUILD_LOG"
+            echo "::endgroup::"
+            while IFS= read -r line; do
+              escaped=${line//'%'/'%25'}
+              escaped=${escaped//$'\r'/'%0D'}
+              escaped=${escaped//$'\n'/'%0A'}
+              echo "::error title=Hara Studio runtime build failed::$escaped"
+            done < <(tail -n 16 "$BUILD_LOG")
+            exit "$BUILD_STATUS"
+          fi
+
+          ARCHIVE="$OUT/hara-studio-runtime-ci.tar.gz"
+          CHECKSUM="$ARCHIVE.sha256"
+          test -s "$ARCHIVE"
+          test -s "$CHECKSUM"
+          sha256sum -c "$CHECKSUM"
+
+          STAGE="$RUNNER_TEMP/hara-runtime-stage"
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE"
+          tar -xzf "$ARCHIVE" -C "$STAGE"
+          find "$STAGE" -maxdepth 1 -type f \
+            -name 'hara-studio-runtime-*.tar.gz.sha256' -delete
+
+          REQUIRED=(
+            rust/hara.wasm
+            rust/hta.js
+            rust/hta-worker.js
+            rust/hta-shared-worker.js
+            rust/packages/hta/index.js
+            rust/packages/hta/worker.js
+            rust/packages/hta/shared-worker.js
+            rust/host/broker.js
+            rust/host/services.js
+            rust/studio/supersonic.js
+            rust/studio/hal/supersonic.hal
+          )
+          for path in "${REQUIRED[@]}"; do
+            if [ ! -f "$STAGE/$path" ]; then
+              echo "built runtime is missing required payload: $path" >&2
+              exit 1
+            fi
+          done
+
+          rm -rf runtime
+          mkdir -p runtime
+          cp -a "$STAGE/." runtime/
+
       - name: Install pinned browser tooling
         run: |
           npm install --no-save --ignore-scripts --package-lock=false playwright@1.53.2
           npx playwright install --with-deps chromium
-
-      - name: Install checksum-verified Hara runtime
-        run: npm run runtime:download
 
       - name: Verify the embedded Showcase host
         run: node scripts/verify-showcase-project-open.mjs
