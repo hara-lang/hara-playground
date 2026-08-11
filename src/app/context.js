@@ -33,7 +33,7 @@ function readSetting(key, fallback) {
 }
 
 const storedActivity = activityById(readSetting(STUDIO_SETTING_KEYS.activity, DEFAULT_ACTIVITY_ID));
-const storedToolset = toolByIdOrFallback(readSetting(STUDIO_SETTING_KEYS.toolset, DEFAULT_TOOLSET_ID));
+const storedToolset = toolsetById(readSetting(STUDIO_SETTING_KEYS.toolset, DEFAULT_TOOLSET_ID));
 const initialToolsetId = storedToolset?.id || storedActivity?.toolsetId || DEFAULT_TOOLSET_ID;
 const initialActivity = storedActivity?.toolsetId === initialToolsetId
   ? storedActivity
@@ -45,10 +45,6 @@ const initialOutput = readSetting(STUDIO_SETTING_KEYS.output, "preview");
 const runtimeWorkerUrl = new URL("../runtime/worker.js", import.meta.url);
 if (initialPresentation.mode === "showcase") {
   runtimeWorkerUrl.searchParams.set("showcase-boot-evidence", "1");
-}
-
-function toolByIdOrFallback(id) {
-  return toolsetById(id);
 }
 
 export const app = document.querySelector("#app");
