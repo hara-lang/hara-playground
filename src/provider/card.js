@@ -14,7 +14,7 @@ export function peacockBallroomPlaygroundUrl(location = globalThis.location) {
   return url.href;
 }
 
-function createCard(document = globalThis.document) {
+function createCard(document = globalThis.document, location = globalThis.location) {
   const article = document.createElement("article");
   article.className = "project-card project-card--provider";
   article.dataset.field = "worlds";
@@ -26,7 +26,7 @@ function createCard(document = globalThis.document) {
     <p>Enter an ivory, teal-glass and gold world generated in Hara and projected by the installed Alumbra provider.</p>
     <ul><li>48 canonical chunks</li><li>Sunlight and chandelier emission</li><li>Playable editing and undo</li></ul>
     <div class="project-card__actions">
-      <a class="primary-action" href="${peacockBallroomPlaygroundUrl()}">Open world <span aria-hidden="true">▶</span></a>
+      <a class="primary-action" href="${peacockBallroomPlaygroundUrl(location)}">Open world <span aria-hidden="true">▶</span></a>
       <a class="source-action" href="https://github.com/greenways-ai/alumbra" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
     </div>`;
   return article;
@@ -34,6 +34,7 @@ function createCard(document = globalThis.document) {
 
 export function installPeacockBallroomProjectCard({
   document = globalThis.document,
+  location = globalThis.location,
   root = document?.querySelector?.("#app"),
 } = {}) {
   if (!document || typeof document.createElement !== "function" || !root) {
@@ -44,7 +45,7 @@ export function installPeacockBallroomProjectCard({
     const grid = root.querySelector?.(".project-grid");
     if (!grid) return false;
     if (!grid.querySelector?.("[data-provider-project='alumbra-hara/peacock-ballroom']")) {
-      grid.prepend(createCard(document));
+      grid.prepend(createCard(document, location));
     }
     return true;
   };
@@ -57,5 +58,7 @@ export function installPeacockBallroomProjectCard({
   return Object.freeze({install, disconnect: () => observer.disconnect()});
 }
 
-const installation = installPeacockBallroomProjectCard();
-window.addEventListener("pagehide", () => installation.disconnect(), {once: true});
+if (globalThis.document?.querySelector && globalThis.window?.addEventListener) {
+  const installation = installPeacockBallroomProjectCard();
+  window.addEventListener("pagehide", () => installation.disconnect(), {once: true});
+}
