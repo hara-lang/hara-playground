@@ -9,11 +9,15 @@ const adapter = readFileSync(new URL("../src/provider/alumbra.js", import.meta.u
 const card = readFileSync(new URL("../src/provider/card.js", import.meta.url), "utf8");
 const build = readFileSync(new URL("../scripts/build-site.mjs", import.meta.url), "utf8");
 
-test("preserves the ordinary editor and embedded Showcase startup path", () => {
+test("preserves the ordinary editor and completely isolates embedded Showcase startup", () => {
   assert.match(page, /src="\.\/src\/main\.js"/);
-  assert.match(page, /src="\.\/src\/provider\/card\.js"/);
+  assert.match(page, /query\.get\("presentation"\) !== "showcase"/);
+  assert.match(page, /import\("\.\/src\/provider\/card\.js"\)/);
+  assert.doesNotMatch(page, /src="\.\/src\/provider\/card\.js"/);
+  assert.doesNotMatch(page, /href="\.\/src\/provider\/provider\.css"/);
   assert.doesNotMatch(page, /src="\.\/src\/bootstrap\.js"/);
-  assert.match(card, /query\.get\("presentation"\) !== "showcase"/);
+  assert.match(card, /data-playground-provider-styles/);
+  assert.match(card, /PROVIDER_STYLESHEET = "\.\/src\/provider\/provider\.css"/);
 });
 
 test("loads provider worlds from a dedicated application document", () => {
