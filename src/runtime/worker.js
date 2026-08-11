@@ -15,6 +15,8 @@ let hostSequence = 0;
 let grantedCapabilities = new Set(["studio/eval"]);
 let runtimeQueue = Promise.resolve();
 const pendingHostCalls = new Map();
+const pendingWorkerMessages = [];
+let workerReady = false;
 
 function traceShowcaseBoot(phase, detail = "") {
   if (!SHOWCASE_BOOT_EVIDENCE) return;
@@ -25,10 +27,26 @@ function traceShowcaseBoot(phase, detail = "") {
   });
 }
 
+function messageIdentity(message) {
+  return `${message?.type || "unknown"}:${message?.id || "none"}`;
+}
+
 traceShowcaseBoot(
   "outer-start",
   `worker=${typeof Worker} shared-worker=${typeof SharedWorker} isolated=${globalThis.crossOriginIsolated}`,
 );
+
+// Module workers may receive messages while top-level await is still creating
+// the canonical Hara host. Register synchronously and retain exact message
+// order so a fast caller cannot lose its first boot request.
+self.addEventListener("message", (event) => {
+  if (!workerReady) {
+    pendingWorkerMessages.push(event.data);
+    traceShowcaseBoot("request-queued", messageIdentity(event.data));
+    return;
+  }
+  void dispatchWorkerMessage(event.data);
+});
 
 function callPageHost(operation, args) {
   const id = `host-${++hostSequence}`;
@@ -250,21 +268,21 @@ function handleHostResponse(message) {
   return true;
 }
 
-self.addEventListener("message", async (event) => {
-  if (event.data?.type === "host-result" || event.data?.type === "host-exception") {
-    handleHostResponse(event.data);
+async function dispatchWorkerMessage(message) {
+  if (message?.type === "host-result" || message?.type === "host-exception") {
+    handleHostResponse(message);
     return;
   }
-  traceShowcaseBoot("request", `${event.data?.type || "unknown"}:${event.data?.id || "none"}`);
+  traceShowcaseBoot("request", messageIdentity(message));
   try {
-    const response = await handle(event.data);
+    const response = await handle(message);
     traceShowcaseBoot("response", `${response?.type || "unknown"}:${response?.id || "none"}`);
     postMessage(response);
   } catch (error) {
     traceShowcaseBoot("request-error", error?.message || String(error));
     postMessage({
       type: "exception",
-      id: event.data?.id || null,
+      id: message?.id || null,
       error: {
         name: error?.name || "Error",
         message: error?.message || String(error),
@@ -275,4 +293,10 @@ self.addEventListener("message", async (event) => {
   } finally {
     activeRequestId = null;
   }
-});
+}
+
+workerReady = true;
+traceShowcaseBoot("listener-ready", `queued=${pendingWorkerMessages.length}`);
+for (const message of pendingWorkerMessages.splice(0)) {
+  void dispatchWorkerMessage(message);
+}
