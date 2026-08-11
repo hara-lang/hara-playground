@@ -42,12 +42,18 @@ const initialPresentation = showcasePresentationFromLocation(globalThis.location
 const initialTheme = initialPresentation.theme
   || readSetting(STUDIO_SETTING_KEYS.theme, readSetting("hara-studio-theme", "dark"));
 const initialOutput = readSetting(STUDIO_SETTING_KEYS.output, "preview");
+const runtimeWorkerUrl = new URL(
+  initialPresentation.mode === "showcase"
+    ? "../runtime/showcase-worker.js"
+    : "../runtime/worker.js",
+  import.meta.url,
+);
 
 export const app = document.querySelector("#app");
 export const store = new WorkspaceStore();
 export const capabilities = new WebCapabilityRegistry({ grants: ["studio/eval"] });
 export const runtime = new RuntimeClient(
-  new URL("../runtime/worker.js", import.meta.url),
+  runtimeWorkerUrl,
   { hostRegistry: capabilities, hostCallTimeout: 130_000 }
 );
 
