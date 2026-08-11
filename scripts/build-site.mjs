@@ -20,6 +20,7 @@ async function copyIfPresent(source, destination) {
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 await cp(resolve(root, "index.html"), resolve(output, "index.html"));
+await cp(resolve(root, "provider.html"), resolve(output, "provider.html"));
 await cp(resolve(root, "src"), resolve(output, "src"), { recursive: true });
 await copyIfPresent("public/og-hara-playground.jpg", "og-hara-playground.jpg");
 
