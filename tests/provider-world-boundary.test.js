@@ -3,25 +3,27 @@ import {readFileSync} from "node:fs";
 import test from "node:test";
 
 const page = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-const bootstrap = readFileSync(new URL("../src/bootstrap.js", import.meta.url), "utf8");
+const providerPage = readFileSync(new URL("../provider.html", import.meta.url), "utf8");
 const entry = readFileSync(new URL("../src/provider/entry.js", import.meta.url), "utf8");
 const adapter = readFileSync(new URL("../src/provider/alumbra.js", import.meta.url), "utf8");
 const card = readFileSync(new URL("../src/provider/card.js", import.meta.url), "utf8");
+const build = readFileSync(new URL("../scripts/build-site.mjs", import.meta.url), "utf8");
 
-test("routes provider URLs before starting the ordinary Playground editor", () => {
-  assert.match(page, /src="\.\/src\/bootstrap\.js"/);
-  assert.doesNotMatch(page, /src="\.\/src\/main\.js"/);
-  const providerCheck = bootstrap.indexOf('query.get("provider")');
-  const providerImport = bootstrap.indexOf('import("./provider/entry.js")');
-  const editorImport = bootstrap.indexOf('import("./main.js")');
-  assert.ok(providerCheck >= 0 && providerImport > providerCheck && editorImport > providerImport);
+test("preserves the ordinary editor and embedded Showcase startup path", () => {
+  assert.match(page, /src="\.\/src\/main\.js"/);
+  assert.match(page, /src="\.\/src\/provider\/card\.js"/);
+  assert.doesNotMatch(page, /src="\.\/src\/bootstrap\.js"/);
+  assert.match(card, /query\.get\("presentation"\) !== "showcase"/);
 });
 
-test("pins the Hodos source and provider-host modules in the browser import map", () => {
-  assert.match(page, /"@greenways\/hodos-core": "\.\/vendor\/hodos\/packages\/core\/src\/index\.js"/);
-  assert.match(page, /"@greenways\/hodos-source-github": "\.\/vendor\/hodos\/packages\/source-github\/src\/index\.js"/);
-  assert.match(page, /"@greenways\/hodos-viewer\/providers": "\.\/vendor\/hodos\/packages\/viewer\/src\/world-provider-host\.js"/);
-  assert.match(page, /href="\.\/src\/provider\/provider\.css"/);
+test("loads provider worlds from a dedicated application document", () => {
+  assert.match(providerPage, /src="\.\/src\/provider\/entry\.js"/);
+  assert.doesNotMatch(providerPage, /src="\.\/src\/main\.js"/);
+  assert.match(providerPage, /"@greenways\/hodos-core": "\.\/vendor\/hodos\/packages\/core\/src\/index\.js"/);
+  assert.match(providerPage, /"@greenways\/hodos-source-github": "\.\/vendor\/hodos\/packages\/source-github\/src\/index\.js"/);
+  assert.match(providerPage, /"@greenways\/hodos-viewer\/providers": "\.\/vendor\/hodos\/packages\/viewer\/src\/world-provider-host\.js"/);
+  assert.match(providerPage, /href="\.\/src\/provider\/provider\.css"/);
+  assert.match(build, /provider\.html/);
 });
 
 test("resolves the repository manifest before allocating the installed provider", () => {
@@ -36,6 +38,7 @@ test("resolves the repository manifest before allocating the installed provider"
 
 test("adds one provider-backed world card without importing Alumbra code", () => {
   assert.match(card, /dataset\.providerProject = "alumbra-hara\/peacock-ballroom"/);
+  assert.match(card, /new URL\("\.\/provider\.html", location\.href\)/);
   assert.match(card, /world", "https:\/\/github\.com\/greenways-ai\/alumbra"/);
   assert.match(card, /Open world/);
   assert.match(adapter, /https:\/\/greenways-ai\.github\.io/);
