@@ -1,0 +1,26 @@
+(ns samples.active-loop-tank)
+
+;; This file does not create a timer or own the tank. It contributes one
+;; replaceable decision function to a loop that already lives in the worker.
+
+(defn clamp [minimum maximum value]
+  (if (< value minimum)
+    minimum
+    (if (> value maximum)
+      maximum
+      value)))
+
+(defn controller [observation memory]
+  (let [level          (get observation :level)
+        target         (get observation :target)
+        error          (- target level)
+        previous-error (get memory :previous-error 0)
+        proportional   (* 0.18 error)
+        damping        (* 0.03 (- error previous-error))
+        pump           (clamp 0 1 (+ proportional damping))]
+    {:command {:pump pump}
+     :memory  {:previous-error error}}))
+
+;; Try changing 0.18, press Activate, and watch the same tick sequence continue.
+;; Then introduce an unresolved symbol and Activate again: the worker rejects
+;; that candidate while the previously accepted controller keeps running.
