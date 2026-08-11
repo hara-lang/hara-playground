@@ -9,6 +9,7 @@ const adapter = readFileSync(new URL("../src/provider/alumbra.js", import.meta.u
 const projects = readFileSync(new URL("../src/studio/projects.js", import.meta.url), "utf8");
 const build = readFileSync(new URL("../scripts/build-site.mjs", import.meta.url), "utf8");
 const prepare = readFileSync(new URL("../scripts/prepare-web-packages.mjs", import.meta.url), "utf8");
+const liveSmoke = readFileSync(new URL("../scripts/verify-live-provider-world.mjs", import.meta.url), "utf8");
 const submodules = readFileSync(new URL("../.gitmodules", import.meta.url), "utf8");
 
 test("preserves the exact ordinary editor and embedded Showcase document", () => {
@@ -52,4 +53,19 @@ test("adds one provider-backed world project without importing Alumbra code", ()
   assert.doesNotMatch(entry, /@greenways\/alumbra/);
   assert.doesNotMatch(adapter, /@greenways\/alumbra/);
   assert.doesNotMatch(adapter, /mesh|shader|canonicalChunk|PlayCanvas/);
+});
+
+test("the public smoke proves repository, host and renderer readiness together", () => {
+  assert.match(liveSmoke, /provider", "alumbra\/world"/);
+  assert.match(liveSmoke, /world", "https:\/\/github\.com\/greenways-ai\/alumbra"/);
+  assert.match(liveSmoke, /data-playground-provider-ready="true"/);
+  assert.match(liveSmoke, /outer\.allocations, "1"/);
+  assert.match(liveSmoke, /outer\.graph\?\.projectId, "alumbra-hara\/peacock-ballroom"/);
+  assert.match(liveSmoke, /providerUrl\.origin, "https:\/\/oss\.greenways\.ai"/);
+  assert.match(liveSmoke, /\/hodos\/alumbra\/apps\/lab\/peacock-ballroom\.html/);
+  assert.match(liveSmoke, /data-peacock-ballroom-ready="true"/);
+  assert.match(liveSmoke, /inner\.chunks, "48"/);
+  assert.match(liveSmoke, /inner\.lighting, "passed"/);
+  assert.match(liveSmoke, /inner\.landmarks, "passed"/);
+  assert.match(liveSmoke, /inner\.disposal, "passed"/);
 });
