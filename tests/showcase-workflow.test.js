@@ -13,5 +13,10 @@ test("Showcase browser CI is read-only and exercises the embedded immutable host
   assert.match(runner, /commit", commit/);
   assert.match(runner, /hara\.showcase\/select-surface/);
   assert.match(runner, /surfaceId: "not-declared"/);
+  assert.match(runner, /HARA_SHOWCASE_READY_TIMEOUT \|\| 45_000/);
+  assert.match(runner, /SHOWCASE_BROWSER_STATE/);
+  assert.match(runner, /consoleErrors/);
+  assert.match(runner, /failedRequests/);
+  assert.match(runner, /htmlDataset/);
   assert.doesNotMatch(runner, /\.test\.(?:js|mjs)/);
 });
