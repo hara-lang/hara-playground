@@ -77,7 +77,12 @@ try {
   assert.equal(outer.state, "ballroom/day");
   assert.equal(outer.allocations, "1");
   assert.equal(outer.graph?.repository, "https://github.com/greenways-ai/alumbra");
-  assert.equal(outer.graph?.projectId, "alumbra-hara/peacock-ballroom");
+  assert.equal(outer.graph?.projectId, "greenways/alumbra");
+  assert.equal(outer.graph?.projectVersion, "0.1.0");
+  assert.equal(outer.launch?.format, "hodos.world-provider-launch/1");
+  assert.equal(outer.launch?.providerId, "alumbra/world");
+  assert.equal(outer.launch?.activityId, "alumbra-hara/peacock-ballroom");
+  assert.equal(outer.launch?.state, "ballroom/day");
   assert.equal(outer.launch?.package, "hara:greenways/alumbra-peacock-ballroom@0.1.0");
 
   const providerUrl = new URL(outer.iframeSrc);

@@ -41,6 +41,8 @@ test("resolves the repository manifest before allocating the installed provider"
   assert.ok(resolution >= 0 && launch > resolution && allocation > launch);
   assert.match(entry, /graph\.project\.provider/);
   assert.match(entry, /graph\.project\.provider\.id !== requestedProvider/);
+  assert.match(entry, /projectId: graph\.project\.id/);
+  assert.match(entry, /playgroundProviderActivity = launch\.activityId/);
   assert.match(entry, /consumer: "hara-playground"/);
 });
 
@@ -55,12 +57,16 @@ test("adds one provider-backed world project without importing Alumbra code", ()
   assert.doesNotMatch(adapter, /mesh|shader|canonicalChunk|PlayCanvas/);
 });
 
-test("the public smoke proves repository, host and renderer readiness together", () => {
+test("the public smoke proves repository, launch, host and renderer readiness together", () => {
   assert.match(liveSmoke, /provider", "alumbra\/world"/);
   assert.match(liveSmoke, /world", "https:\/\/github\.com\/greenways-ai\/alumbra"/);
   assert.match(liveSmoke, /data-playground-provider-ready="true"/);
   assert.match(liveSmoke, /outer\.allocations, "1"/);
-  assert.match(liveSmoke, /outer\.graph\?\.projectId, "alumbra-hara\/peacock-ballroom"/);
+  assert.match(liveSmoke, /outer\.graph\?\.projectId, "greenways\/alumbra"/);
+  assert.match(liveSmoke, /outer\.launch\?\.format, "hodos\.world-provider-launch\/1"/);
+  assert.match(liveSmoke, /outer\.launch\?\.providerId, "alumbra\/world"/);
+  assert.match(liveSmoke, /outer\.launch\?\.activityId, "alumbra-hara\/peacock-ballroom"/);
+  assert.match(liveSmoke, /outer\.launch\?\.state, "ballroom\/day"/);
   assert.match(liveSmoke, /providerUrl\.origin, "https:\/\/oss\.greenways\.ai"/);
   assert.match(liveSmoke, /\/hodos\/alumbra\/apps\/lab\/peacock-ballroom\.html/);
   assert.match(liveSmoke, /data-peacock-ballroom-ready="true"/);
