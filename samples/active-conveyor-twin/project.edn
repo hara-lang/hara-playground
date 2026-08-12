@@ -1,0 +1,27 @@
+{:hara/type :project
+ :hara/version "1.0.0"
+ :project/id playground.active-conveyor-twin
+ :project/version "0.1.0"
+ :project/source-paths ["src"]
+ :project/test-paths ["test"]
+ :project/extension-paths ["extensions"]
+ :project/main samples.active-conveyor-twin
+ :project/capabilities
+ #{:studio/eval
+   :preview/hta}
+
+ ;; The worker owns the conveyor, package identities, sensor sequence, clock and
+ ;; twin history. This project contributes only a replaceable routing policy.
+ :playground/active-loop
+ {:active/id "conveyor/cell-a"
+  :active/kind :conveyor
+  :active/path "src/main.hal"
+  :active/entry route-package
+  :active/rate-hz 6
+  :active/initial-packages 4
+  :active/spawn-every-ticks 8
+  :active/belt-speed 4.5
+  :active/sensor-position 44
+  :active/route-position 72
+  :active/max-packages 16
+  :active/auto-start true}}

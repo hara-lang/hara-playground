@@ -1,166 +1,16 @@
-import { renderTankActiveLoop } from "./active-loop-view.js";
+import {
+  activityKindFor,
+  normalizeConveyorResult,
+  normalizeTankResult,
+} from "./active-activity-kinds.js";
+import {
+  cloneActiveValue,
+  normalizeKeyword,
+  stageActiveSource,
+  toHaraLiteral,
+} from "./active-values.js";
 
 const ACTIVE_LOOP_SCHEMA = "playground.active-loop/v1";
-const DEFAULT_TANK = Object.freeze({
-  id: "tank/controller",
-  kind: "tank",
-  rateHz: 8,
-  initialLevel: 78,
-  target: 68,
-  leakRate: 1.6,
-  fillRate: 10,
-});
-
-const NAMESPACE_PATTERN = /\(ns\s+([A-Za-z][A-Za-z0-9_.-]*)/;
-const SYMBOL_PATTERN = /^[A-Za-z][A-Za-z0-9_.?*!+\-]*$/;
-const LOOP_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_./-]*$/;
-
-function clamp(minimum, maximum, value) {
-  return Math.min(maximum, Math.max(minimum, value));
-}
-
-function finiteNumber(value, fallback) {
-  const number = Number(value);
-  return Number.isFinite(number) ? number : fallback;
-}
-
-function boundedNumber(value, fallback, minimum, maximum) {
-  return clamp(minimum, maximum, finiteNumber(value, fallback));
-}
-
-function normalizeKeyword(value) {
-  const text = String(value ?? "");
-  return text.startsWith(":") ? text.slice(1) : text;
-}
-
-function plainKey(value) {
-  if (typeof value === "string") return normalizeKeyword(value);
-  if (value?.constructor?.name === "HtaKeyword" && typeof value.name === "string") return value.name;
-  return normalizeKeyword(value);
-}
-
-export function toPlainActiveValue(value, seen = new WeakSet()) {
-  if (value == null || typeof value !== "object") return value;
-  if (seen.has(value)) throw new Error("active/value-cycle");
-  seen.add(value);
-  try {
-    if (Array.isArray(value)) return value.map((item) => toPlainActiveValue(item, seen));
-    if (value instanceof Map) {
-      return Object.fromEntries(
-        [...value.entries()].map(([key, entry]) => [plainKey(key), toPlainActiveValue(entry, seen)])
-      );
-    }
-    if (value?.constructor?.name === "HtaKeyword" && typeof value.name === "string") {
-      return `:${value.name}`;
-    }
-    const output = {};
-    for (const [key, entry] of Object.entries(value)) {
-      output[plainKey(key)] = toPlainActiveValue(entry, seen);
-    }
-    return output;
-  } finally {
-    seen.delete(value);
-  }
-}
-
-function cloneActiveValue(value) {
-  return toPlainActiveValue(value);
-}
-
-function keywordLiteral(key) {
-  const normalized = normalizeKeyword(key);
-  if (!SYMBOL_PATTERN.test(normalized)) {
-    throw new Error(`active/map-key-invalid:${normalized}`);
-  }
-  return `:${normalized}`;
-}
-
-export function toHaraLiteral(value, seen = new WeakSet()) {
-  if (value == null) return "nil";
-  if (value === true) return "true";
-  if (value === false) return "false";
-  if (typeof value === "number") {
-    if (!Number.isFinite(value)) throw new Error("active/number-invalid");
-    return Object.is(value, -0) ? "0" : String(value);
-  }
-  if (typeof value === "string") return JSON.stringify(value);
-  if (typeof value !== "object") throw new Error(`active/value-unsupported:${typeof value}`);
-  if (seen.has(value)) throw new Error("active/value-cycle");
-  seen.add(value);
-  try {
-    if (Array.isArray(value)) return `[${value.map((item) => toHaraLiteral(item, seen)).join(" ")}]`;
-    const plain = toPlainActiveValue(value);
-    return `{${Object.entries(plain)
-      .map(([key, entry]) => `${keywordLiteral(key)} ${toHaraLiteral(entry, seen)}`)
-      .join(" ")}}`;
-  } finally {
-    seen.delete(value);
-  }
-}
-
-function safeNamespace(value, fallback = "active.loop") {
-  const namespace = String(value || fallback).replace(/[^A-Za-z0-9_.-]/g, "-");
-  return /^[A-Za-z]/.test(namespace) ? namespace : `active.${namespace}`;
-}
-
-export function stageActiveSource(source, {
-  namespace = "active.loop",
-  entry = "controller",
-  attempt = 1,
-} = {}) {
-  const text = String(source || "").trim();
-  if (!text) throw new Error("active/source-required");
-  const entryName = String(entry || "controller");
-  if (!SYMBOL_PATTERN.test(entryName)) throw new Error(`active/entry-invalid:${entryName}`);
-  if (!Number.isSafeInteger(attempt) || attempt < 1) throw new Error("active/attempt-invalid");
-
-  const declared = text.match(NAMESPACE_PATTERN)?.[1] || null;
-  const base = safeNamespace(declared || namespace);
-  const stagingNamespace = `${base}.active.v${attempt}`;
-  const stagedSource = declared
-    ? text.replace(NAMESPACE_PATTERN, `(ns ${stagingNamespace}`)
-    : `(ns ${stagingNamespace})\n\n${text}`;
-
-  return Object.freeze({
-    source: stagedSource,
-    namespace: stagingNamespace,
-    entry: entryName,
-    qualifiedEntry: `${stagingNamespace}/${entryName}`,
-  });
-}
-
-export function normalizeControllerResult(value, previousMemory = {}) {
-  const result = toPlainActiveValue(value);
-  if (!result || typeof result !== "object" || Array.isArray(result)) {
-    throw new Error("active/controller-result-invalid");
-  }
-  const command = result.command && typeof result.command === "object"
-    ? result.command
-    : result;
-  const pump = Number(command.pump);
-  if (!Number.isFinite(pump)) throw new Error("active/controller-pump-required");
-  const memory = result.memory === undefined ? cloneActiveValue(previousMemory) : cloneActiveValue(result.memory);
-  if (!memory || typeof memory !== "object" || Array.isArray(memory)) {
-    throw new Error("active/controller-memory-invalid");
-  }
-  return Object.freeze({ pump: clamp(0, 1, pump), memory });
-}
-
-function normalizeTankSpec(spec = {}) {
-  const id = String(spec.loopId || spec.id || spec.activeId || DEFAULT_TANK.id);
-  if (!LOOP_ID_PATTERN.test(id)) throw new Error(`active/id-invalid:${id}`);
-  const kind = normalizeKeyword(spec.kind || spec.activeKind || DEFAULT_TANK.kind);
-  if (kind !== "tank") throw new Error(`active/kind-unsupported:${kind}`);
-  return Object.freeze({
-    id,
-    kind,
-    rateHz: boundedNumber(spec.rateHz, DEFAULT_TANK.rateHz, 1, 60),
-    initialLevel: boundedNumber(spec.initialLevel, DEFAULT_TANK.initialLevel, 0, 100),
-    target: boundedNumber(spec.target, DEFAULT_TANK.target, 0, 100),
-    leakRate: boundedNumber(spec.leakRate, DEFAULT_TANK.leakRate, 0, 100),
-    fillRate: boundedNumber(spec.fillRate, DEFAULT_TANK.fillRate, 0, 100),
-  });
-}
 
 function eventRecord(loop, kind, message, values = {}) {
   loop.events.push({
@@ -170,16 +20,7 @@ function eventRecord(loop, kind, message, values = {}) {
     message,
     ...values,
   });
-  if (loop.events.length > 8) loop.events.splice(0, loop.events.length - 8);
-}
-
-function observationFor(loop) {
-  return {
-    level: loop.world.level,
-    target: loop.world.target,
-    pump: loop.world.pump,
-    tick: loop.tick,
-  };
+  if (loop.events.length > 12) loop.events.splice(0, loop.events.length - 12);
 }
 
 function controllerCall(controller, observation, memory) {
@@ -187,21 +28,9 @@ function controllerCall(controller, observation, memory) {
 }
 
 function appendHistory(loop) {
-  loop.history.push({ tick: loop.tick, level: loop.world.level, target: loop.world.target });
-  if (loop.history.length > 48) loop.history.splice(0, loop.history.length - 48);
-}
-
-function applyTankDynamics(loop, pump) {
-  const deltaSeconds = 1 / loop.spec.rateHz;
-  const inflow = pump * loop.spec.fillRate * deltaSeconds;
-  const leak = loop.spec.leakRate * deltaSeconds;
-  loop.world.pump = pump;
-  loop.world.level = clamp(0, 100, loop.world.level + inflow - leak);
-}
-
-function round(value, digits = 2) {
-  const factor = 10 ** digits;
-  return Math.round(value * factor) / factor;
+  const point = loop.definition.historyPoint(loop);
+  loop.history.push(cloneActiveValue(point));
+  if (loop.history.length > 64) loop.history.splice(0, loop.history.length - 64);
 }
 
 function snapshotOf(loop) {
@@ -219,6 +48,9 @@ function snapshotOf(loop) {
     schema: ACTIVE_LOOP_SCHEMA,
     id: loop.spec.id,
     kind: loop.spec.kind,
+    activityLabel: loop.definition.activityLabel,
+    behaviorLabel: loop.definition.behaviorLabel,
+    interventionLabel: loop.definition.interventionLabel,
     status: loop.installing ? "activating" : loop.paused ? "paused" : "running",
     paused: loop.paused,
     tick: loop.tick,
@@ -228,13 +60,7 @@ function snapshotOf(loop) {
     createdAt: loop.createdAt,
     updatedAt: loop.updatedAt,
     controller,
-    world: {
-      level: round(loop.world.level),
-      target: round(loop.world.target),
-      pump: round(loop.world.pump, 3),
-      leakRate: loop.spec.leakRate,
-      fillRate: loop.spec.fillRate,
-    },
+    world: loop.definition.snapshotWorld(loop),
     memory: cloneActiveValue(loop.memory),
     lastError: loop.lastError,
     runtimeError: loop.runtimeError,
@@ -245,7 +71,7 @@ function snapshotOf(loop) {
       controllerMemoryRetained: true,
     },
     events: loop.events.map((event) => ({ ...event })),
-    history: loop.history.map((point) => ({ ...point })),
+    history: loop.history.map((point) => cloneActiveValue(point)),
   };
 }
 
@@ -273,7 +99,11 @@ export function createActiveLoopController({
     if (!snapshot) return null;
     const publishEvery = Math.max(1, Math.round(loop.spec.rateHz / 4));
     if (force || loop.tick % publishEvery === 0) {
-      publish({ type: "html", html: renderTankActiveLoop(snapshot), activeLoop: snapshot });
+      publish({
+        type: "html",
+        html: loop.definition.render(snapshot),
+        activeLoop: snapshot,
+      });
     }
     return snapshot;
   }
@@ -300,12 +130,14 @@ export function createActiveLoopController({
   }
 
   function create(spec = {}) {
-    const normalized = normalizeTankSpec(spec);
+    const definition = activityKindFor(spec.kind || spec.activeKind || "tank");
+    const normalized = definition.normalizeSpec(spec);
     if (loop?.spec.id === normalized.id && loop?.spec.kind === normalized.kind) return inspect();
     stopTimer();
     const createdAt = now();
     loop = {
       spec: normalized,
+      definition,
       createdAt,
       updatedAt: createdAt,
       tick: 0,
@@ -314,7 +146,7 @@ export function createActiveLoopController({
       installing: false,
       controller: null,
       memory: {},
-      world: { level: normalized.initialLevel, target: normalized.target, pump: 0 },
+      world: definition.createWorld(normalized),
       events: [],
       eventSequence: 0,
       history: [],
@@ -322,7 +154,11 @@ export function createActiveLoopController({
       runtimeError: null,
     };
     appendHistory(loop);
-    eventRecord(loop, "loop-created", "Runtime created the active loop before controller code was installed.");
+    eventRecord(
+      loop,
+      "loop-created",
+      `Runtime created ${definition.activityLabel} before ${definition.behaviorLabel} code was installed.`,
+    );
     publishSnapshot();
     scheduleNext(0);
     return inspect();
@@ -334,13 +170,13 @@ export function createActiveLoopController({
     return loop;
   }
 
-  async function evaluateController(controller, memory = loop?.memory || {}) {
+  async function evaluateController(controller, observation, memory = loop?.memory || {}) {
     const current = requireLoop();
     const result = await evaluate(
-      controllerCall(controller, observationFor(current), memory),
+      controllerCall(controller, observation, memory),
       controller.namespace,
     );
-    return normalizeControllerResult(result, memory);
+    return current.definition.normalizeResult(result, memory);
   }
 
   async function install({
@@ -366,35 +202,46 @@ export function createActiveLoopController({
         installedAtTick: current.tick,
       };
       await evaluate(staged.source, staged.namespace);
-      // Dry-run against copies. Neither world nor controller memory can change
-      // until the candidate has compiled and produced a valid command shape.
-      await evaluateController(candidate, cloneActiveValue(current.memory));
+      // Validate the candidate against a representative observation and copied
+      // memory. The continuing activity is not mutated until installation.
+      await evaluateController(
+        candidate,
+        current.definition.validationObservation(current),
+        cloneActiveValue(current.memory),
+      );
     } catch (cause) {
       current.installing = false;
       const message = cause?.message || String(cause);
       current.lastError = message;
       current.updatedAt = now();
-      eventRecord(current, "activation-rejected", `Attempt ${attempt} rejected; v${current.controller?.version || 0} remains active.`, { attempt });
+      eventRecord(
+        current,
+        "activation-rejected",
+        `Attempt ${attempt} rejected; ${current.controller ? `${current.definition.behaviorLabel} v${current.controller.version}` : "the safe default"} remains active.`,
+        { attempt },
+      );
       const activeLoop = publishSnapshot();
       const error = new Error(`active/activation-rejected:${message}`, { cause });
       error.data = { attempt, activeLoop };
       throw error;
     }
 
-    const retainedTick = current.tick;
-    const retainedLevel = current.world.level;
+    const retainedWorld = cloneActiveValue(current.world);
     const retainedMemory = cloneActiveValue(current.memory);
+    const retainedTick = current.tick;
     current.controller = candidate;
+    current.world = retainedWorld;
     current.memory = retainedMemory;
-    current.world.level = retainedLevel;
     current.installing = false;
     current.lastError = null;
     current.runtimeError = null;
     current.updatedAt = now();
-    eventRecord(current, "activation-installed", `Controller v${attempt} installed at a safe tick boundary.`, {
-      attempt,
-      installedAtTick: retainedTick,
-    });
+    eventRecord(
+      current,
+      "activation-installed",
+      `${current.definition.behaviorLabel} v${attempt} installed at a safe tick boundary.`,
+      { attempt, installedAtTick: retainedTick },
+    );
     return publishSnapshot();
   }
 
@@ -402,24 +249,39 @@ export function createActiveLoopController({
     const current = requireLoop();
     if (current.paused || current.installing) return inspect();
 
-    let pump = 0;
-    if (current.controller) {
+    const decide = async (observation) => {
+      if (!current.controller) return current.definition.defaultCommand(current, observation);
       try {
-        const result = await evaluateController(current.controller, current.memory);
-        pump = result.pump;
+        const result = await evaluateController(current.controller, observation, current.memory);
         current.memory = result.memory;
         current.runtimeError = null;
+        return result.command;
       } catch (cause) {
-        pump = 0;
         const message = cause?.message || String(cause);
         if (message !== current.runtimeError) {
-          eventRecord(current, "controller-failed", `Controller v${current.controller.version} failed for this tick; pump set to zero.`);
+          eventRecord(
+            current,
+            "controller-failed",
+            `${current.definition.behaviorLabel} v${current.controller.version} failed for this decision; the safe default was used.`,
+          );
         }
         current.runtimeError = message;
+        return current.definition.defaultCommand(current, observation);
       }
+    };
+
+    try {
+      await current.definition.advance(current, decide, {
+        event(kind, message, values = {}) {
+          eventRecord(current, kind, message, values);
+        },
+      });
+    } catch (cause) {
+      const message = cause?.message || String(cause);
+      current.runtimeError = message;
+      eventRecord(current, "activity-failed", `${current.definition.activityLabel} could not advance this tick.`);
     }
 
-    applyTankDynamics(current, pump);
     current.tick += 1;
     current.updatedAt = now();
     appendHistory(current);
@@ -432,33 +294,27 @@ export function createActiveLoopController({
     switch (command) {
       case "pause":
         current.paused = true;
-        current.world.pump = 0;
+        if (Object.hasOwn(current.world, "pump")) current.world.pump = 0;
         eventRecord(current, "loop-paused", "The runtime paused progression without discarding state.");
         break;
       case "resume":
         current.paused = false;
-        eventRecord(current, "loop-resumed", "The runtime resumed the same loop identity and state.");
+        eventRecord(current, "loop-resumed", "The runtime resumed the same activity identity and state.");
         break;
       case "toggle":
         return command(loopId, current.paused ? "resume" : "pause", options);
-      case "disturb": {
-        const amount = boundedNumber(options.amount, 18, 1, 80);
-        current.world.level = clamp(0, 100, current.world.level - amount);
-        current.world.pump = 0;
-        appendHistory(current);
-        eventRecord(current, "world-disturbed", `Removed ${round(amount, 1)}% of the tank to test the live controller.`);
-        break;
-      }
-      case "set-target": {
-        const target = boundedNumber(options.target, current.world.target, 0, 100);
-        current.world.target = target;
-        eventRecord(current, "target-updated", `Target changed to ${round(target, 1)}%.`);
-        break;
-      }
       case "status":
         return inspect();
-      default:
-        throw new Error(`active/command-unsupported:${command}`);
+      default: {
+        const handled = current.definition.command(current, command, options, {
+          event(kind, message, values = {}) {
+            eventRecord(current, kind, message, values);
+          },
+        });
+        if (!handled) throw new Error(`active/command-unsupported:${command}`);
+        appendHistory(current);
+        break;
+      }
     }
     current.updatedAt = now();
     return publishSnapshot();
@@ -473,4 +329,20 @@ export function createActiveLoopController({
   return Object.freeze({ create, install, tick, command, inspect, reset });
 }
 
+export function normalizeControllerResult(value, previousMemory = {}) {
+  const normalized = normalizeTankResult(value, previousMemory);
+  return Object.freeze({ pump: normalized.command.pump, memory: normalized.memory });
+}
+
+export function normalizeRoutingResult(value, previousMemory = {}) {
+  const normalized = normalizeConveyorResult(value, previousMemory);
+  return Object.freeze({ route: normalized.command.route, memory: normalized.memory });
+}
+
+export {
+  cloneActiveValue,
+  stageActiveSource,
+  toHaraLiteral,
+  toPlainActiveValue,
+} from "./active-values.js";
 export { ACTIVE_LOOP_SCHEMA };

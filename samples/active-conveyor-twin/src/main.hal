@@ -1,0 +1,26 @@
+(ns samples.active-conveyor-twin)
+
+;; The worker already owns the conveyor activity. This function is installed as
+;; one replaceable judgement policy; it does not create a timer or callback.
+(defn route-package [observation memory]
+  (let [colour     (get observation :colour)
+        weight     (get observation :weight)
+        confidence (get observation :confidence)
+        anomaly    (get observation :anomaly)
+        seen       (get memory :seen 0)
+        route      (if anomaly
+                     :inspect
+                     (if (< confidence 0.72)
+                       :inspect
+                       (if (= colour "red")
+                         :reject
+                         (if (> weight 8)
+                           :inspect
+                           :green))))]
+    {:command {:route route}
+     :memory  {:seen (+ seen 1)
+               :last-package (get observation :package-id)
+               :last-route route}}))
+
+;; Change the confidence threshold or weight rule, then press Activate policy.
+;; The belt, packages, sensor sequence and counts continue through the change.

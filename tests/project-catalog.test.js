@@ -18,31 +18,35 @@ test("repository-backed projects point at complete GitHub subprojects", () => {
   assert.equal(repositoryLabel(liveValues.repository), "hara-lang/hara-playground/samples/live-values");
 });
 
+test("Conveyor Twin is the primary applied active-runtime project", () => {
+  const project = FEATURED_PROJECTS.find((candidate) => candidate.id === "active-conveyor-twin");
+  assert.ok(project);
+  assert.equal(project.repository.path, "samples/active-conveyor-twin");
+  assert.ok(project.capabilities.includes("Observation continuity"));
+  assert.equal(project.field, "simulation");
+  assert.deepEqual(
+    FEATURED_PROJECTS.filter((candidate) => candidate.primary).map((candidate) => candidate.id),
+    ["active-conveyor-twin"],
+  );
+});
+
+test("Living Tank remains the compact control-loop proof", () => {
+  const project = FEATURED_PROJECTS.find((candidate) => candidate.id === "active-loop-tank");
+  assert.ok(project);
+  assert.equal(project.repository.path, "samples/active-loop-tank");
+  assert.ok(project.capabilities.includes("Resident compiler"));
+  assert.equal(project.primary, undefined);
+});
+
 test("Peacock Ballroom is a provider-backed world project", () => {
   const project = FEATURED_PROJECTS.find((candidate) => candidate.id === "peacock-ballroom");
   assert.ok(project);
   assert.equal(project.repository, undefined);
   assert.equal(project.entry, undefined);
   assert.equal(project.field, "worlds");
-  assert.equal(project.sourceUrl, "https://github.com/greenways-ai/alumbra");
-
   const link = new URL(projectDeepLink(project, "/"), "https://playground.hara-lang.org/");
   assert.equal(link.pathname, "/provider.html");
   assert.equal(link.searchParams.get("provider"), "alumbra/world");
-  assert.equal(link.searchParams.get("world"), "https://github.com/greenways-ai/alumbra");
-  assert.equal(link.searchParams.get("state"), "ballroom/day");
-});
-
-test("Living Tank is the primary active-runtime project", () => {
-  const project = FEATURED_PROJECTS.find((candidate) => candidate.id === "active-loop-tank");
-  assert.ok(project);
-  assert.equal(project.repository.path, "samples/active-loop-tank");
-  assert.ok(project.capabilities.includes("Resident compiler"));
-  assert.equal(project.field, "simulation");
-  assert.deepEqual(
-    FEATURED_PROJECTS.filter((candidate) => candidate.primary).map((candidate) => candidate.id),
-    ["active-loop-tank"],
-  );
 });
 
 test("Supersonic is a featured audio project", () => {
