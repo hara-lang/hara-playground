@@ -1,15 +1,27 @@
 export const FEATURED_PROJECTS = Object.freeze([
   Object.freeze({
+    id: "active-conveyor-twin",
+    title: "Conveyor Cell Digital Twin",
+    eyebrow: "ACTIVE RUNTIME · REAL-WORLD MODEL",
+    description: "Keep packages, sensor sequence and twin state moving while a Hara routing policy is safely replaced inside the worker-owned activity.",
+    repository: Object.freeze({ owner: "hara-lang", repo: "hara-playground", branch: "main", path: "samples/active-conveyor-twin" }),
+    sourceUrl: "https://github.com/hara-lang/hara-playground/tree/main/samples/active-conveyor-twin",
+    entry: "src/main.hal",
+    capabilities: Object.freeze(["Digital twin", "Live policy activation", "Observation continuity"]),
+    action: "Open Conveyor Twin",
+    primary: true,
+    field: "simulation"
+  }),
+  Object.freeze({
     id: "active-loop-tank",
     title: "The Living Tank",
-    eyebrow: "ACTIVE RUNTIME · DIGITAL TWIN",
+    eyebrow: "ACTIVE RUNTIME · CONTROL LOOP",
     description: "Install and replace a Hara controller inside a worker-owned simulation while the loop identity, tick and world state continue.",
     repository: Object.freeze({ owner: "hara-lang", repo: "hara-playground", branch: "main", path: "samples/active-loop-tank" }),
     sourceUrl: "https://github.com/hara-lang/hara-playground/tree/main/samples/active-loop-tank",
     entry: "src/main.hal",
     capabilities: Object.freeze(["Resident compiler", "State-preserving activation", "Safe replacement"]),
     action: "Open Living Tank",
-    primary: true,
     field: "simulation"
   }),
   Object.freeze({

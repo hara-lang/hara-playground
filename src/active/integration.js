@@ -3,6 +3,27 @@ import { appendRepl, saveCurrentFile } from "../app/actions.js";
 import { updateReplOnly } from "../app/view.js";
 import { detectActiveLoopConfiguration } from "../runtime/active-project.js";
 
+const ACTIVITY_UI = Object.freeze({
+  tank: Object.freeze({
+    activity: "Living Tank",
+    behavior: "controller",
+    activate: "Activate controller",
+    intervention: "Disturb tank",
+    interventionTitle: "Remove water without restarting the active loop",
+    command: "disturb",
+    options: Object.freeze({ amount: 18 }),
+  }),
+  conveyor: Object.freeze({
+    activity: "Conveyor Cell A",
+    behavior: "routing policy",
+    activate: "Activate policy",
+    intervention: "Inject anomaly",
+    interventionTitle: "Mark the next sensor observation anomalous without restarting the conveyor",
+    command: "inject-anomaly",
+    options: Object.freeze({}),
+  }),
+});
+
 let installed = false;
 let workspaceKey = null;
 let configuration = null;
@@ -38,19 +59,25 @@ function observeRuntimeTransition() {
   lastRuntimeStatus = state.runtimeStatus;
 }
 
+function uiForActivity() {
+  return ACTIVITY_UI[configuration?.kind] || ACTIVITY_UI.tank;
+}
+
 function activeFileSelected() {
   return Boolean(configuration && state.selectedPath === configuration.path);
 }
 
 function controlLabel() {
+  const ui = uiForActivity();
   if (busy) return "Activating…";
-  if (!snapshot?.version) return "Activate controller";
-  return `Activate v${Number(snapshot.attempt || snapshot.version) + 1}`;
+  if (!snapshot?.version) return ui.activate;
+  return `${ui.activate} v${Number(snapshot.attempt || snapshot.version) + 1}`;
 }
 
 function statusLabel() {
-  if (!snapshot) return "loop awaiting activation";
-  const version = snapshot.version ? `v${snapshot.version}` : "no controller";
+  if (!snapshot) return "activity awaiting activation";
+  const ui = uiForActivity();
+  const version = snapshot.version ? `${ui.behavior} v${snapshot.version}` : `no ${ui.behavior}`;
   return `${snapshot.status} · tick ${snapshot.tick} · ${version}`;
 }
 
@@ -66,6 +93,7 @@ function renderControls() {
     return;
   }
 
+  const ui = uiForActivity();
   const actions = document.querySelector(".editor-actions");
   if (!actions) return;
   let group = actions.querySelector("[data-active-loop-controls]");
@@ -79,23 +107,23 @@ function renderControls() {
   }
 
   group.innerHTML = `
-    <button id="active-loop-activate" class="primary-mini" type="button" title="Stage, validate and install this controller inside the running worker">${controlLabel()}</button>
-    <button id="active-loop-disturb" class="quiet-action" type="button" title="Remove water without restarting the active loop">Disturb tank</button>
-    <button id="active-loop-toggle" class="quiet-action" type="button" title="Pause or resume the runtime-owned loop">${snapshot?.paused ? "Resume loop" : "Pause loop"}</button>`;
+    <button id="active-loop-activate" class="primary-mini" type="button" title="Stage, validate and install this ${ui.behavior} inside the running worker">${controlLabel()}</button>
+    <button id="active-loop-intervention" class="quiet-action" type="button" title="${ui.interventionTitle}">${ui.intervention}</button>
+    <button id="active-loop-toggle" class="quiet-action" type="button" title="Pause or resume the runtime-owned activity">${snapshot?.paused ? "Resume activity" : "Pause activity"}</button>`;
 
   const available = state.runtimeStatus === "ready" && !busy;
   group.querySelector("#active-loop-activate").disabled = !available;
-  group.querySelector("#active-loop-disturb").disabled = !available || !snapshot;
+  group.querySelector("#active-loop-intervention").disabled = !available || !snapshot;
   group.querySelector("#active-loop-toggle").disabled = !available || !snapshot;
   group.querySelector("#active-loop-activate").addEventListener("click", () => {
-    void activateController({ announce: true });
+    void activateBehavior({ announce: true });
   });
-  group.querySelector("#active-loop-disturb").addEventListener("click", () => {
-    void sendCommand("disturb", { amount: 18 }, "Tank disturbed without restarting the loop.");
+  group.querySelector("#active-loop-intervention").addEventListener("click", () => {
+    void sendCommand(ui.command, ui.options, `${ui.intervention} applied without restarting ${configuration.id}.`);
   });
   group.querySelector("#active-loop-toggle").addEventListener("click", () => {
     const command = snapshot?.paused ? "resume" : "pause";
-    void sendCommand(command, {}, `${command === "pause" ? "Paused" : "Resumed"} the same loop identity and state.`);
+    void sendCommand(command, {}, `${command === "pause" ? "Paused" : "Resumed"} the same activity identity and state.`);
   });
 
   const meta = document.querySelector(".editor-meta");
@@ -111,7 +139,7 @@ function renderControls() {
   status.textContent = statusLabel();
   status.title = snapshot?.lastError
     ? `Last replacement rejected: ${snapshot.lastError}`
-    : "The runtime owns the clock and retains state across controller replacement.";
+    : `The runtime owns ${ui.activity}'s clock and retains state across ${ui.behavior} replacement.`;
 }
 
 function record(kind, message) {
@@ -131,21 +159,26 @@ async function activeSource() {
 }
 
 async function ensureLoop() {
+  const {
+    id,
+    kind,
+    path: _path,
+    entry: _entry,
+    autoStart: _autoStart,
+    ...settings
+  } = configuration;
   const result = await runtime.request("active-create", {
-    loopId: configuration.id,
-    kind: configuration.kind,
-    rateHz: configuration.rateHz,
-    initialLevel: configuration.initialLevel,
-    target: configuration.target,
-    leakRate: configuration.leakRate,
-    fillRate: configuration.fillRate,
+    loopId: id,
+    kind,
+    ...settings,
   });
   snapshot = result.activeLoop || snapshot;
   return snapshot;
 }
 
-async function activateController({ announce = false } = {}) {
+async function activateBehavior({ announce = false } = {}) {
   if (!configuration || busy || state.runtimeStatus !== "ready") return false;
+  const ui = uiForActivity();
   busy = true;
   renderControls();
   try {
@@ -159,14 +192,14 @@ async function activateController({ announce = false } = {}) {
     });
     snapshot = result.activeLoop || snapshot;
     if (announce) {
-      record("result", `Activated ${configuration.id} controller v${snapshot?.version || "?"} at tick ${snapshot?.installedAtTick ?? snapshot?.tick ?? "?"}; loop state retained.`);
+      record("result", `Activated ${configuration.id} ${ui.behavior} v${snapshot?.version || "?"} at tick ${snapshot?.installedAtTick ?? snapshot?.tick ?? "?"}; activity state retained.`);
     } else {
-      record("result", `Living Tank active · ${configuration.id} · controller v${snapshot?.version || "?"}`);
+      record("result", `${ui.activity} active · ${configuration.id} · ${ui.behavior} v${snapshot?.version || "?"}`);
     }
     return true;
   } catch (error) {
     snapshot = error?.data?.activeLoop || snapshot;
-    const retained = snapshot?.version ? ` Controller v${snapshot.version} remains active.` : "";
+    const retained = snapshot?.version ? ` ${ui.behavior} v${snapshot.version} remains active.` : " The safe default remains active.";
     record("error", `${error?.message || error}.${retained}`);
     return false;
   } finally {
@@ -198,7 +231,7 @@ async function maybeActivateAutomatically() {
   const key = `${workspaceKey}:${readyGeneration}`;
   if (automaticActivationKey === key) return;
   automaticActivationKey = key;
-  await activateController({ announce: false });
+  await activateBehavior({ announce: false });
 }
 
 async function refreshConfiguration() {

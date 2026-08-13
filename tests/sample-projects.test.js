@@ -34,8 +34,9 @@ test("every featured GitHub sample is a complete workspace.edn-first Hara projec
     assert.ok(workspace.includes(project.entry), `${project.id} workspace.edn does not name ${project.entry}`);
     assert.match(source, /\(ns\s+[A-Za-z]/);
     if (/:playground\/active-loop/.test(descriptor)) {
-      assert.match(descriptor, /:active\/entry\s+controller/);
-      assert.match(source, /\(defn\s+controller\s+\[/);
+      const behavior = descriptor.match(/:active\/entry\s+([A-Za-z][A-Za-z0-9_.?*!+\-]*)/)?.[1];
+      assert.ok(behavior, `${project.id} active project does not declare an entry symbol`);
+      assert.match(source, new RegExp(`\\(defn\\s+${behavior.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s+\\[`));
     } else {
       assert.match(source, /\(view\)\s*$/);
     }
