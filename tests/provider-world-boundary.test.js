@@ -57,7 +57,7 @@ test("adds one provider-backed world project without importing Alumbra code", ()
   assert.doesNotMatch(adapter, /mesh|shader|canonicalChunk|PlayCanvas/);
 });
 
-test("the public smoke proves repository, launch, host and renderer readiness together", () => {
+test("the public smoke proves repository, launch, progress, host and renderer readiness together", () => {
   assert.match(liveSmoke, /provider", "alumbra\/world"/);
   assert.match(liveSmoke, /world", "https:\/\/github\.com\/greenways-ai\/alumbra"/);
   assert.match(liveSmoke, /data-playground-provider-ready="true"/);
@@ -71,7 +71,17 @@ test("the public smoke proves repository, launch, host and renderer readiness to
   assert.match(liveSmoke, /\/hodos\/alumbra\/apps\/lab\/peacock-ballroom\.html/);
   assert.match(liveSmoke, /data-peacock-ballroom-ready="true"/);
   assert.match(liveSmoke, /inner\.chunks, "48"/);
+  assert.match(liveSmoke, /inner\.architecture, "passed"/);
+  assert.match(liveSmoke, /Number\(inner\.architectureEntities\) > 0/);
   assert.match(liveSmoke, /inner\.lighting, "passed"/);
   assert.match(liveSmoke, /inner\.landmarks, "passed"/);
   assert.match(liveSmoke, /inner\.disposal, "passed"/);
+  assert.match(liveSmoke, /inner\.progress, "100"/);
+  assert.match(liveSmoke, /inner\.progressStage, "ready"/);
+  assert.match(liveSmoke, /inner\.progressFormat, "alumbra\.peacock-ballroom-progress\/1"/);
+  assert.match(liveSmoke, /inner\.progressReady, true/);
+  assert.match(liveSmoke, /inner\.progressFailed, false/);
+  assert.match(liveSmoke, /inner\.progressStages, 5/);
+  assert.match(liveSmoke, /inner\.progressBar, true/);
+  assert.match(liveSmoke, /inner\.progressStageBars, 5/);
 });
