@@ -100,6 +100,7 @@ try {
 
   const inner = await providerFrame.locator("body").evaluate((body) => {
     const preview = window.__PEACOCK_BALLROOM_PREVIEW__;
+    const progress = window.__PEACOCK_BALLROOM_PROGRESS__;
     return {
       title: document.title,
       ready: body.dataset.peacockBallroomReady || "",
@@ -107,10 +108,20 @@ try {
       pageError: document.documentElement.dataset.peacockBallroomPageError || "false",
       state: body.dataset.peacockBallroomState || "",
       chunks: body.dataset.peacockBallroomChunks || "",
+      architecture: body.dataset.peacockBallroomArchitecture || "",
+      architectureEntities: body.dataset.peacockBallroomArchitectureEntities || "",
       lighting: body.dataset.peacockBallroomLighting || "",
       landmarks: body.dataset.peacockBallroomLandmarks || "",
       disposal: body.dataset.peacockBallroomDisposal || "",
+      progress: body.dataset.peacockBallroomProgress || "",
+      progressStage: body.dataset.peacockBallroomProgressStage || "",
+      progressFormat: progress?.format || "",
+      progressReady: progress?.ready ?? null,
+      progressFailed: progress?.failed ?? null,
+      progressStages: progress?.stages?.length ?? null,
       canvas: Boolean(document.querySelector("#peacock-ballroom-canvas")),
+      progressBar: Boolean(document.querySelector('[data-ballroom-progress-overall][role="progressbar"]')),
+      progressStageBars: document.querySelectorAll("[data-ballroom-progress-stage]").length,
       status: document.querySelector("[data-ballroom-status]")?.textContent?.trim() || "",
       snapshotStatus: preview?.status || "",
       snapshotState: preview?.activeState || "",
@@ -124,9 +135,19 @@ try {
   assert.equal(inner.pageError, "false");
   assert.equal(inner.state, "ballroom/day");
   assert.equal(inner.chunks, "48");
+  assert.equal(inner.architecture, "passed");
+  assert.ok(Number(inner.architectureEntities) > 0);
   assert.equal(inner.lighting, "passed");
   assert.equal(inner.landmarks, "passed");
   assert.equal(inner.disposal, "passed");
+  assert.equal(inner.progress, "100");
+  assert.equal(inner.progressStage, "ready");
+  assert.equal(inner.progressFormat, "alumbra.peacock-ballroom-progress/1");
+  assert.equal(inner.progressReady, true);
+  assert.equal(inner.progressFailed, false);
+  assert.equal(inner.progressStages, 5);
+  assert.equal(inner.progressBar, true);
+  assert.equal(inner.progressStageBars, 5);
   assert.equal(inner.canvas, true);
   assert.equal(inner.snapshotStatus, "ready");
   assert.equal(inner.snapshotState, "ballroom/day");
@@ -144,7 +165,7 @@ try {
     failedRequests,
   }, null, 2));
   console.log(
-    "Verified the public Peacock Ballroom provider: repository resolution, installed Hodos host, 48-chunk Alumbra world, lighting and landmark evidence.",
+    "Verified the public Peacock Ballroom provider: released launch, five-stage progress rail, finite ornamental projection, 48 chunks, lighting and landmark evidence.",
   );
 } catch (error) {
   let outerState = null;
@@ -166,6 +187,7 @@ try {
         title: document.title,
         htmlDataset: {...document.documentElement.dataset},
         bodyDataset: {...(document.body?.dataset || {})},
+        progress: window.__PEACOCK_BALLROOM_PROGRESS__ || null,
         status: document.querySelector("[data-ballroom-status]")?.textContent?.trim() || "",
         bodyTail: (document.body?.innerText || "").slice(-1_500),
       })).catch((stateError) => ({captureError: stateError?.message || String(stateError)}));
