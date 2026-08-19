@@ -1,0 +1,363 @@
+/* Playground Studio refinement: precision without armour. */
+:root {
+  --studio-calm-radius: 12px;
+  --studio-calm-radius-small: 8px;
+  --studio-calm-motion: 185ms cubic-bezier(.2, .7, .2, 1);
+  --studio-calm-line: color-mix(in srgb, var(--hara-line, #8090a0) 32%, transparent);
+  --studio-calm-line-strong: color-mix(in srgb, var(--hara-line, #8090a0) 52%, transparent);
+  --studio-calm-raised: color-mix(in srgb, var(--hara-panel, #111821) 92%, var(--hara-canvas, #0b1017));
+  --studio-calm-wash: color-mix(in srgb, var(--hara-signal, #4d9cff) 10%, transparent);
+}
+
+.playground-shell {
+  background: var(--hara-canvas, #0b1017);
+}
+
+.workbench-header,
+.project-panel,
+.editor-panel,
+.output-panel,
+.studio-frontmatter-panel {
+  border-color: var(--studio-calm-line) !important;
+  border-radius: var(--studio-calm-radius) !important;
+  box-shadow: 0 16px 42px color-mix(in srgb, #000 16%, transparent) !important;
+  background: var(--hara-panel, #111821) !important;
+}
+
+.workbench-header {
+  margin: 10px 12px 0;
+  min-height: 58px;
+  padding-inline: 14px;
+}
+
+.kernel-ribbon {
+  margin: 8px 12px 0;
+  min-height: 34px;
+  gap: 14px;
+  padding: 6px 12px;
+  border: 1px solid var(--studio-calm-line);
+  border-radius: var(--studio-calm-radius-small);
+  color: var(--hara-muted, #97a5b5);
+  background: color-mix(in srgb, var(--hara-panel, #111821) 72%, transparent);
+  font-size: 11px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.runtime-pill {
+  border-radius: 999px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.studio-section-nav {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  display: flex;
+  gap: 4px;
+  margin: 8px 12px 0;
+  padding: 6px;
+  overflow-x: auto;
+  border: 1px solid var(--studio-calm-line);
+  border-radius: var(--studio-calm-radius);
+  background: color-mix(in srgb, var(--hara-panel, #111821) 92%, transparent);
+  backdrop-filter: blur(14px);
+  scrollbar-width: none;
+}
+
+.studio-section-nav::-webkit-scrollbar { display: none; }
+
+.studio-section-nav button {
+  appearance: none;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: var(--studio-calm-radius-small);
+  color: var(--hara-muted, #97a5b5);
+  background: transparent;
+  font: 600 12px/1.1 var(--hara-font-sans, Inter, system-ui, sans-serif);
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color var(--studio-calm-motion),
+    background-color var(--studio-calm-motion),
+    border-color var(--studio-calm-motion),
+    box-shadow var(--studio-calm-motion);
+}
+
+.studio-section-nav button:hover {
+  color: var(--hara-ink, #e8eef5);
+  background: var(--studio-calm-raised);
+}
+
+.studio-section-nav button[aria-selected="true"] {
+  color: var(--hara-ink, #e8eef5);
+  border-color: var(--studio-calm-line);
+  background: var(--studio-calm-raised);
+  box-shadow: inset 0 -2px 0 var(--hara-signal, #4d9cff);
+}
+
+.studio-section-nav button:focus-visible,
+.playground-shell :where(button, input, textarea, select, a):focus-visible {
+  outline: 2px solid var(--hara-signal, #4d9cff);
+  outline-offset: 2px;
+}
+
+.workbench-grid {
+  display: block !important;
+  min-height: calc(100svh - 190px);
+  margin: 8px 12px 12px;
+  overflow: visible;
+}
+
+.workbench-grid > [data-studio-panel] {
+  width: 100% !important;
+  min-height: calc(100svh - 210px);
+  box-sizing: border-box;
+  animation: studio-calm-enter var(--studio-calm-motion) both;
+}
+
+.workbench-grid > [data-studio-panel][hidden] {
+  display: none !important;
+}
+
+@keyframes studio-calm-enter {
+  from { opacity: .82; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+.project-panel,
+.output-panel {
+  max-width: none !important;
+}
+
+.panel-heading,
+.editor-header,
+.output-tabs,
+.studio-frontmatter-header {
+  min-height: 48px;
+  border-color: var(--studio-calm-line) !important;
+  background: color-mix(in srgb, var(--hara-panel-raised, #171f29) 70%, transparent) !important;
+  box-shadow: none !important;
+}
+
+.panel-heading,
+.output-tabs {
+  padding-inline: 12px;
+}
+
+.editor-header {
+  padding-inline: 12px;
+}
+
+.editor-tab,
+.panel-heading > span,
+.output-tab,
+.preview-mode,
+.editor-meta,
+.editor-status {
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.editor-actions,
+.workbench-actions {
+  gap: 6px;
+}
+
+.editor-actions button,
+.workbench-actions button,
+.panel-heading button,
+.output-tabs button,
+.editor-options summary,
+.editor-options-menu button {
+  min-height: 34px;
+  border-radius: var(--studio-calm-radius-small) !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  transition:
+    color var(--studio-calm-motion),
+    background-color var(--studio-calm-motion),
+    border-color var(--studio-calm-motion),
+    box-shadow var(--studio-calm-motion);
+}
+
+.editor-meta,
+.editor-status,
+.project-path,
+.repl-toolbar {
+  border-color: var(--studio-calm-line) !important;
+  background: color-mix(in srgb, var(--hara-panel, #111821) 88%, transparent) !important;
+}
+
+.file-tree,
+.editor-wrap,
+.preview-view,
+.repl-view,
+.value-view,
+.problems-view {
+  background: var(--hara-canvas, #0b1017) !important;
+}
+
+.file-tree button,
+.output-tab,
+.completion-item,
+.repl-result,
+.problem-row {
+  border-radius: 7px !important;
+  transition: background-color var(--studio-calm-motion), color var(--studio-calm-motion);
+}
+
+.file-tree button:hover,
+.output-tab:hover,
+.completion-item:hover {
+  background: var(--studio-calm-wash) !important;
+}
+
+.output-tab.active,
+.file-tree button.selected,
+.file-tree button[aria-current="true"] {
+  color: var(--hara-ink, #e8eef5) !important;
+  background: var(--studio-calm-wash) !important;
+  box-shadow: inset 2px 0 0 var(--hara-signal, #4d9cff);
+}
+
+.editor-options {
+  position: relative;
+}
+
+.editor-options-menu {
+  border-color: var(--studio-calm-line) !important;
+  border-radius: var(--studio-calm-radius) !important;
+  background: var(--hara-panel-raised, #171f29) !important;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, .22) !important;
+}
+
+.studio-frontmatter-panel {
+  overflow: hidden;
+}
+
+.studio-frontmatter-header {
+  display: grid;
+  grid-template-columns: minmax(0, .75fr) minmax(280px, 1.25fr);
+  gap: 24px;
+  align-items: end;
+  padding: 18px 20px;
+}
+
+.studio-frontmatter-header small {
+  color: var(--hara-muted, #97a5b5);
+  font-size: 11px;
+}
+
+.studio-frontmatter-header h2 {
+  margin: 4px 0 0;
+  font-size: clamp(1.8rem, 4vw, 3.4rem);
+  letter-spacing: -.045em;
+}
+
+.studio-frontmatter-header p {
+  margin: 0;
+  color: var(--hara-muted, #97a5b5);
+  line-height: 1.6;
+}
+
+.studio-frontmatter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  padding: 1px;
+  background: var(--studio-calm-line);
+}
+
+.studio-frontmatter-grid > div {
+  min-height: 82px;
+  padding: 14px 16px;
+  background: var(--hara-panel, #111821);
+}
+
+.studio-frontmatter-grid dt {
+  margin-bottom: 8px;
+  color: var(--hara-muted, #97a5b5);
+  font-size: 11px;
+}
+
+.studio-frontmatter-grid dd {
+  margin: 0;
+  color: var(--hara-ink, #e8eef5);
+  font: 600 12px/1.5 var(--hara-font-mono, ui-monospace, monospace);
+  word-break: break-word;
+}
+
+.statusbar {
+  margin-inline: 12px;
+  border: 1px solid var(--studio-calm-line);
+  border-radius: var(--studio-calm-radius-small);
+  background: color-mix(in srgb, var(--hara-panel, #111821) 82%, transparent) !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+/* The project lobby now shares the same calm surface rhythm. */
+.lobby-main {
+  width: min(1480px, calc(100% - 32px));
+}
+
+.project-card,
+.resume-card,
+.lisp-niceties,
+.lobby-hero__artifact,
+.repository-open-form,
+.local-project-cta {
+  border-radius: var(--studio-calm-radius) !important;
+  border-color: var(--studio-calm-line) !important;
+  box-shadow: 0 16px 42px color-mix(in srgb, #000 12%, transparent) !important;
+}
+
+.project-card__actions a,
+.repository-open-form button,
+.repository-open-form input,
+.local-project-cta button,
+.resume-card button {
+  min-height: 38px;
+  border-radius: var(--studio-calm-radius-small) !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+@media (max-width: 760px) {
+  .workbench-header,
+  .kernel-ribbon,
+  .studio-section-nav,
+  .workbench-grid,
+  .statusbar {
+    margin-inline: 8px;
+  }
+
+  .studio-section-nav {
+    top: 4px;
+  }
+
+  .workbench-grid > [data-studio-panel] {
+    min-height: calc(100svh - 176px);
+  }
+
+  .studio-frontmatter-header,
+  .studio-frontmatter-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .playground-shell,
+  .playground-shell * {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
