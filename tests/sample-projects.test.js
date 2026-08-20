@@ -4,42 +4,46 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { FEATURED_PROJECTS } from "../src/studio/projects.js";
 import { scanHara } from "../src/editor/lisp.js";
+import { validateSampleCatalog } from "../scripts/validate-samples.mjs";
 
 const root = new URL("..", import.meta.url).pathname;
+const catalog = JSON.parse(await readFile(new URL("../samples/catalog.json", import.meta.url), "utf8"));
 
-test("every featured GitHub sample is a complete workspace.edn-first Hara project", async () => {
+test("every sample directory has one package-authoritative catalog entry", async () => {
+  const report = await validateSampleCatalog(root);
+  assert.equal(report.samples.length, catalog.samples.length);
+  assert.equal(report.authorityCommit, catalog.authority.commit);
+  assert.equal(report.runtimeVersion, catalog.runtime.version);
+});
+
+test("featured repository projects resolve to catalogued samples", () => {
+  const catalogPaths = new Set(catalog.samples.map((sample) => sample.path));
   const projects = FEATURED_PROJECTS.filter((project) => project.repository);
   assert.ok(projects.length > 0);
-
   for (const project of projects) {
-    assert.equal(typeof project.entry, "string", `${project.id} does not declare a Hara entry`);
-    const relative = project.repository.path;
-    const directory = join(root, relative);
-    const [descriptor, workspace, source] = await Promise.all([
-      readFile(join(directory, "project.edn"), "utf8"),
-      readFile(join(directory, "workspace.edn"), "utf8"),
-      readFile(join(directory, project.entry), "utf8")
-    ]);
-    assert.match(descriptor, /:hara\/type\s+:project/);
-    assert.match(descriptor, /:studio\/eval/);
-    if (project.id === "greenways-ai") assert.match(descriptor, /:model\/generate/);
-    assert.match(workspace, /:hara\/type\s+:workspace/);
-    assert.match(workspace, /:workspace\/layout/);
-    assert.match(workspace, /:layout\/type\s+:split/);
-    assert.match(workspace, /:workspace\/areas/);
-    assert.match(workspace, /:area\/id\s+"area\/project"/);
-    assert.match(workspace, /:area\/id\s+"area\/editor"/);
-    assert.match(workspace, /:workspace\/selection/);
-    assert.match(workspace, /:responsive\/breakpoint/);
-    assert.ok(workspace.includes(project.entry), `${project.id} workspace.edn does not name ${project.entry}`);
-    assert.match(source, /\(ns\s+[A-Za-z]/);
-    if (/:playground\/active-loop/.test(descriptor)) {
-      const behavior = descriptor.match(/:active\/entry\s+([A-Za-z][A-Za-z0-9_.?*!+\-]*)/)?.[1];
-      assert.ok(behavior, `${project.id} active project does not declare an entry symbol`);
+    assert.ok(catalogPaths.has(project.repository.path), `${project.id} is not represented in samples/catalog.json`);
+  }
+});
+
+test("catalogued source and optional workspace surfaces retain their bounded smoke contracts", async () => {
+  for (const sample of catalog.samples) {
+    const directory = join(root, sample.path);
+    const source = await readFile(join(directory, sample.source), "utf8");
+    assert.match(source, new RegExp(`^\\(ns\\s+${sample.mainNamespace.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
+    assert.equal(scanHara(source).unmatched.size, 0, `${sample.id} contains unbalanced syntax`);
+
+    if (sample.workspace) {
+      const workspace = await readFile(join(directory, sample.workspace), "utf8");
+      assert.match(workspace, /:hara\/type\s+:workspace/);
+      assert.match(workspace, /:workspace\/layout/);
+      assert.ok(workspace.includes(sample.source), `${sample.id} workspace does not name ${sample.source}`);
+    }
+
+    if (sample.validation.mode === "active-policy") {
+      const behavior = sample.validation.entrySymbol;
       assert.match(source, new RegExp(`\\(defn\\s+${behavior.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s+\\[`));
     } else {
       assert.match(source, /\(view\)\s*$/);
     }
-    assert.equal(scanHara(source).unmatched.size, 0, `${project.id} contains unbalanced syntax`);
   }
 });
