@@ -22,6 +22,11 @@ export function tokenize(source) {
       while (index < source.length && source[index] !== "\n") index += 1;
       continue;
     }
+    if (char === "#" && source[index + 1] === "{") {
+      tokens.push({ type: "delimiter", value: "#{", position: index });
+      index += 2;
+      continue;
+    }
     if (delimiters.has(char)) {
       tokens.push({ type: "delimiter", value: char, position: index });
       index += 1;
@@ -95,6 +100,10 @@ export function vector(items) {
   return { type: "vector", items };
 }
 
+export function set(items) {
+  return { type: "set", items };
+}
+
 export function map(entries) {
   return { type: "map", entries };
 }
@@ -122,7 +131,7 @@ export function readAll(source) {
     if (token.type === "quote") return list([symbol("quote"), readForm()]);
     if (token.type !== "delimiter") return parseAtom(token);
 
-    const pairs = { "(": ")", "[": "]", "{": "}" };
+    const pairs = { "(": ")", "[": "]", "{": "}", "#{": "}" };
     const close = pairs[token.value];
     if (!close) throw new HaraReaderError(`Unexpected '${token.value}'`, token.position);
 
@@ -133,6 +142,7 @@ export function readAll(source) {
 
     if (token.value === "(") return list(values);
     if (token.value === "[") return vector(values);
+    if (token.value === "#{") return set(values);
     if (values.length % 2 !== 0) throw new HaraReaderError("Map literal requires an even number of forms", token.position);
     const entries = [];
     for (let index = 0; index < values.length; index += 2) entries.push([values[index], values[index + 1]]);
