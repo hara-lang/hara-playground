@@ -1,0 +1,74 @@
+name: Playground sample runtime validation
+
+on:
+  pull_request:
+    branches: [main, agent/sample-catalog-validation]
+    paths:
+      - ".github/workflows/sample-runtime-ci.yml"
+      - "package.json"
+      - "runtime.lock.json"
+      - "samples/catalog.json"
+      - "samples/**/project.edn"
+      - "samples/**/src/**"
+      - "scripts/install-pinned-runtime"
+      - "scripts/prepare-web-packages.mjs"
+      - "scripts/runtime-lock.mjs"
+      - "scripts/sample-validation/**"
+      - "scripts/verify-sample-runtime.mjs"
+      - "src/ai/gw.ai.hal"
+      - "src/audio/gw.audio.supersonic.hal"
+      - "src/audio/supersonic-provider.js"
+      - "src/runtime/canonical.js"
+      - "tests/sample-runtime-plan.test.js"
+      - "tests/sample-validator.test.js"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sample-runtime-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Prepare exact web package pins
+        run: npm run web:prepare
+
+      - name: Validate the static sample and runtime plan
+        run: |
+          node --check scripts/verify-sample-runtime.mjs
+          node --check scripts/sample-validation/runtime.mjs
+          node --test tests/sample-runtime-plan.test.js tests/sample-validator.test.js
+          npm run samples:validate
+
+      - name: Install the exact runtime.lock archive
+        run: npm run runtime:download
+
+      - name: Install Chromium smoke dependency
+        run: |
+          npm install --no-save --ignore-scripts --package-lock=false playwright@1.53.2
+          npx playwright install --with-deps chromium
+
+      - name: Run every sample against the canonical browser runtime twice
+        run: |
+          node scripts/verify-sample-runtime.mjs --output "$RUNNER_TEMP/sample-runtime-first.json"
+          node scripts/verify-sample-runtime.mjs --output "$RUNNER_TEMP/sample-runtime-second.json"
+          cmp "$RUNNER_TEMP/sample-runtime-first.json" "$RUNNER_TEMP/sample-runtime-second.json"
+
+      - name: Upload the exact runtime report
+        uses: actions/upload-artifact@v4
+        with:
+          name: playground-sample-runtime-report
+          path: ${{ runner.temp }}/sample-runtime-first.json
+          if-no-files-found: error
+          retention-days: 30
