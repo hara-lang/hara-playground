@@ -10,6 +10,7 @@ import {
   readVerifiedFile,
 } from "./common.mjs";
 import { parseProjectManifest, validateManifestExtensions } from "./manifest.mjs";
+import { validateRuntimeValidation } from "./runtime.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
 const validationModes = new Set(["active-policy", "browser-capability", "host-capability", "static-view"]);
@@ -110,6 +111,7 @@ export async function validateSampleCatalog(root = repositoryRoot) {
     const sourceNamespace = namespaceFromSource(source, sourceRelative);
     if (sourceNamespace !== sample.mainNamespace) fail(label, `source namespace ${sourceNamespace} differs from :project/main ${sample.mainNamespace}`);
     validateSourceShape(sample, source, label);
+    const runtimeValidation = validateRuntimeValidation(sample, label);
 
     if (sample.workspace !== undefined || sample.workspaceGitBlobSha !== undefined) {
       const workspace = assertRelativePath(`${label}.workspace`, sample.workspace);
@@ -120,12 +122,19 @@ export async function validateSampleCatalog(root = repositoryRoot) {
       if (!workspaceSource.includes(sample.source)) fail(workspaceRelative, `does not name ${sample.source}`);
     }
 
-    results.push(Object.freeze({ id: sample.id, mode: sample.validation.mode, mainNamespace: sample.mainNamespace }));
+    results.push(Object.freeze({
+      id: sample.id,
+      mode: sample.validation.mode,
+      mainNamespace: sample.mainNamespace,
+      runtimeValidation,
+    }));
   }
 
   return Object.freeze({
     authorityCommit: catalog.authority.commit,
     runtimeVersion: catalog.runtime.version,
+    runtimeLockGitBlobSha: catalog.runtime.lockGitBlobSha,
+    runtimeSha256: catalog.runtime.sha256,
     samples: Object.freeze(results),
   });
 }

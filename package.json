@@ -12,6 +12,7 @@
     "test": "node --test tests/*.test.js",
     "precheck": "npm run web:prepare",
     "samples:validate": "node scripts/validate-samples.mjs",
+    "samples:runtime": "node scripts/verify-sample-runtime.mjs",
     "check": "node scripts/check.mjs && npm run samples:validate",
     "runtime:install": "node scripts/install-runtime.mjs",
     "prebuild": "npm run web:prepare",
