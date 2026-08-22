@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { workspaceShellPatch } from "../src/hodos/workspace-shell-events.js";
-import { projectPlaygroundWorkspace } from "../src/hodos/workspace-shell-state.js";
+import { projectPlayWorkspace } from "../src/hodos/workspace-shell-state.js";
 
-const descriptor = projectPlaygroundWorkspace({
+const descriptor = projectPlayWorkspace({
   workspace: "workspace/test",
   workspaceShell: {
     workspaceId: "workspace/test",

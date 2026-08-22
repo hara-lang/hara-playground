@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { PlaygroundAudioHost } from "../src/audio/host.js";
+import { PlayAudioHost } from "../src/audio/host.js";
 
 class FakeRuntime {
   constructor() {
@@ -100,7 +100,7 @@ test("an aborted old graph cannot commit after the next project configures", asy
   let preparationStarted;
   const started = new Promise((resolve) => { preparationStarted = resolve; });
   engine.prepareStarted = preparationStarted;
-  const host = new PlaygroundAudioHost({ runtime, engine });
+  const host = new PlayAudioHost({ runtime, engine });
 
   await host.configure(["audio/playback"], "workspace/old", { generation: 1 });
   const controller = new AbortController();

@@ -1,7 +1,7 @@
-# Playground Showcase Host v1
+# Play Showcase Host v1
 
 The Showcase Host is the narrow, cross-origin presentation contract used by
-`packages.hara-lang.org`. It reuses the normal Playground project importer,
+`packages.hara-lang.org`. It reuses the normal Play project importer,
 Hara runtime, evaluated `workspace.edn`, Hodos component registry and browser
 capability boundary. It does not create a second renderer.
 
@@ -10,7 +10,7 @@ capability boundary. It does not create a second renderer.
 A Showcase link must identify an exact Git commit:
 
 ```text
-https://playground.hara-lang.org/
+https://play.hara-lang.org/
   ?repo=owner/repository
   &branch=main
   &commit=<40-character-lowercase-sha>
@@ -32,7 +32,7 @@ and output tabs. Hodos receives a one-area Workspace layout for the selected
 surface. The selected surface must be present in the projected Workspace
 descriptor.
 
-Normal Playground links and the project browser are unchanged.
+Normal Play links and the project browser are unchanged.
 
 ## Parent protocol
 
@@ -43,7 +43,7 @@ iframe.contentWindow.postMessage({
   type: "hara.showcase/select-surface",
   version: 1,
   surfaceId: "preview"
-}, "https://playground.hara-lang.org");
+}, "https://play.hara-lang.org");
 ```
 
 Only the parent frame may send commands. Production accepts the Packages
@@ -72,5 +72,5 @@ workspace content.
 
 Package demos, named states and named views are not encoded into query strings
 or messages. They will be declared in a reviewed package `showcase.edn`.
-`packages.hara-lang.org` will select a declared demo identifier, and Playground
+`packages.hara-lang.org` will select a declared demo identifier, and Play
 will resolve that identifier inside the immutable imported project.

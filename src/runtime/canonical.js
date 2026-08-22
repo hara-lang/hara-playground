@@ -110,7 +110,7 @@ async function loadAiResource(root, options) {
       if (hasCanonicalAiHostContract(source)) return source;
       options.onDiagnostic?.(`Ignoring non-bootstrap-safe AI HAL resource at ${url}`);
     } catch {
-      // Try the next source. The Playground ships a local compatibility copy.
+      // Try the next source. The Play ships a local compatibility copy.
     }
   }
   options.onDiagnostic?.("gw.ai HAL resource is unavailable; AI projects cannot load");
@@ -133,7 +133,7 @@ export function createAiHostServices(ai) {
 }
 
 async function loadSupersonicResource(root, options) {
-  // The Playground copy is intentionally first. It calls the built-in Host
+  // The Play copy is intentionally first. It calls the built-in Host
   // boundary directly and therefore does not require Foundation namespaces to
   // exist before the first browser project is evaluated.
   const candidates = [
@@ -148,7 +148,7 @@ async function loadSupersonicResource(root, options) {
       if (hasCanonicalSupersonicHostContract(source)) return source;
       options.onDiagnostic?.(`Ignoring non-bootstrap-safe Supersonic HAL resource at ${url}`);
     } catch {
-      // Try the next source. The Playground ships a local compatibility copy.
+      // Try the next source. The Play ships a local compatibility copy.
     }
   }
   options.onDiagnostic?.("Supersonic HAL resource is unavailable; audio projects cannot load");

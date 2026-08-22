@@ -4,7 +4,7 @@ import test from "node:test";
 
 const text = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Playground mounts the merged Hodos Explorer component", async () => {
+test("Play mounts the merged Hodos Explorer component", async () => {
   const [integration, main, view] = await Promise.all([
     text("src/hodos/explorer.js"),
     text("src/main.js"),
@@ -19,7 +19,7 @@ test("Playground mounts the merged Hodos Explorer component", async () => {
   assert.doesNotMatch(view, /renderTree\(groupFiles\(state\.files\)\)/);
 });
 
-test("file selection and mutations enter Playground only through Explorer events", async () => {
+test("file selection and mutations enter Play only through Explorer events", async () => {
   const [events, integration] = await Promise.all([
     text("src/app/events.js"),
     text("src/hodos/explorer.js"),
@@ -41,7 +41,7 @@ test("file selection and mutations enter Playground only through Explorer events
   assert.doesNotMatch(integration, /innerHTML/);
 });
 
-test("Explorer projects explicit directories while storage remains Playground-owned", async () => {
+test("Explorer projects explicit directories while storage remains Play-owned", async () => {
   const [state, integration, events] = await Promise.all([
     text("src/hodos/explorer-state.js"),
     text("src/hodos/explorer.js"),

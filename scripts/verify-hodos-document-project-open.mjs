@@ -63,7 +63,7 @@ try {
   await installAnonymousIdentityFixture(page);
   await installGitHubFixtureRoutes(page);
   const url = new URL(`http://127.0.0.1:${address.port}/`);
-  url.searchParams.set("repo", "hara-lang/hara-playground");
+  url.searchParams.set("repo", "hara-lang/hara-play");
   url.searchParams.set("branch", "main");
   url.searchParams.set("path", sampleRoot);
   await page.goto(url.href, { waitUntil: "domcontentloaded", timeout: 15_000 });
@@ -150,11 +150,11 @@ async function installGitHubFixtureRoutes(page) {
   await page.route("https://api.github.com/**", async (route) => {
     const url = new URL(route.request().url());
     let body = null;
-    if (url.pathname === "/repos/hara-lang/hara-playground") {
-      body = { default_branch: "main", html_url: "https://github.com/hara-lang/hara-playground" };
-    } else if (url.pathname === "/repos/hara-lang/hara-playground/branches/main") {
+    if (url.pathname === "/repos/hara-lang/hara-play") {
+      body = { default_branch: "main", html_url: "https://github.com/hara-lang/hara-play" };
+    } else if (url.pathname === "/repos/hara-lang/hara-play/branches/main") {
       body = { commit: { sha: commit } };
-    } else if (url.pathname === `/repos/hara-lang/hara-playground/git/trees/${commit}`) {
+    } else if (url.pathname === `/repos/hara-lang/hara-play/git/trees/${commit}`) {
       body = {
         truncated: false,
         tree: [...sampleFiles].map(([path, content]) => ({
@@ -177,7 +177,7 @@ async function installGitHubFixtureRoutes(page) {
 
   await page.route("https://raw.githubusercontent.com/**", async (route) => {
     const url = new URL(route.request().url());
-    const prefix = `/hara-lang/hara-playground/${commit}/`;
+    const prefix = `/hara-lang/hara-play/${commit}/`;
     if (!url.pathname.startsWith(prefix)) {
       await route.fulfill({ status: 404, headers: cors, body: "not found" });
       return;

@@ -66,20 +66,20 @@ test("rejects non-GitHub hosts and parent traversal", () => {
 test("reads repository deep links from query, hash and clean routes", () => {
   assert.equal(repositoryFromStudioLocation({ search: "?repo=hara-lang/hara&branch=main", hash: "", pathname: "/" }),
     "https://github.com/hara-lang/hara/tree/main");
-  assert.deepEqual(repositoryFromStudioLocation({ search: "?repo=hara-lang/hara-playground&branch=main&path=samples/live-values", hash: "", pathname: "/" }), {
+  assert.deepEqual(repositoryFromStudioLocation({ search: "?repo=hara-lang/hara-play&branch=main&path=samples/live-values", hash: "", pathname: "/" }), {
     owner: "hara-lang",
-    repo: "hara-playground",
+    repo: "hara-play",
     branch: "main",
     path: "samples/live-values"
   });
   const commit = "b".repeat(40);
   assert.deepEqual(repositoryFromStudioLocation({
-    search: `?repo=hara-lang/hara-playground&branch=main&commit=${commit}&path=samples/live-values`,
+    search: `?repo=hara-lang/hara-play&branch=main&commit=${commit}&path=samples/live-values`,
     hash: "",
     pathname: "/",
   }), {
     owner: "hara-lang",
-    repo: "hara-playground",
+    repo: "hara-play",
     branch: "main",
     commit,
     path: "samples/live-values",
@@ -99,15 +99,15 @@ test("builds immutable raw content URLs without consuming API requests", () => {
 
 test("imports only a selected GitHub project directory and strips its prefix", async () => {
   const originalFetch = globalThis.fetch;
-  const api = "https://api.github.com/repos/hara-lang/hara-playground";
+  const api = "https://api.github.com/repos/hara-lang/hara-play";
   const project = "samples/live-values";
   const files = new Map([
-    [`https://raw.githubusercontent.com/hara-lang/hara-playground/abc123/${project}/project.edn`, "{:hara/type :project}"],
-    [`https://raw.githubusercontent.com/hara-lang/hara-playground/abc123/${project}/src/main.hal`, "(ns samples.live-values)\n42"]
+    [`https://raw.githubusercontent.com/hara-lang/hara-play/abc123/${project}/project.edn`, "{:hara/type :project}"],
+    [`https://raw.githubusercontent.com/hara-lang/hara-play/abc123/${project}/src/main.hal`, "(ns samples.live-values)\n42"]
   ]);
   globalThis.fetch = async (url) => {
     const value = String(url);
-    if (value === api) return mockResponse({ default_branch: "main", html_url: "https://github.com/hara-lang/hara-playground" });
+    if (value === api) return mockResponse({ default_branch: "main", html_url: "https://github.com/hara-lang/hara-play" });
     if (value === `${api}/branches/main`) return mockResponse({ commit: { sha: "abc123" } });
     if (value === `${api}/git/trees/abc123?recursive=1`) return mockResponse({
       truncated: false,
@@ -122,13 +122,13 @@ test("imports only a selected GitHub project directory and strips its prefix", a
   };
 
   try {
-    const imported = await importGitHubRepository({ owner: "hara-lang", repo: "hara-playground", branch: "main", path: project });
+    const imported = await importGitHubRepository({ owner: "hara-lang", repo: "hara-play", branch: "main", path: project });
     assert.deepEqual(imported.files, [
       { path: "project.edn", content: "{:hara/type :project}" },
       { path: "src/main.hal", content: "(ns samples.live-values)\n42" }
     ]);
     assert.equal(imported.metadata.path, project);
-    assert.equal(imported.workspace, `github.com/hara-lang/hara-playground/main/${project}`);
+    assert.equal(imported.workspace, `github.com/hara-lang/hara-play/main/${project}`);
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -136,7 +136,7 @@ test("imports only a selected GitHub project directory and strips its prefix", a
 
 test("commit-pinned imports skip branch resolution and isolate the Workspace", async () => {
   const originalFetch = globalThis.fetch;
-  const api = "https://api.github.com/repos/hara-lang/hara-playground";
+  const api = "https://api.github.com/repos/hara-lang/hara-play";
   const commit = "c".repeat(40);
   const project = "samples/hodos-document";
   let branchRequests = 0;
@@ -146,7 +146,7 @@ test("commit-pinned imports skip branch resolution and isolate the Workspace", a
     if (value === api) {
       return mockResponse({
         default_branch: "main",
-        html_url: "https://github.com/hara-lang/hara-playground",
+        html_url: "https://github.com/hara-lang/hara-play",
       });
     }
     if (value.includes("/branches/")) {
@@ -159,7 +159,7 @@ test("commit-pinned imports skip branch resolution and isolate the Workspace", a
         tree: [{ type: "blob", path: `${project}/src/main.hal`, size: 42 }],
       });
     }
-    if (value === `https://raw.githubusercontent.com/hara-lang/hara-playground/${commit}/${project}/src/main.hal`) {
+    if (value === `https://raw.githubusercontent.com/hara-lang/hara-play/${commit}/${project}/src/main.hal`) {
       return mockResponse("(ns showcase.main)\n42", { json: false });
     }
     return mockResponse({}, { status: 404 });
@@ -168,7 +168,7 @@ test("commit-pinned imports skip branch resolution and isolate the Workspace", a
   try {
     const imported = await importGitHubRepository({
       owner: "hara-lang",
-      repo: "hara-playground",
+      repo: "hara-play",
       branch: "main",
       commit,
       path: project,
@@ -176,8 +176,8 @@ test("commit-pinned imports skip branch resolution and isolate the Workspace", a
     assert.equal(branchRequests, 0);
     assert.equal(imported.metadata.commit, commit);
     assert.equal(imported.metadata.branch, "main");
-    assert.equal(imported.workspace, `github.com/hara-lang/hara-playground/${commit}/${project}`);
-    assert.equal(imported.metadata.url, `https://github.com/hara-lang/hara-playground/tree/${commit}/${project}`);
+    assert.equal(imported.workspace, `github.com/hara-lang/hara-play/${commit}/${project}`);
+    assert.equal(imported.metadata.url, `https://github.com/hara-lang/hara-play/tree/${commit}/${project}`);
   } finally {
     globalThis.fetch = originalFetch;
   }

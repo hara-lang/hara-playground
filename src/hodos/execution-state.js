@@ -5,8 +5,8 @@ import {
   selectExecutionState,
 } from "../../vendor/hodos/packages/dev/src/index.js";
 
-export const PLAYGROUND_EXECUTION_AREA_ID = "execution/main";
-export const PLAYGROUND_EXECUTION_LIMITS = Object.freeze({
+export const PLAY_EXECUTION_AREA_ID = "execution/main";
+export const PLAY_EXECUTION_LIMITS = Object.freeze({
   events: 512,
   trace: 128,
   diagnostics: 64,
@@ -28,12 +28,12 @@ const optionalString = (value, label) => {
 };
 
 const diagnosticValue = (value) => {
-  const diagnostic = objectValue(value, "Playground Execution diagnostic");
+  const diagnostic = objectValue(value, "Play Execution diagnostic");
   return Object.freeze({
-    code: optionalString(diagnostic.code, "Playground Execution diagnostic code"),
-    message: optionalString(diagnostic.message, "Playground Execution diagnostic message")
+    code: optionalString(diagnostic.code, "Play Execution diagnostic code"),
+    message: optionalString(diagnostic.message, "Play Execution diagnostic message")
       ?? "Execution failed",
-    severity: optionalString(diagnostic.severity, "Playground Execution diagnostic severity")
+    severity: optionalString(diagnostic.severity, "Play Execution diagnostic severity")
       ?? "error",
     evidence: diagnostic.evidence ?? null,
   });
@@ -99,22 +99,22 @@ const freezeState = (state) => Object.freeze({
   diagnostics: Object.freeze([...state.diagnostics]),
 });
 
-export function createPlaygroundExecutionState({
+export function createPlayExecutionState({
   currentSourceId = null,
   currentSourceVersion = null,
   workspaceId = null,
   sourceAvailable = false,
 } = {}) {
   const initial = {
-    model: createExecutionState({ limits: PLAYGROUND_EXECUTION_LIMITS }),
+    model: createExecutionState({ limits: PLAY_EXECUTION_LIMITS }),
     sourceId: null,
     sourceVersion: null,
-    currentSourceId: optionalString(currentSourceId, "Playground Execution current source id"),
+    currentSourceId: optionalString(currentSourceId, "Play Execution current source id"),
     currentSourceVersion: optionalString(
       currentSourceVersion,
-      "Playground Execution current source version",
+      "Play Execution current source version",
     ),
-    workspaceId: optionalString(workspaceId, "Playground Execution workspace id"),
+    workspaceId: optionalString(workspaceId, "Play Execution workspace id"),
     sourceAvailable: Boolean(sourceAvailable),
     stale: false,
     runtimeLoaded: false,
@@ -133,15 +133,15 @@ export function withExecutionEnvironment(state, {
   workspaceId = null,
   sourceAvailable = false,
 } = {}) {
-  const current = objectValue(state, "Playground Execution state");
+  const current = objectValue(state, "Play Execution state");
   const next = {
     ...current,
-    currentSourceId: optionalString(currentSourceId, "Playground Execution current source id"),
+    currentSourceId: optionalString(currentSourceId, "Play Execution current source id"),
     currentSourceVersion: optionalString(
       currentSourceVersion,
-      "Playground Execution current source version",
+      "Play Execution current source version",
     ),
-    workspaceId: optionalString(workspaceId, "Playground Execution workspace id"),
+    workspaceId: optionalString(workspaceId, "Play Execution workspace id"),
     sourceAvailable: Boolean(sourceAvailable),
   };
   next.model = rebuildModel(next, { metadata: metadataValue(next) });
@@ -149,16 +149,16 @@ export function withExecutionEnvironment(state, {
 }
 
 export function setExecutionBusy(state, busy) {
-  const current = objectValue(state, "Playground Execution state");
+  const current = objectValue(state, "Play Execution state");
   const next = { ...current, busy: Boolean(busy) };
   next.model = rebuildModel(next, { metadata: metadataValue(next) });
   return freezeState(next);
 }
 
 export function appendExecutionDiagnostic(state, diagnostic) {
-  const current = objectValue(state, "Playground Execution state");
+  const current = objectValue(state, "Play Execution state");
   const nextDiagnostics = [...current.diagnostics, diagnosticValue(diagnostic)]
-    .slice(-PLAYGROUND_EXECUTION_LIMITS.diagnostics);
+    .slice(-PLAY_EXECUTION_LIMITS.diagnostics);
   const next = { ...current, diagnostics: nextDiagnostics };
   next.model = rebuildModel(next, {
     diagnostics: nextDiagnostics,
@@ -178,8 +178,8 @@ const freshSessionModel = (state, update) => createExecutionState({
 });
 
 export function applyExecutionControllerUpdate(state, update) {
-  const current = objectValue(state, "Playground Execution state");
-  const value = objectValue(update, "Playground Execution controller update");
+  const current = objectValue(state, "Play Execution state");
+  const value = objectValue(update, "Play Execution controller update");
 
   if (value.kind === "diagnostic") {
     return appendExecutionDiagnostic(current, value.diagnostic);
@@ -237,15 +237,15 @@ export function applyExecutionControllerUpdate(state, update) {
   return freezeState(next);
 }
 
-export function markPlaygroundExecutionStale(state, currentSourceVersion = null) {
-  const current = objectValue(state, "Playground Execution state");
+export function markPlayExecutionStale(state, currentSourceVersion = null) {
+  const current = objectValue(state, "Play Execution state");
   if (current.model.session.id == null || current.stale) return current;
   const next = {
     ...current,
     stale: true,
     currentSourceVersion: optionalString(
       currentSourceVersion ?? current.currentSourceVersion,
-      "Playground Execution current source version",
+      "Play Execution current source version",
     ),
   };
   next.model = rebuildModel(next, {
@@ -255,8 +255,8 @@ export function markPlaygroundExecutionStale(state, currentSourceVersion = null)
   return freezeState(next);
 }
 
-export function selectPlaygroundExecution(state, selection) {
-  const current = objectValue(state, "Playground Execution state");
+export function selectPlayExecution(state, selection) {
+  const current = objectValue(state, "Play Execution state");
   const next = {
     ...current,
     model: selectExecutionState(current.model, selection),
@@ -265,10 +265,10 @@ export function selectPlaygroundExecution(state, selection) {
   return freezeState(next);
 }
 
-export function executionAreaFromPlayground(state) {
-  const current = objectValue(state, "Playground Execution state");
+export function executionAreaFromPlay(state) {
+  const current = objectValue(state, "Play Execution state");
   return createExecutionArea({
-    id: PLAYGROUND_EXECUTION_AREA_ID,
+    id: PLAY_EXECUTION_AREA_ID,
     title: "Execution",
     state: current.model,
   });

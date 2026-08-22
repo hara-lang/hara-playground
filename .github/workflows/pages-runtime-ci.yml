@@ -168,7 +168,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          SERVER_LOG="$RUNNER_TEMP/hara-playground-server.log"
+          SERVER_LOG="$RUNNER_TEMP/hara-play-server.log"
           PORT=4173 node scripts/dev-server.mjs >"$SERVER_LOG" 2>&1 &
           SERVER_PID=$!
           cleanup() {
@@ -188,5 +188,5 @@ jobs:
             exit 1
           fi
 
-          HARA_PLAYGROUND_URL=http://127.0.0.1:4173/ \
+          HARA_PLAY_URL=http://127.0.0.1:4173/ \
             node scripts/verify-live-supersonic.mjs

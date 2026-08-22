@@ -4,7 +4,7 @@ import test from "node:test";
 
 const text = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Playground pins and publishes the Hodos Workspace packages", async () => {
+test("Play pins and publishes the Hodos Workspace packages", async () => {
   const [modules, prepare, build, page] = await Promise.all([
     text(".gitmodules"),
     text("scripts/prepare-web-packages.mjs"),

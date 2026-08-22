@@ -19,6 +19,6 @@ test("the local scratch project carries the neutral Hara Workspace manifest", ()
   assert.match(manifest, /:document\/path\s+"src\/app\/core\.hal"/);
 });
 
-test("the neutral default leaves the Playground project host to product projection", () => {
+test("the neutral default leaves the Play project host to product projection", () => {
   assert.doesNotMatch(manifest, /:area\/id\s+(?::area\/project|"area\/project")/);
 });

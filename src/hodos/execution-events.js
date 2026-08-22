@@ -81,7 +81,7 @@ export function executionWorkspacePatch(value, {
   }
 
   if (!Number.isSafeInteger(generation) || generation < 0) {
-    throw new TypeError("Playground Execution generation must be a non-negative integer");
+    throw new TypeError("Play Execution generation must be a non-negative integer");
   }
 
   const patch = {

@@ -1,15 +1,15 @@
 # Supersonic audio live coding
 
-Hara Playground treats audio as an optional browser host capability. A HAL
+Hara Play treats audio as an optional browser host capability. A HAL
 project describes a Supersonic graph, the canonical Hara kernel calls the
 Supersonic host namespace, and the page renders the graph with Web Audio after
 an explicit user gesture.
 
 The complete example is in [`samples/supersonic-live`](../samples/supersonic-live/README.md).
-Open it directly in the Playground:
+Open it directly in the Play:
 
 ```text
-https://playground.hara-lang.org/?repo=hara-lang/hara-playground&branch=main&path=samples/supersonic-live
+https://play.hara-lang.org/?repo=hara-lang/hara-play&branch=main&path=samples/supersonic-live
 ```
 
 ## Execution boundary
@@ -265,7 +265,7 @@ other's controls or prior Play gesture.
 
 ## Current browser renderer
 
-The Playground's dependency-free engine currently interprets these roles:
+The Play's dependency-free engine currently interprets these roles:
 
 - `control/transport`: `playing`, `tempo`, and `steps-per-beat`;
 - `data/sequence`: note-offset `steps`;
@@ -277,7 +277,7 @@ The provider validates the complete graph and connection references, but the
 browser engine is intentionally a focused sequencer rather than a general DSP
 graph compiler. Sample playback, arbitrary effects, multiple independent
 oscillators, external MIDI, microphone input, and device selection are not yet
-implemented by this Playground renderer.
+implemented by this Play renderer.
 
 Those features can extend the page-side engine without changing the HAL host
 namespace or moving browser resources into the worker.

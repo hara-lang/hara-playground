@@ -17,7 +17,7 @@ const adapters = Object.freeze({
   "src/ui/hta.js": "packages/web-preview/src/hta.js"
 });
 
-test("Playground pins hara-ui and routes stable adapters through web packages", async () => {
+test("Play pins hara-ui and routes stable adapters through web packages", async () => {
   const modules = await read(".gitmodules");
   assert.match(modules, /path = vendor\/hara-ui/);
   assert.match(modules, /github\.com\/hara-lang\/hara-ui\.git/);
@@ -38,7 +38,7 @@ test("repository commands prepare and publish the pinned package tree", async ()
   assert.equal(
     packageJson.scripts.test,
     "node --test tests/*.test.js",
-    "the Playground suite must not recursively discover tests inside vendor/hara-ui"
+    "the Play suite must not recursively discover tests inside vendor/hara-ui"
   );
   assert.match(await read("scripts/build-site.mjs"), /vendor\/hara-ui\/packages/);
 });

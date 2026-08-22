@@ -2,10 +2,10 @@
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 
-const baseUrl = process.env.HARA_PLAYGROUND_URL || "https://playground.hara-lang.org/";
+const baseUrl = process.env.HARA_PLAY_URL || "https://play.hara-lang.org/";
 const target = new URL(baseUrl);
 const REVISION_SELECTOR = ".audio-console__header h2 + p";
-target.searchParams.set("repo", "hara-lang/hara-playground");
+target.searchParams.set("repo", "hara-lang/hara-play");
 target.searchParams.set("branch", "main");
 target.searchParams.set("path", "samples/supersonic-live");
 target.searchParams.set("smoke", String(Date.now()));
@@ -41,8 +41,8 @@ try {
     waitUntil: "domcontentloaded",
     timeout: 45_000
   });
-  assert.ok(response, "the deployed Playground returned no navigation response");
-  assert.ok(response.ok(), `the deployed Playground returned HTTP ${response.status()}`);
+  assert.ok(response, "the deployed Play returned no navigation response");
+  assert.ok(response.ok(), `the deployed Play returned HTTP ${response.status()}`);
 
   await page.waitForSelector("#editor", { state: "visible", timeout: 45_000 });
   await page.waitForFunction(() =>
@@ -118,7 +118,7 @@ try {
   null,
   { timeout: 10_000 });
 
-  assert.equal(crashed, false, "Chromium reported that the deployed Playground crashed");
+  assert.equal(crashed, false, "Chromium reported that the deployed Play crashed");
   assert.deepEqual(pageErrors, [], `deployed page errors:\n${pageErrors.join("\n")}`);
   assert.deepEqual(consoleErrors, [], `deployed console errors:\n${consoleErrors.join("\n")}`);
 

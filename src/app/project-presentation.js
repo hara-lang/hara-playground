@@ -1,7 +1,7 @@
 import { disposeHodosPreview, mountHodosPreview } from "../hodos/preview.js";
 import { outputSurfaceAvailable, projectPresentation } from "../workspace/presentation.js";
 
-const OUTPUT_SETTING = "hara-playground-output";
+const OUTPUT_SETTING = "hara-play-output";
 const EMPTY_PRESENTATION = Object.freeze({ preview: false, audio: false, learn: false });
 
 let generation = 0;

@@ -4,7 +4,7 @@ import test from "node:test";
 
 const text = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Playground mounts the merged Hodos Value Inspector component", async () => {
+test("Play mounts the merged Hodos Value Inspector component", async () => {
   const [integration, main, view] = await Promise.all([
     text("src/hodos/value-inspector.js"),
     text("src/main.js"),

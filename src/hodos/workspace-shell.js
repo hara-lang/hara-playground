@@ -6,7 +6,7 @@ import {
 } from "@greenways/hodos-2d-ui";
 import {
   playgroundSurfaceById,
-  projectPlaygroundWorkspace,
+  projectPlayWorkspace,
   workspaceTokenName,
 } from "./workspace-shell-state.js";
 
@@ -41,7 +41,7 @@ let descriptor = null;
 let stateRef = null;
 
 const preferenceKey = (workspaceId, suffix) =>
-  `hara-playground/workspace-shell/${encodeURIComponent(workspaceId || "workspace")}/${suffix}`;
+  `hara-play/workspace-shell/${encodeURIComponent(workspaceId || "workspace")}/${suffix}`;
 
 function readPreference(key) {
   try {
@@ -150,7 +150,7 @@ function createAreaRoot(area) {
   const title = document.createElement("h2");
   title.textContent = area?.title || area?.id || "Workspace area";
   const note = document.createElement("p");
-  note.textContent = `This Workspace area type is not mounted by the Playground: ${area?.type || "unknown"}`;
+  note.textContent = `This Workspace area type is not mounted by the Play: ${area?.type || "unknown"}`;
   root.append(title, note);
   return root;
 }
@@ -206,7 +206,7 @@ export function mountHodosWorkspaceShell(state) {
   const root = globalThis.document?.querySelector(".workbench-grid");
   if (!root) return false;
   stateRef = state;
-  descriptor = projectPlaygroundWorkspace(state);
+  descriptor = projectPlayWorkspace(state);
   shellHost = createWorkspaceShellHost({
     root,
     registry,
@@ -229,7 +229,7 @@ export function mountHodosWorkspaceShell(state) {
 export function updateHodosWorkspaceShell(state) {
   if (!shellHost) return false;
   stateRef = state;
-  descriptor = projectPlaygroundWorkspace(state);
+  descriptor = projectPlayWorkspace(state);
   shellHost.update(descriptor, { state });
   return true;
 }

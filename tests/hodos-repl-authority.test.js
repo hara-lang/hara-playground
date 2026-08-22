@@ -4,7 +4,7 @@ import test from "node:test";
 
 const text = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Playground mounts the merged Hodos REPL component", async () => {
+test("Play mounts the merged Hodos REPL component", async () => {
   const [integration, main] = await Promise.all([
     text("src/hodos/repl.js"),
     text("src/main.js"),

@@ -8,7 +8,7 @@ const SOLUTIONS = {
   "square-function": `(ns activities.square-function)\n(defn square [x] (* x x))\n(square 9)`,
   "profile-data": `(ns activities.profile-data)\n(def profile {:name "Hara" :status :draft})\n(def active-profile (assoc profile :status :ready))\nactive-profile`,
   "status-card": `(ns activities.status-card)
-(defn status-card [label state] [:article {:class "card"} [:span {:class "eyebrow"} label] [:h1 state] [:p "Rendered from a guided Playground activity."]])
+(defn status-card [label state] [:article {:class "card"} [:span {:class "eyebrow"} label] [:h1 state] [:p "Rendered from a guided Play activity."]])
 (defn view [] [:main {:class "preview-shell"} (status-card "INSTANT HARA" "Ready")])
 (view)`,
   "trace-a-value": `(ns activities.trace-a-value)\n(def temperature 21)\n(def label (if (> temperature 20) "warm" "cool"))\nlabel`

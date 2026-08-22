@@ -246,7 +246,7 @@ active-profile
   [:article {:class "card"}
    [:span {:class "eyebrow"} label]
    [:h1 state]
-   [:p "Rendered from a guided Playground activity."]])
+   [:p "Rendered from a guided Play activity."]])
 
 (defn view []
   [:section {:class "preview-shell"}

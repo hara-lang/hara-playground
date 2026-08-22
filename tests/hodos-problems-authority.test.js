@@ -4,7 +4,7 @@ import test from "node:test";
 
 const text = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Playground mounts the merged Hodos Problems component", async () => {
+test("Play mounts the merged Hodos Problems component", async () => {
   const [integration, main, view] = await Promise.all([
     text("src/hodos/problems.js"),
     text("src/main.js"),
@@ -28,7 +28,7 @@ test("runtime diagnostics remain in the REPL and also enter Problems state", asy
   assert.match(events, /problemFromError\(event\.detail/);
 });
 
-test("Problems source, clipboard, filter and clear behavior remains Playground policy", async () => {
+test("Problems source, clipboard, filter and clear behavior remains Play policy", async () => {
   const [events, integration, actions] = await Promise.all([
     text("src/app/events.js"),
     text("src/hodos/problems.js"),

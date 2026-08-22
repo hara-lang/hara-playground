@@ -43,7 +43,7 @@ try {
   await installAnonymousIdentityFixture(page);
   await installGitHubFixtureRoutes(page);
   const url = new URL(`http://127.0.0.1:${address.port}/`);
-  url.searchParams.set("repo", "hara-lang/hara-playground");
+  url.searchParams.set("repo", "hara-lang/hara-play");
   url.searchParams.set("branch", "main");
   url.searchParams.set("path", sampleRoot);
   await page.goto(url.href, { waitUntil: "domcontentloaded", timeout: 15_000 });
@@ -114,15 +114,15 @@ async function installGitHubFixtureRoutes(page) {
   await page.route("https://api.github.com/**", async (route) => {
     const url = new URL(route.request().url());
     let body = null;
-    if (url.pathname === "/repos/hara-lang/hara-playground") body = { default_branch: "main", html_url: "https://github.com/hara-lang/hara-playground" };
-    else if (url.pathname === "/repos/hara-lang/hara-playground/branches/main") body = { commit: { sha: commit } };
-    else if (url.pathname === `/repos/hara-lang/hara-playground/git/trees/${commit}`) body = { truncated: false, tree: [...sampleFiles].map(([path, content]) => ({ path, type: "blob", size: Buffer.byteLength(content) })) };
+    if (url.pathname === "/repos/hara-lang/hara-play") body = { default_branch: "main", html_url: "https://github.com/hara-lang/hara-play" };
+    else if (url.pathname === "/repos/hara-lang/hara-play/branches/main") body = { commit: { sha: commit } };
+    else if (url.pathname === `/repos/hara-lang/hara-play/git/trees/${commit}`) body = { truncated: false, tree: [...sampleFiles].map(([path, content]) => ({ path, type: "blob", size: Buffer.byteLength(content) })) };
     if (!body) return route.fulfill({ status: 404, headers: cors, body: "not found" });
     await route.fulfill({ status: 200, headers: { ...cors, "content-type": "application/json" }, body: JSON.stringify(body) });
   });
   await page.route("https://raw.githubusercontent.com/**", async (route) => {
     const url = new URL(route.request().url());
-    const prefix = `/hara-lang/hara-playground/${commit}/`;
+    const prefix = `/hara-lang/hara-play/${commit}/`;
     if (!url.pathname.startsWith(prefix)) return route.fulfill({ status: 404, headers: cors, body: "not found" });
     const path = url.pathname.slice(prefix.length).split("/").map(decodeURIComponent).join("/");
     const content = sampleFiles.get(path);

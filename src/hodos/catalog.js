@@ -6,7 +6,7 @@ import { isHaraSource } from "../workspace/project.js";
 import { ACTIVITIES, TOOLSETS } from "../studio/catalog.js";
 
 const registry = createHodosComponentRegistry();
-registerHodosCatalogUi(registry, { createCatalogHost: createPlaygroundCatalogHost });
+registerHodosCatalogUi(registry, { createCatalogHost: createPlayCatalogHost });
 
 const projectedToolsets = Object.freeze(TOOLSETS.map((toolset) => Object.freeze({
   id: toolset.id,
@@ -264,8 +264,8 @@ function renderActivitySurface(container, model, dispatch, document, signal) {
   container.append(panel);
 }
 
-export function createPlaygroundCatalogHost({ container, dispatch }) {
-  if (!container) throw new Error("Hodos Catalog requires a Playground container");
+export function createPlayCatalogHost({ container, dispatch }) {
+  if (!container) throw new Error("Hodos Catalog requires a Play container");
   const document = container.ownerDocument || globalThis.document;
   let renderAbort = null;
 
@@ -282,7 +282,7 @@ export function createPlaygroundCatalogHost({ container, dispatch }) {
       } else if (next.surface === "activity") {
         renderActivitySurface(container, next, dispatch, document, signal);
       } else {
-        throw new Error(`Unsupported Playground Catalog surface: ${next.surface}`);
+        throw new Error(`Unsupported Play Catalog surface: ${next.surface}`);
       }
       container.dataset.catalogSurface = next.surface || "";
       container.dataset.catalogId = next.catalog?.id || "";
@@ -296,7 +296,7 @@ export function createPlaygroundCatalogHost({ container, dispatch }) {
   };
 }
 
-function catalogRunFromPlayground(state) {
+function catalogRunFromPlay(state) {
   const status = state.activityRun?.status === "ready"
     ? "idle"
     : ["idle", "opening", "running", "passed", "failed"].includes(state.activityRun?.status)
@@ -316,23 +316,23 @@ function catalogRunFromPlayground(state) {
   };
 }
 
-export function catalogAreaFromPlayground(state, surface) {
+export function catalogAreaFromPlay(state, surface) {
   const haraFileSelected = Boolean(
     state.selectedPath && isHaraSource(state.selectedPath),
   );
   return createCatalogArea({
     id: surface === "tools" ? "catalog/tools" : "catalog/activity",
     title: surface === "tools" ? "Developer tools" : "Guided activity",
-    catalogId: "hara-playground/catalog",
-    catalogTitle: "Hara Playground Catalog",
+    catalogId: "hara-play/catalog",
+    catalogTitle: "Hara Play Catalog",
     version: "1",
-    source: "hara-playground",
+    source: "hara-play",
     surface,
     toolsets: projectedToolsets,
     activities: projectedActivities,
     selectedToolsetId: state.toolsetId,
     selectedActivityId: state.activityId,
-    run: catalogRunFromPlayground(state),
+    run: catalogRunFromPlay(state),
     capabilities: {
       selectToolset: surface === "tools",
       selectActivity: surface === "activity",
@@ -374,11 +374,11 @@ export function mountHodosCatalog(state) {
 
   if (toolsRoot) {
     toolsAreaHost = createAreaHost(toolsRoot);
-    toolsAreaHost.open(catalogAreaFromPlayground(state, "tools"));
+    toolsAreaHost.open(catalogAreaFromPlay(state, "tools"));
   }
   if (activityRoot) {
     activityAreaHost = createAreaHost(activityRoot);
-    activityAreaHost.open(catalogAreaFromPlayground(state, "activity"));
+    activityAreaHost.open(catalogAreaFromPlay(state, "activity"));
   }
   return Boolean(toolsAreaHost || activityAreaHost);
 }
@@ -386,11 +386,11 @@ export function mountHodosCatalog(state) {
 export function updateHodosCatalog(state) {
   let updated = false;
   if (toolsAreaHost) {
-    toolsAreaHost.update(catalogAreaFromPlayground(state, "tools"));
+    toolsAreaHost.update(catalogAreaFromPlay(state, "tools"));
     updated = true;
   }
   if (activityAreaHost) {
-    activityAreaHost.update(catalogAreaFromPlayground(state, "activity"));
+    activityAreaHost.update(catalogAreaFromPlay(state, "activity"));
     updated = true;
   }
   return updated;

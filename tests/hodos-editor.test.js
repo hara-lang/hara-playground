@@ -4,7 +4,7 @@ import test from "node:test";
 
 const text = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Playground pins the merged Hodos Editor boundary", async () => {
+test("Play pins the merged Hodos Editor boundary", async () => {
   const [modules, integration, main] = await Promise.all([
     text(".gitmodules"),
     text("src/hodos/editor.js"),
@@ -27,7 +27,7 @@ test("Hodos Editor projects source and emits semantic change and selection event
   assert.match(integration, /new CustomEvent\("hodos:workspace-event"/);
 });
 
-test("Hodos Editor retains Playground behavior as a bounded compatibility host", async () => {
+test("Hodos Editor retains Play behavior as a bounded compatibility host", async () => {
   const integration = await text("src/hodos/editor.js");
   assert.match(integration, /querySelector\?\.\("#editor"\)/);
   assert.match(integration, /editor\.readOnly = Boolean\(next\.readOnly\)/);

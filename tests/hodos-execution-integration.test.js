@@ -4,7 +4,7 @@ import test from "node:test";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Execution composes the pinned Hodos host instead of defining a Playground renderer", async () => {
+test("Execution composes the pinned Hodos host instead of defining a Play renderer", async () => {
   const [integration, styles, main] = await Promise.all([
     read("src/hodos/execution.js"),
     read("src/styles.css"),
@@ -12,7 +12,7 @@ test("Execution composes the pinned Hodos host instead of defining a Playground 
   ]);
   assert.match(integration, /registerHodosExecutionDomUi\(registry\)/);
   assert.match(integration, /createWorkspaceAreaHost/);
-  assert.match(integration, /executionAreaFromPlayground/);
+  assert.match(integration, /executionAreaFromPlay/);
   assert.match(integration, /editorSelectionEventFromExecution/);
   assert.doesNotMatch(integration, /WebAssembly\.instantiate|new\s+Machine|session\.handle/);
   assert.match(styles, /vendor\/hodos\/packages\/dev-ui\/src\/execution\.css/);
@@ -35,7 +35,7 @@ test("the observation host is lazy and absent from serializable application stat
   assert.match(controller, /await import\(DEFAULT_HOST_URL\.href\)/);
   assert.match(controller, /function defaultLoadRuntime/);
   assert.doesNotMatch(context, /bytecode-observation\.js|BytecodeObservationRuntime|BytecodeObservationSession/);
-  assert.match(context, /execution: createPlaygroundExecutionState\(\)/);
+  assert.match(context, /execution: createPlayExecutionState\(\)/);
 });
 
 test("the runtime lock can add observation files only as one atomic pair", async () => {

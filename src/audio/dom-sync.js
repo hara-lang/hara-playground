@@ -5,7 +5,7 @@ export const AUDIO_OBSERVER_OPTIONS = Object.freeze({
 
 /**
  * Audio only needs to observe replacement of the application shell itself.
- * Playground renders the shell by replacing #app children; runtime/audio state
+ * Play renders the shell by replacing #app children; runtime/audio state
  * changes call the audio reconciler directly. Observing the full subtree would
  * also see Preview, REPL, editor and Hodos component writes and schedule an
  * unnecessary reconciliation microtask for each of them.

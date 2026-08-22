@@ -4,7 +4,7 @@ import { createProblemsArea } from "@greenways/hodos-dev";
 import { registerHodosProblemsUi } from "@greenways/hodos-dev-ui";
 
 const registry = createHodosComponentRegistry();
-registerHodosProblemsUi(registry, { createProblemsHost: createPlaygroundProblemsHost });
+registerHodosProblemsUi(registry, { createProblemsHost: createPlayProblemsHost });
 
 let areaHost = null;
 
@@ -82,7 +82,7 @@ function problemRow(document, problem, selectedId, dispatch, signal) {
   return row;
 }
 
-export function createPlaygroundProblemsHost({ container, dispatch }) {
+export function createPlayProblemsHost({ container, dispatch }) {
   if (!container) throw new Error("Hodos Problems requires a container");
   const document = container.ownerDocument || globalThis.document;
   const abort = new AbortController();
@@ -178,7 +178,7 @@ export function createPlaygroundProblemsHost({ container, dispatch }) {
   };
 }
 
-export function problemsAreaFromPlayground(state) {
+export function problemsAreaFromPlay(state) {
   const problems = state.problems;
   return createProblemsArea({
     id: "problems/main",
@@ -212,12 +212,12 @@ export function mountHodosProblems(state) {
       }));
     },
   });
-  areaHost.open(problemsAreaFromPlayground(state));
+  areaHost.open(problemsAreaFromPlay(state));
   return true;
 }
 
 export function updateHodosProblems(state) {
   if (!areaHost) return false;
-  areaHost.update(problemsAreaFromPlayground(state));
+  areaHost.update(problemsAreaFromPlay(state));
   return true;
 }

@@ -37,11 +37,11 @@ class FakeRoot {
   replaceChildren(...children) { this.children = children; }
 }
 
-test("builds the semantic Playground route and installed provider URL", () => {
+test("builds the semantic Play route and installed provider URL", () => {
   const project = featuredProject("peacock-ballroom");
   assert.ok(project);
-  const route = new URL(projectDeepLink(project), "https://playground.hara-lang.org/");
-  assert.equal(route.origin, "https://playground.hara-lang.org");
+  const route = new URL(projectDeepLink(project), "https://play.hara-lang.org/");
+  assert.equal(route.origin, "https://play.hara-lang.org");
   assert.equal(route.pathname, "/provider.html");
   assert.equal(route.searchParams.get("provider"), ALUMBRA_PROVIDER_ID);
   assert.equal(route.searchParams.get("world"), "https://github.com/greenways-ai/alumbra");

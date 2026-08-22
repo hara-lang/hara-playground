@@ -71,7 +71,7 @@ export async function verifyPagesDeployment({
   requestTimeoutMs = 15_000,
   onAttempt = null
 } = {}) {
-  if (!baseUrl) throw new Error("HARA_PLAYGROUND_URL or a base URL argument is required");
+  if (!baseUrl) throw new Error("HARA_PLAY_URL or a base URL argument is required");
   if (typeof fetchImpl !== "function") throw new Error("A fetch implementation is required");
   if (!Number.isInteger(attempts) || attempts < 1) throw new Error("attempts must be a positive integer");
 
@@ -203,8 +203,8 @@ function sha256(bytes) {
 }
 
 async function main() {
-  const baseUrl = process.env.HARA_PLAYGROUND_URL || process.argv[2];
-  const commit = process.env.HARA_PLAYGROUND_COMMIT || process.env.GITHUB_SHA || "manual";
+  const baseUrl = process.env.HARA_PLAY_URL || process.argv[2];
+  const commit = process.env.HARA_PLAY_COMMIT || process.env.GITHUB_SHA || "manual";
   const report = await verifyPagesDeployment({
     baseUrl,
     commit,

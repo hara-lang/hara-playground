@@ -42,7 +42,7 @@ test("the pinned Hodos graph exposes the merged Execution model and DOM host", a
 test("the browser import map reuses the existing Hodos aliases", async () => {
   const html = await read("index.html");
   const importMapSource = html.match(/<script type="importmap">\s*([\s\S]*?)<\/script>/)?.[1];
-  assert.ok(importMapSource, "Playground must expose a browser import map");
+  assert.ok(importMapSource, "Play must expose a browser import map");
   const importMap = JSON.parse(importMapSource);
 
   assert.equal(

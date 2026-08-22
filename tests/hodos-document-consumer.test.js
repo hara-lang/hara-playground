@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   playgroundAreaIds,
-  projectPlaygroundWorkspace,
+  projectPlayWorkspace,
 } from "../src/hodos/workspace-shell-state.js";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
@@ -38,8 +38,8 @@ const documentArea = {
   },
 };
 
-test("Playground preserves manifest components and exposes responsive document surfaces", () => {
-  const descriptor = projectPlaygroundWorkspace({
+test("Play preserves manifest components and exposes responsive document surfaces", () => {
+  const descriptor = projectPlayWorkspace({
     workspace: "workspace/test",
     workspaceShell: {
       workspaceId: "workspace/test",
@@ -70,7 +70,7 @@ test("Playground preserves manifest components and exposes responsive document s
 
 
 test("manifest-selected extension surfaces override carried fallback selections", () => {
-  const descriptor = projectPlaygroundWorkspace({
+  const descriptor = projectPlayWorkspace({
     workspace: "workspace/document",
     workspaceShell: {
       workspaceId: "workspace/document",
@@ -96,7 +96,7 @@ test("manifest-selected extension surfaces override carried fallback selections"
   assert.equal(descriptor["workspace/selection"]["surface/id"], "document");
   assert.equal(descriptor["workspace/selection"]["area/id"], "area/document");
 });
-test("Playground pins and registers the Hodos 2D document packages", async () => {
+test("Play pins and registers the Hodos 2D document packages", async () => {
   const [html, shell, styles, manifest] = await Promise.all([
     read("../index.html"),
     read("../src/hodos/workspace-shell.js"),

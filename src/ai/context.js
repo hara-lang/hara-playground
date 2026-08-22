@@ -15,12 +15,12 @@ function boundedSource(value, maximum) {
   const source = typeof value === "string" ? value : "";
   if (source.length <= maximum) return { source, truncated: false };
   return {
-    source: `${source.slice(0, maximum)}\n\n;; Greenways context truncated by Hara Playground`,
+    source: `${source.slice(0, maximum)}\n\n;; Greenways context truncated by Hara Play`,
     truncated: true,
   };
 }
 
-export function buildPlaygroundMessages({
+export function buildPlayMessages({
   prompt,
   selectedPath,
   content,
@@ -34,7 +34,7 @@ export function buildPlaygroundMessages({
   }
 
   const system = [
-    "You are assisting inside Hara Playground.",
+    "You are assisting inside Hara Play.",
     "Hara is a Lisp: preserve balanced forms, namespaces, and project conventions.",
     "Explain decisions clearly. Do not claim to have applied changes unless the user explicitly asks for a replacement and you provide the replacement source.",
   ].join(" ");

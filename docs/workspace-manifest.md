@@ -1,6 +1,6 @@
 # Workspace manifests
 
-Every complete Playground project carries two declarative roots:
+Every complete Play project carries two declarative roots:
 
 ```text
 project.edn    language paths, main namespace and requested capabilities
@@ -18,17 +18,17 @@ workspace.edn source in OPFS or an imported GitHub project
     → retained Workspace value
     → runtime.inspect(value-id)
     → bounded plain serializable Workspace view
-    → Playground product-role projection
+    → Play product-role projection
     → Hodos recursive responsive shell
 ```
 
-Hara owns descriptor evaluation and `workspace.*` state semantics. Playground
+Hara owns descriptor evaluation and `workspace.*` state semantics. Play
 owns browser storage, project policy, mapping into its installed project/editor/
 output hosts, nested output tabs, Audio, focus and local presentation
 preferences. Hodos owns visible recursive geometry, splitter interaction,
 compact surface presentation and deterministic host lifecycle.
 
-A missing manifest uses the standard Playground shell. An invalid manifest is
+A missing manifest uses the standard Play shell. An invalid manifest is
 reported as a structured Workspace problem and also falls back to that shell;
 it does not prevent the Hara kernel from opening the project.
 
@@ -106,7 +106,7 @@ Directions are `:horizontal` and `:vertical`; ratios are strictly between zero
 and one. Area IDs must be unique, every layout reference must resolve, and a
 layout must not mount the same area twice.
 
-The Playground recognizes these product roles:
+The Play recognizes these product roles:
 
 ```text
 :project  project/explorer host
@@ -140,9 +140,9 @@ The generic Hodos shell supports descriptive responsive surfaces through
    :surface/mode :preview}]}
 ```
 
-The Playground provides its installed compact product surfaces—Files, Code,
+The Play provides its installed compact product surfaces—Files, Code,
 Canvas, Audio, REPL and Learn—while respecting the manifest breakpoint. A
-compact selection emits `workspace/area-select`; Playground then applies its
+compact selection emits `workspace/area-select`; Play then applies its
 existing output-tab or focus policy.
 
 Splitter ratios and the last compact surface are local UI preferences. They are
@@ -152,7 +152,7 @@ not written back into portable Hara Workspace state.
 
 A manifest may select IDs already installed by the host, but it cannot install
 packages, supply executable component factories, receive browser credentials or
-move raw runtime/Audio/storage authority into Hodos. The Playground strips
+move raw runtime/Audio/storage authority into Hodos. The Play strips
 manifest component descriptors from its product projection and mounts only its
 trusted packaged adapters.
 
@@ -160,7 +160,7 @@ trusted packaged adapters.
 ## Manifest-native Hodos components
 
 A Workspace area may carry a complete serializable `:area/component`
-descriptor. Playground preserves unknown component areas instead of
+descriptor. Play preserves unknown component areas instead of
 flattening them into the fixed Project, Editor or Output roles. Registered
 Hodos component packages then mount those areas directly.
 
@@ -178,7 +178,7 @@ Hodos component packages then mount those areas directly.
   :component/events ["document/select" "document/edit-text"]}}
 ```
 
-The manifest owns serializable component state only. Playground applies
+The manifest owns serializable component state only. Play applies
 semantic events to its application state and supplies a new canonical model
 to Hodos. Runtime evaluation, persistence, collaboration, signatures and
 privileged capabilities are not embedded in `workspace.edn`.

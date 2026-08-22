@@ -38,13 +38,13 @@ const OUTPUT_TYPES = new Set([
   "hodos.dev/value-inspector",
 ]);
 
-export const PLAYGROUND_WORKSPACE_AREAS = Object.freeze({
+export const PLAY_WORKSPACE_AREAS = Object.freeze({
   project: "area/playground-project",
   editor: "area/playground-editor",
   output: "area/playground-output",
 });
 
-export const PLAYGROUND_WORKSPACE_SURFACES = Object.freeze([
+export const PLAY_WORKSPACE_SURFACES = Object.freeze([
   Object.freeze({ id: "files", role: "project", label: "Files", icon: "folder", mode: "files", order: 0 }),
   Object.freeze({ id: "code", role: "editor", label: "Code", icon: "code", mode: "code", order: 1 }),
   Object.freeze({ id: "preview", role: "output", label: "Canvas", icon: "eye", mode: "preview", order: 2 }),
@@ -195,7 +195,7 @@ const selectedSurfaceId = (view) => tokenName(field(
   ["surface/id", "surfaceId"],
 ));
 
-export function projectPlaygroundWorkspace(state) {
+export function projectPlayWorkspace(state) {
   const loaded = state?.workspaceShell?.workspaceId === state?.workspace
     ? state.workspaceShell.view
     : null;
@@ -208,9 +208,9 @@ export function projectPlaygroundWorkspace(state) {
   }
 
   const ids = {
-    project: canonical.project ? areaId(canonical.project) : PLAYGROUND_WORKSPACE_AREAS.project,
-    editor: canonical.editor ? areaId(canonical.editor) : PLAYGROUND_WORKSPACE_AREAS.editor,
-    output: canonical.output ? areaId(canonical.output) : PLAYGROUND_WORKSPACE_AREAS.output,
+    project: canonical.project ? areaId(canonical.project) : PLAY_WORKSPACE_AREAS.project,
+    editor: canonical.editor ? areaId(canonical.editor) : PLAY_WORKSPACE_AREAS.editor,
+    output: canonical.output ? areaId(canonical.output) : PLAY_WORKSPACE_AREAS.output,
   };
   const aliases = new Map();
   const unsupported = [];
@@ -248,7 +248,7 @@ export function projectPlaygroundWorkspace(state) {
     content,
   );
 
-  const fixedSurfaces = PLAYGROUND_WORKSPACE_SURFACES.map((surface) => ({
+  const fixedSurfaces = PLAY_WORKSPACE_SURFACES.map((surface) => ({
     "surface/id": surface.id,
     "surface/area": ids[surface.role],
     "surface/label": surface.label,

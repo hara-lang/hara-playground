@@ -7,7 +7,7 @@ import { applyStudioChrome, syncPublicLobby } from "./app/studio-chrome.js";
 import { render } from "./app/view.js";
 import { mountWorkspaceAssist } from "./app/workspace-assist.js";
 import { mountGreenwaysAiAssistant } from "./ai/assistant.js";
-import { PlaygroundAiHost } from "./ai/host.js";
+import { PlayAiHost } from "./ai/host.js";
 import { installHodosGraphConsumer } from "./hodos/graph-consumer.js";
 import {
   disposeHodosWorkspaceShell,
@@ -35,7 +35,7 @@ import {
   syncActiveLoopDemo,
 } from "./active/integration.js";
 
-function renderPlayground() {
+function renderPlay() {
   document.documentElement.dataset.presentation = state.presentation?.mode || "studio";
   disposeHodosWorkspaceShell();
   disposeHodosCatalog();
@@ -78,17 +78,17 @@ function renderPlayground() {
   if (!footer || footer.querySelector("[data-greenways-open-source]")) return;
   const stewardship = document.createElement("span");
   stewardship.dataset.greenwaysOpenSource = "";
-  stewardship.innerHTML = '<a href="https://opensource.greenways.ai/open-source/">A Greenways Open Source Project</a> · <a href="https://github.com/hara-lang/hara-playground/blob/main/LICENSE">EPL-2.0</a>';
+  stewardship.innerHTML = '<a href="https://opensource.greenways.ai/open-source/">A Greenways Open Source Project</a> · <a href="https://github.com/hara-lang/hara-play/blob/main/LICENSE">EPL-2.0</a>';
   footer.append(stewardship);
 }
 
-setRenderer(renderPlayground);
+setRenderer(renderPlay);
 setupRuntimeEvents();
 installActiveLoopDemo();
-installHodosExecution({ state, render: renderPlayground });
+installHodosExecution({ state, render: renderPlay });
 installHodosGraphConsumer();
 installAudioOutput();
-new PlaygroundAiHost({ runtime });
+new PlayAiHost({ runtime });
 installShowcaseHost();
 
 function failShowcase(error) {
@@ -96,7 +96,7 @@ function failShowcase(error) {
     ...state.presentation,
     error: error?.message || String(error),
   };
-  renderPlayground();
+  renderPlay();
 }
 
 async function start() {
@@ -131,5 +131,5 @@ async function start() {
   await prepareProjectHome();
 }
 
-renderPlayground();
+renderPlay();
 start();

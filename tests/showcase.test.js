@@ -15,9 +15,9 @@ import {
   trustedShowcaseParentOrigin,
 } from "../src/studio/showcase.js";
 
-test("ordinary Playground locations retain Studio presentation", () => {
+test("ordinary Play locations retain Studio presentation", () => {
   assert.deepEqual(showcasePresentationFromLocation({
-    search: "?repo=hara-lang/hara-playground",
+    search: "?repo=hara-lang/hara-play",
   }), {
     mode: "studio",
     surfaceId: null,
@@ -82,12 +82,12 @@ test("surface messages admit selectors only and fail closed", () => {
 
 test("Showcase origins are limited to Packages, same-origin and local development", () => {
   const production = {
-    href: "https://playground.hara-lang.org/",
-    origin: "https://playground.hara-lang.org",
+    href: "https://play.hara-lang.org/",
+    origin: "https://play.hara-lang.org",
   };
   assert.equal(trustedShowcaseParentOrigin("https://packages.hara-lang.org", production), true);
   assert.equal(trustedShowcaseParentOrigin("https://packages.testing.hara-lang.org", production), true);
-  assert.equal(trustedShowcaseParentOrigin("https://playground.hara-lang.org", production), true);
+  assert.equal(trustedShowcaseParentOrigin("https://play.hara-lang.org", production), true);
   assert.equal(trustedShowcaseParentOrigin("https://malicious.example", production), false);
   assert.equal(trustedShowcaseParentOrigin("http://localhost:8888", {
     href: "http://localhost:4173/",
@@ -99,7 +99,7 @@ test("Showcase deep links preserve immutable project and presentation identity",
   const commit = "d".repeat(40);
   const location = showcaseLocationFor({
     owner: "hara-lang",
-    repository: "hara-playground",
+    repository: "hara-play",
     branch: "main",
     commit,
     path: "samples/hodos-document",
@@ -108,8 +108,8 @@ test("Showcase deep links preserve immutable project and presentation identity",
     surfaceId: "document",
     theme: "dark",
   }, "/");
-  const url = new URL(location, "https://playground.hara-lang.org");
-  assert.equal(url.searchParams.get("repo"), "hara-lang/hara-playground");
+  const url = new URL(location, "https://play.hara-lang.org");
+  assert.equal(url.searchParams.get("repo"), "hara-lang/hara-play");
   assert.equal(url.searchParams.get("branch"), "main");
   assert.equal(url.searchParams.get("commit"), commit);
   assert.equal(url.searchParams.get("path"), "samples/hodos-document");

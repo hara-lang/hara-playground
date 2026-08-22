@@ -1,9 +1,9 @@
 {
-  "name": "@hara-lang/playground",
+  "name": "@hara-lang/play",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "The browser-native Hara Playground and live Studio environment.",
+  "description": "The browser-native Hara Play and live Studio environment.",
   "scripts": {
     "web:prepare": "node scripts/prepare-web-packages.mjs",
     "predev": "npm run web:prepare",

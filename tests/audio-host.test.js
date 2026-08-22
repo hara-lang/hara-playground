@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { PlaygroundAudioHost } from "../src/audio/host.js";
+import { PlayAudioHost } from "../src/audio/host.js";
 
 class FakeRuntime {
   constructor() {
@@ -143,7 +143,7 @@ function volume(snapshot) {
 
 test("page-side Supersonic operations enforce the project capability", async () => {
   const runtime = new FakeRuntime();
-  const host = new PlaygroundAudioHost({ runtime, engine: new FakeAudioEngine() });
+  const host = new PlayAudioHost({ runtime, engine: new FakeAudioEngine() });
 
   await assert.rejects(
     runtime.invoke("gw.audio.supersonic/start", graph()),
@@ -162,7 +162,7 @@ test("kernel boots revoke authorization and isolate overlays by workspace", asyn
   const runtime = new FakeRuntime();
   const engine = new FakeAudioEngine();
   const storage = new MemoryStorage();
-  const host = new PlaygroundAudioHost({ runtime, engine, storage });
+  const host = new PlayAudioHost({ runtime, engine, storage });
 
   await host.configure(["audio/playback"], "workspace/a");
   await runtime.invoke("gw.audio.supersonic/start", graph());
@@ -191,7 +191,7 @@ test("kernel boots revoke authorization and isolate overlays by workspace", asyn
 
 test("transport actions expose stable playing, paused and stopped states", async () => {
   const runtime = new FakeRuntime();
-  const host = new PlaygroundAudioHost({ runtime, engine: new FakeAudioEngine() });
+  const host = new PlayAudioHost({ runtime, engine: new FakeAudioEngine() });
 
   await host.configure(["audio/playback"], "workspace/status");
   await runtime.invoke("gw.audio.supersonic/start", graph());

@@ -4,7 +4,7 @@ import { createEditorArea } from "@greenways/hodos-dev";
 import { registerHodosEditorUi } from "@greenways/hodos-dev-ui";
 
 const registry = createHodosComponentRegistry();
-registerHodosEditorUi(registry, { createEditorHost: createPlaygroundEditorHost });
+registerHodosEditorUi(registry, { createEditorHost: createPlayEditorHost });
 
 const NAVIGATION_KEYS = new Set([
   "ArrowUp",
@@ -32,9 +32,9 @@ function send(dispatch, event) {
   });
 }
 
-export function createPlaygroundEditorHost({ container, dispatch }) {
+export function createPlayEditorHost({ container, dispatch }) {
   const editor = container?.querySelector?.("#editor");
-  if (!editor) throw new Error("Hodos Editor requires the Playground #editor element");
+  if (!editor) throw new Error("Hodos Editor requires the Play #editor element");
 
   const abort = new AbortController();
   const signal = abort.signal;

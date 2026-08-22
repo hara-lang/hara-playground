@@ -3,7 +3,7 @@ import test from "node:test";
 import { WebCapabilityRegistry } from "../src/runtime/capabilities.js";
 import {
   MODEL_GENERATE_CAPABILITY,
-  PlaygroundAiHost,
+  PlayAiHost,
   normalizeGenerationRequest,
 } from "../src/ai/host.js";
 
@@ -73,7 +73,7 @@ function fixture({ grants = [] } = {}) {
   const registry = new WebCapabilityRegistry({ grants });
   const runtime = new FakeRuntime(registry);
   const client = new FakeClient();
-  const host = new PlaygroundAiHost({ runtime, client });
+  const host = new PlayAiHost({ runtime, client });
   return { registry, runtime, client, host };
 }
 

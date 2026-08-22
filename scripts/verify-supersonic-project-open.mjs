@@ -73,7 +73,7 @@ try {
   await installGitHubFixtureRoutes(page);
 
   const url = new URL(`http://127.0.0.1:${address.port}/`);
-  url.searchParams.set("repo", "hara-lang/hara-playground");
+  url.searchParams.set("repo", "hara-lang/hara-play");
   url.searchParams.set("branch", "main");
   url.searchParams.set("path", sampleRoot);
   await page.goto(url.href, { waitUntil: "domcontentloaded", timeout: 15_000 });
@@ -149,7 +149,7 @@ try {
     };
     requestAnimationFrame(tick);
   }));
-  assert.ok(heartbeat.frames >= 3, "the Playground event loop stopped producing frames");
+  assert.ok(heartbeat.frames >= 3, "the Play event loop stopped producing frames");
   assert.ok(
     heartbeat.after - heartbeat.before < 10,
     `Audio reconciliation kept queuing microtasks (${heartbeat.before} → ${heartbeat.after})`
@@ -174,8 +174,8 @@ try {
     finalMicrotasks - audioSurface.queuedMicrotasks < 10,
     "opening Audio restarted a self-observing microtask loop"
   );
-  assert.equal(crashed, false, "Chromium reported that the Playground page crashed");
-  assert.deepEqual(pageErrors, [], `Playground page errors:\n${pageErrors.join("\n")}`);
+  assert.equal(crashed, false, "Chromium reported that the Play page crashed");
+  assert.deepEqual(pageErrors, [], `Play page errors:\n${pageErrors.join("\n")}`);
 
   console.log(
     "Verified that the complete Supersonic deep link imports, mounts Audio, and remains responsive in Chromium."
@@ -194,14 +194,14 @@ async function installGitHubFixtureRoutes(page) {
   await page.route("https://api.github.com/**", async (route) => {
     const url = new URL(route.request().url());
     let body = null;
-    if (url.pathname === "/repos/hara-lang/hara-playground") {
+    if (url.pathname === "/repos/hara-lang/hara-play") {
       body = {
         default_branch: "main",
-        html_url: "https://github.com/hara-lang/hara-playground"
+        html_url: "https://github.com/hara-lang/hara-play"
       };
-    } else if (url.pathname === "/repos/hara-lang/hara-playground/branches/main") {
+    } else if (url.pathname === "/repos/hara-lang/hara-play/branches/main") {
       body = { commit: { sha: commit } };
-    } else if (url.pathname === `/repos/hara-lang/hara-playground/git/trees/${commit}`) {
+    } else if (url.pathname === `/repos/hara-lang/hara-play/git/trees/${commit}`) {
       body = {
         truncated: false,
         tree: [...sampleFiles].map(([path, content]) => ({
@@ -225,7 +225,7 @@ async function installGitHubFixtureRoutes(page) {
 
   await page.route("https://raw.githubusercontent.com/**", async (route) => {
     const url = new URL(route.request().url());
-    const prefix = `/hara-lang/hara-playground/${commit}/`;
+    const prefix = `/hara-lang/hara-play/${commit}/`;
     if (!url.pathname.startsWith(prefix)) {
       await route.fulfill({ status: 404, headers: cors, body: "not found" });
       return;

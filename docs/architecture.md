@@ -6,7 +6,7 @@
 Browser page
 ├── WorkspaceStore (OPFS, localStorage or memory)
 ├── GitHub importer pinned to a resolved commit
-├── Playground application policy
+├── Play application policy
 │   ├── project/editor/output host mapping
 │   ├── nested output tabs and focus
 │   └── capability and Audio policy
@@ -36,7 +36,7 @@ values and host effects.
 6. Restore the configured main namespace for the live REPL.
 7. Evaluate `workspace.edn` through Hara, retain the value and inspect it into a
    bounded serializable Workspace view.
-8. Project manifest roles into installed Playground hosts and mount them through
+8. Project manifest roles into installed Play hosts and mount them through
    the Hodos Workspace shell.
 
 A missing or invalid Workspace manifest selects the standard fallback shell.
@@ -51,7 +51,7 @@ Hara
   language/runtime state
   workspace.* semantic state and events
 
-Playground
+Play
   browser storage and GitHub import
   product role mapping and installed adapters
   output tabs, Audio, focus and local presentation preferences
@@ -62,7 +62,7 @@ Hodos
   trusted component lifecycle and semantic-event boundaries
 ```
 
-Manifest component descriptors are not executed by the Playground projection.
+Manifest component descriptors are not executed by the Play projection.
 Unknown area types remain inert placeholders.
 
 ## Workspace storage

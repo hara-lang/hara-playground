@@ -1,6 +1,6 @@
 # Shared Hara web packages
 
-Playground is a consumer of the browser platform packages maintained in
+Play is a consumer of the browser platform packages maintained in
 `hara-lang/hara-ui`:
 
 ```text
@@ -18,10 +18,10 @@ URLs keep the same relative shape in source and in `dist`.
 
 The files under `src/runtime/client.js`, `src/editor/`, `src/language/`,
 `src/workspace/`, and `src/ui/hta.js` are compatibility adapters. Existing
-Playground imports stay stable while the implementation is owned by the shared
+Play imports stay stable while the implementation is owned by the shared
 packages.
 
-The following remain Playground-specific in this slice:
+The following remain Play-specific in this slice:
 
 - the canonical runtime worker and adapter;
 - the embedded development evaluator;

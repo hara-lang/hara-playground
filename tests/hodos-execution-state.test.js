@@ -6,11 +6,11 @@ register("./support/hodos-import-loader.mjs", import.meta.url);
 
 const {
   applyExecutionControllerUpdate,
-  createPlaygroundExecutionState,
-  executionAreaFromPlayground,
+  createPlayExecutionState,
+  executionAreaFromPlay,
   executionStateIsSerializable,
-  markPlaygroundExecutionStale,
-  selectPlaygroundExecution,
+  markPlayExecutionStale,
+  selectPlayExecution,
   withExecutionEnvironment,
 } = await import("../src/hodos/execution-state.js");
 
@@ -71,8 +71,8 @@ const trace = (traceId, sequence = 1, status = "running") => ({
   }],
 });
 
-test("Playground Execution state is serializable and delegates evidence to Hodos", () => {
-  let state = createPlaygroundExecutionState();
+test("Play Execution state is serializable and delegates evidence to Hodos", () => {
+  let state = createPlayExecutionState();
   state = withExecutionEnvironment(state, {
     currentSourceId: "main.hal",
     currentSourceVersion: "v1",
@@ -128,13 +128,13 @@ test("Playground Execution state is serializable and delegates evidence to Hodos
   assert.equal(executionStateIsSerializable(state), true);
   assert.doesNotMatch(JSON.stringify(state), /handle|WebAssembly|Promise/);
 
-  const area = executionAreaFromPlayground(state);
+  const area = executionAreaFromPlay(state);
   assert.equal(area["area/id"], "execution/main");
   assert.equal(area["area/component"]["component/id"], "hodos.dev/execution");
 });
 
 test("staleness retains evidence while disabling bytecode control", () => {
-  let state = createPlaygroundExecutionState({
+  let state = createPlayExecutionState({
     currentSourceId: "main.hal",
     currentSourceVersion: "v1",
     workspaceId: "workspace/test",
@@ -155,7 +155,7 @@ test("staleness retains evidence while disabling bytecode control", () => {
     },
     evidence: [metrics("trace/1"), events("trace/1"), trace("trace/1")],
   });
-  state = markPlaygroundExecutionStale(state, "v2");
+  state = markPlayExecutionStale(state, "v2");
   assert.equal(state.stale, true);
   assert.equal(state.model.session.status, "connected");
   assert.equal(state.model.evidence.trace.length, 1);
@@ -166,7 +166,7 @@ test("staleness retains evidence while disabling bytecode control", () => {
 });
 
 test("a reset trace identity cannot retain the previous trace", () => {
-  let state = createPlaygroundExecutionState({ sourceAvailable: true });
+  let state = createPlayExecutionState({ sourceAvailable: true });
   state = applyExecutionControllerUpdate(state, {
     kind: "started",
     generation: 1,
@@ -192,8 +192,8 @@ test("a reset trace identity cannot retain the previous trace", () => {
 });
 
 test("selection remains data-only", () => {
-  let state = createPlaygroundExecutionState();
-  state = selectPlaygroundExecution(state, {
+  let state = createPlayExecutionState();
+  state = selectPlayExecution(state, {
     function: 0,
     ip: 2,
     eventIndex: 1,

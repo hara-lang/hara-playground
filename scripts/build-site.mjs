@@ -22,7 +22,7 @@ await mkdir(output, { recursive: true });
 await cp(resolve(root, "index.html"), resolve(output, "index.html"));
 await cp(resolve(root, "provider.html"), resolve(output, "provider.html"));
 await cp(resolve(root, "src"), resolve(output, "src"), { recursive: true });
-await copyIfPresent("public/og-hara-playground.jpg", "og-hara-playground.jpg");
+await copyIfPresent("public/og-hara-play.jpg", "og-hara-play.jpg");
 
 // Keep the proven editor/Showcase Hodos pin separate from the newer provider
 // runtime. Advancing the whole editor stack would couple provider delivery to
@@ -30,14 +30,14 @@ await copyIfPresent("public/og-hara-playground.jpg", "og-hara-playground.jpg");
 await copyIfPresent("vendor/hara-ui/packages", "vendor/hara-ui/packages");
 const hodosPackagesCopied = await copyIfPresent("vendor/hodos/packages", "vendor/hodos/packages");
 if (!hodosPackagesCopied) {
-  throw new Error("The pinned Hodos editor package tree is required for the static Playground build");
+  throw new Error("The pinned Hodos editor package tree is required for the static Play build");
 }
 const providerPackagesCopied = await copyIfPresent(
   "vendor/hodos-provider/packages",
   "vendor/hodos-provider/packages",
 );
 if (!providerPackagesCopied) {
-  throw new Error("The pinned Hodos provider package tree is required for the static Playground build");
+  throw new Error("The pinned Hodos provider package tree is required for the static Play build");
 }
 const executionStyles = resolve(output, "vendor/hodos/packages/dev-ui/src/execution.css");
 if (!await exists(executionStyles)) {
@@ -56,8 +56,8 @@ await copyIfPresent("runtime/examples", "examples");
 await copyIfPresent("runtime/assets", "assets");
 await copyIfPresent("runtime.lock.json", "runtime.lock.json");
 
-if (process.env.HARA_PLAYGROUND_DOMAIN !== "") {
-  await writeFile(resolve(output, "CNAME"), `${process.env.HARA_PLAYGROUND_DOMAIN || "playground.hara-lang.org"}\n`);
+if (process.env.HARA_PLAY_DOMAIN !== "") {
+  await writeFile(resolve(output, "CNAME"), `${process.env.HARA_PLAY_DOMAIN || "play.hara-lang.org"}\n`);
 }
 
-console.log(`Built static Hara Playground site at ${output}`);
+console.log(`Built static Hara Play site at ${output}`);
