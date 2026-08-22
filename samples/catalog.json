@@ -24,16 +24,30 @@
       "sourceGitBlobSha": "71c72b02c94003a5a4e6e95a4977680e8f5d857f",
       "workspace": "workspace.edn",
       "workspaceGitBlobSha": "dd16c7e29af2a09827dd1bce50b16ef86e7df877",
-      "capabilities": ["preview/hta", "studio/eval"],
+      "capabilities": [
+        "preview/hta",
+        "studio/eval"
+      ],
       "validation": {
         "mode": "active-policy",
         "entrySymbol": "route-package"
+      },
+      "runtimeValidation": {
+        "load": "full-source",
+        "smokeForm": "(get (get (route-package {:colour \"blue\" :weight 4 :confidence 0.9 :anomaly false :package-id \"package/1\"} {:seen 0}) :memory) :seen)",
+        "expected": {
+          "type": "number",
+          "value": 1
+        },
+        "effect": {
+          "status": "not-required"
+        }
       },
       "manifestExtensions": [
         {
           "key": "playground/active-loop",
           "issue": "https://github.com/hara-lang/hara-play/issues/79",
-          "reason": "The current active-runtime host reads bounded Play activity metadata from project.edn; moving it to host metadata is deferred to the runtime execution slice."
+          "reason": "The current active-runtime host reads bounded Play activity metadata from project.edn. This runtime-validation slice verifies the declared policy without treating that host metadata as Package-contract authority; moving it remains tracked by #79."
         }
       ]
     },
@@ -48,16 +62,30 @@
       "sourceGitBlobSha": "79f40287f338184cf11fa72ff1727573814a7f41",
       "workspace": "workspace.edn",
       "workspaceGitBlobSha": "e5a39faab2095ec781bbda6e6dc26fb63f46d0b2",
-      "capabilities": ["preview/hta", "studio/eval"],
+      "capabilities": [
+        "preview/hta",
+        "studio/eval"
+      ],
       "validation": {
         "mode": "active-policy",
         "entrySymbol": "controller"
+      },
+      "runtimeValidation": {
+        "load": "full-source",
+        "smokeForm": "(get (get (controller {:level 60 :target 68} {:previous-error 0}) :command) :pump)",
+        "expected": {
+          "type": "number",
+          "value": 1
+        },
+        "effect": {
+          "status": "not-required"
+        }
       },
       "manifestExtensions": [
         {
           "key": "playground/active-loop",
           "issue": "https://github.com/hara-lang/hara-play/issues/79",
-          "reason": "The current active-runtime host reads bounded Play activity metadata from project.edn; moving it to host metadata is deferred to the runtime execution slice."
+          "reason": "The current active-runtime host reads bounded Play activity metadata from project.edn. This runtime-validation slice verifies the declared controller without treating that host metadata as Package-contract authority; moving it remains tracked by #79."
         }
       ]
     },
@@ -72,8 +100,23 @@
       "sourceGitBlobSha": "b53ea627081727bba7d681d142d930cbab8d0d5a",
       "workspace": "workspace.edn",
       "workspaceGitBlobSha": "ba896b9192390dc82e01184b951b5edcd5f2d75a",
-      "capabilities": ["studio/eval"],
-      "validation": { "mode": "static-view" },
+      "capabilities": [
+        "studio/eval"
+      ],
+      "validation": {
+        "mode": "static-view"
+      },
+      "runtimeValidation": {
+        "load": "full-source",
+        "smokeForm": "(str decision \":\" score)",
+        "expected": {
+          "type": "string",
+          "value": "ready:9"
+        },
+        "effect": {
+          "status": "not-required"
+        }
+      },
       "manifestExtensions": []
     },
     {
@@ -87,10 +130,26 @@
       "sourceGitBlobSha": "1dded7c77ce7a8b754fc806d4d77264164cab5e6",
       "workspace": "workspace.edn",
       "workspaceGitBlobSha": "9643f3d259f74c6eebd231de177687e049ce80f5",
-      "capabilities": ["model/generate", "studio/eval"],
+      "capabilities": [
+        "model/generate",
+        "studio/eval"
+      ],
       "validation": {
         "mode": "host-capability",
         "hostCapability": "model/generate"
+      },
+      "runtimeValidation": {
+        "load": "full-source",
+        "smokeForm": "(count (view))",
+        "expected": {
+          "type": "number",
+          "value": 3
+        },
+        "effect": {
+          "status": "deferred",
+          "capability": "model/generate",
+          "reason": "Model generation requires an external Greenways OS provider profile. Validation loads the namespace and exercises its pure view without contacting a provider."
+        }
       },
       "manifestExtensions": []
     },
@@ -105,8 +164,23 @@
       "sourceGitBlobSha": "635d0e3c26a7d34fbfb92d86cfca2e0a442558ba",
       "workspace": "workspace.edn",
       "workspaceGitBlobSha": "545a6effe41d2d2ed414582a12f05a2c418687e1",
-      "capabilities": ["studio/eval"],
-      "validation": { "mode": "static-view" },
+      "capabilities": [
+        "studio/eval"
+      ],
+      "validation": {
+        "mode": "static-view"
+      },
+      "runtimeValidation": {
+        "load": "full-source",
+        "smokeForm": "answer",
+        "expected": {
+          "type": "number",
+          "value": 42
+        },
+        "effect": {
+          "status": "not-required"
+        }
+      },
       "manifestExtensions": []
     },
     {
@@ -120,8 +194,23 @@
       "sourceGitBlobSha": "5222352ecfc911c6e13efc79b1825290452e7c5e",
       "workspace": "workspace.edn",
       "workspaceGitBlobSha": "b9af24f4797cd8fabf4f02f911f9b8079ee3f573",
-      "capabilities": ["studio/eval"],
-      "validation": { "mode": "static-view" },
+      "capabilities": [
+        "studio/eval"
+      ],
+      "validation": {
+        "mode": "static-view"
+      },
+      "runtimeValidation": {
+        "load": "full-source",
+        "smokeForm": "(get flow :result)",
+        "expected": {
+          "type": "number",
+          "value": 42
+        },
+        "effect": {
+          "status": "not-required"
+        }
+      },
       "manifestExtensions": []
     },
     {
@@ -135,8 +224,24 @@
       "sourceGitBlobSha": "0875ef20288305625c1b6481ee78c18911658caa",
       "workspace": "workspace.edn",
       "workspaceGitBlobSha": "7f6c1d8432e71160d629e75d945f17fc88af8a78",
-      "capabilities": ["preview/hta", "studio/eval"],
-      "validation": { "mode": "static-view" },
+      "capabilities": [
+        "preview/hta",
+        "studio/eval"
+      ],
+      "validation": {
+        "mode": "static-view"
+      },
+      "runtimeValidation": {
+        "load": "full-source",
+        "smokeForm": "(count (view))",
+        "expected": {
+          "type": "number",
+          "value": 3
+        },
+        "effect": {
+          "status": "not-required"
+        }
+      },
       "manifestExtensions": []
     },
     {
@@ -150,8 +255,24 @@
       "sourceGitBlobSha": "a8fcdb6cd255a2774e639c54259f18b844c9a470",
       "workspace": "workspace.edn",
       "workspaceGitBlobSha": "2bbacceeb0722341301e4a3b4c0380037fd85931",
-      "capabilities": ["preview/hta", "studio/eval"],
-      "validation": { "mode": "static-view" },
+      "capabilities": [
+        "preview/hta",
+        "studio/eval"
+      ],
+      "validation": {
+        "mode": "static-view"
+      },
+      "runtimeValidation": {
+        "load": "full-source",
+        "smokeForm": "(total (get order :items))",
+        "expected": {
+          "type": "number",
+          "value": 54
+        },
+        "effect": {
+          "status": "not-required"
+        }
+      },
       "manifestExtensions": []
     },
     {
@@ -165,10 +286,26 @@
       "sourceGitBlobSha": "7ea8bb70f5fb7d7c80ff2443e0bf0283a3ffb50b",
       "workspace": "workspace.edn",
       "workspaceGitBlobSha": "5b81cb4bdc087a1a6f572ec568f0b840597a7f5b",
-      "capabilities": ["audio/playback", "studio/eval"],
+      "capabilities": [
+        "audio/playback",
+        "studio/eval"
+      ],
       "validation": {
         "mode": "browser-capability",
         "hostCapability": "audio/playback"
+      },
+      "runtimeValidation": {
+        "load": "full-source",
+        "smokeForm": "(get audio-state \"status\")",
+        "expected": {
+          "type": "string",
+          "value": "running"
+        },
+        "effect": {
+          "status": "deferred",
+          "capability": "audio/playback",
+          "reason": "The silent graph contract is validated through the bounded Supersonic provider. AudioContext playback remains browser-owned and requires a user activation."
+        }
       },
       "manifestExtensions": []
     }

@@ -77,6 +77,12 @@ test("catalog validation treats workspace metadata as optional and rejects orpha
         sourceGitBlobSha: gitBlobSha(source),
         capabilities: ["preview/hta", "studio/eval"],
         validation: { mode: "static-view" },
+        runtimeValidation: {
+          load: "full-source",
+          smokeForm: "(count (view))",
+          expected: { type: "number", value: 2 },
+          effect: { status: "not-required" },
+        },
         manifestExtensions: [],
       }],
     };
