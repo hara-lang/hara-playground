@@ -15,7 +15,7 @@ function section(start, end) {
 test("Catalog projects descriptive tool and activity records without executable fields", () => {
   const toolProjection = section("const projectedToolsets", "const projectedActivities");
   const activityProjection = section("const projectedActivities", "let toolsAreaHost");
-  const runProjection = section("function catalogRunFromPlayground", "export function catalogAreaFromPlayground");
+  const runProjection = section("function catalogRunFromPlay", "export function catalogAreaFromPlay");
 
   assert.match(toolProjection, /id: tool\.id/);
   assert.match(toolProjection, /description: tool\.description/);

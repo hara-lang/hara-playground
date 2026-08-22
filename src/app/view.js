@@ -3,7 +3,7 @@ import { isHaraSource } from "../workspace/project.js";
 import { highlightHara } from "../editor/lisp.js";
 import { updateHodosRepl } from "../hodos/repl.js";
 import { syncWorkspaceAssist } from "./workspace-assist.js";
-import { FEATURED_PROJECTS, PLAYGROUND_NICETIES, projectDeepLink, repositoryLabel } from "../studio/projects.js";
+import { FEATURED_PROJECTS, PLAY_NICETIES, projectDeepLink, repositoryLabel } from "../studio/projects.js";
 import { icon, haraMark, escapeHtml, fileName, fileLanguage, renderRepl } from "./view-helpers.js";
 
 const EDITOR_LINE_HEIGHT = 22;
@@ -44,11 +44,11 @@ function renderResumeCard() {
 function renderProjectLobby() {
   return `<div class="project-lobby">
     <header class="lobby-header">
-      <a class="lobby-brand" href="./" aria-label="Hara Playground home">${haraMark("Hara Playground")}<span><strong>Hara</strong><em>Playground</em></span></a>
+      <a class="lobby-brand" href="./" aria-label="Hara Play home">${haraMark("Hara Play")}<span><strong>Hara</strong><em>Play</em></span></a>
       <nav class="lobby-nav" aria-label="Hara links">
         <a href="https://www.hara-lang.org" target="_blank" rel="noreferrer">Hara</a>
         <a href="https://docs.hara-lang.org" target="_blank" rel="noreferrer">Docs</a>
-        <a href="https://github.com/hara-lang/hara-playground" target="_blank" rel="noreferrer">Source</a>
+        <a href="https://github.com/hara-lang/hara-play" target="_blank" rel="noreferrer">Source</a>
         ${renderThemeButton("home-theme-button")}
       </nav>
     </header>
@@ -65,7 +65,7 @@ function renderProjectLobby() {
           </form>
           ${state.importProgress ? `<div class="import-progress-card"><i></i><span>${escapeHtml(state.importProgress)}</span></div>` : ""}
           ${state.home.error ? `<p class="home-error" role="alert">${escapeHtml(state.home.error)}</p>` : ""}
-          <div class="kernel-promise"><span class="kernel-promise__dot"></span><strong>Browser-owned session</strong><span>Repository files, evaluation state and preview effects stay inside the Playground origin.</span></div>
+          <div class="kernel-promise"><span class="kernel-promise__dot"></span><strong>Browser-owned session</strong><span>Repository files, evaluation state and preview effects stay inside the Play origin.</span></div>
         </div>
         <div class="lobby-hero__artifact hara-surface" aria-label="Hara kernel editor preview">
           <div class="artifact-header"><span><i></i> kernel / ready</span><span>app.core</span></div>
@@ -83,13 +83,13 @@ function renderProjectLobby() {
       ${renderResumeCard()}
 
       <section class="project-collection" id="projects">
-        <header class="section-heading"><div><p class="hara-kicker">TRY A REAL REPOSITORY</p><h2>Sample GitHub projects</h2></div><p>These cards open complete project directories from <code>hara-lang/hara-playground</code>. The browser imports only that subproject and boots every source file in the kernel.</p></header>
+        <header class="section-heading"><div><p class="hara-kicker">TRY A REAL REPOSITORY</p><h2>Sample GitHub projects</h2></div><p>These cards open complete project directories from <code>hara-lang/hara-play</code>. The browser imports only that subproject and boots every source file in the kernel.</p></header>
         <div class="project-grid">${renderProjectCards()}</div>
       </section>
 
       <section class="lisp-niceties hara-surface">
-        <header><p class="hara-kicker">LISP, NOT A GENERIC TEXT BOX</p><h2>Structural editing is part of the Playground.</h2></header>
-        <div class="nicety-grid">${PLAYGROUND_NICETIES.map((feature, index) => `<article><span>0${index + 1}</span><h3>${escapeHtml(feature.title)}</h3><p>${escapeHtml(feature.description)}</p></article>`).join("")}</div>
+        <header><p class="hara-kicker">LISP, NOT A GENERIC TEXT BOX</p><h2>Structural editing is part of the Play.</h2></header>
+        <div class="nicety-grid">${PLAY_NICETIES.map((feature, index) => `<article><span>0${index + 1}</span><h3>${escapeHtml(feature.title)}</h3><p>${escapeHtml(feature.description)}</p></article>`).join("")}</div>
       </section>
 
       <section class="local-project-cta">
@@ -98,7 +98,7 @@ function renderProjectLobby() {
       </section>
     </main>
 
-    <footer class="lobby-footer"><span>HARA / PLAYGROUND</span><span>Persistent kernel · structural editor · GitHub projects</span></footer>
+    <footer class="lobby-footer"><span>HARA / PLAY</span><span>Persistent kernel · structural editor · GitHub projects</span></footer>
   </div>`;
 }
 
@@ -232,7 +232,7 @@ function renderWorkbench() {
   const repositoryUrl = state.metadata.url || (state.metadata.source === "github" ? `https://github.com/${state.metadata.owner}/${state.metadata.repository}` : null);
   return `<div class="playground-shell">
     <header class="workbench-header hara-surface">
-      <button id="projects-home-button" class="brand-button" type="button" title="Open project browser">${haraMark("Hara Playground")}<span><strong>Hara</strong><em>Playground</em></span></button>
+      <button id="projects-home-button" class="brand-button" type="button" title="Open project browser">${haraMark("Hara Play")}<span><strong>Hara</strong><em>Play</em></span></button>
       <div class="project-identity"><span>${icon(state.metadata.source === "github" ? "github" : "code")}</span><div><strong>${escapeHtml(sourceLabel())}</strong><small>${escapeHtml(state.metadata.branch || "browser")}${state.metadata.commit ? ` · ${escapeHtml(state.metadata.commit.slice(0, 8))}` : ""}</small></div>${repositoryUrl ? `<a href="${escapeHtml(repositoryUrl)}" target="_blank" rel="noreferrer" title="Open source repository">${icon("external")}</a>` : ""}</div>
       <div class="workbench-actions">
         <button id="open-projects-button" class="quiet-action">${icon("folder")} Projects</button>

@@ -4,7 +4,7 @@ import test from "node:test";
 
 const text = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Playground editor state is driven by Hodos Workspace events", async () => {
+test("Play editor state is driven by Hodos Workspace events", async () => {
   const events = await text("src/app/events.js");
   assert.match(events, /document\.addEventListener\("hodos:workspace-event", handleHodosWorkspaceEvent\)/);
   assert.match(events, /editorWorkspacePatch\(event\.detail, state\.content\)/);

@@ -43,7 +43,7 @@ test("resolves the repository manifest before allocating the installed provider"
   assert.match(entry, /graph\.project\.provider\.id !== requestedProvider/);
   assert.match(entry, /projectId: graph\.project\.id/);
   assert.match(entry, /playgroundProviderActivity = launch\.activityId/);
-  assert.match(entry, /consumer: "hara-playground"/);
+  assert.match(entry, /consumer: "hara-play"/);
 });
 
 test("adds one provider-backed world project without importing Alumbra code", () => {

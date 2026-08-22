@@ -13,9 +13,9 @@
     ?.trim();
   const identityOrigin = configuredOrigin
     ? (allowedOrigins.has(configuredOrigin) ? configuredOrigin : null)
-    : location.hostname === "playground.hara-lang.org"
+    : location.hostname === "play.hara-lang.org"
       ? productionOrigin
-      : location.hostname === "playground.testing.hara-lang.org"
+      : location.hostname === "play.testing.hara-lang.org"
         || location.hostname.endsWith(".testing.hara-lang.org")
         ? testingOrigin
         : null;
@@ -45,7 +45,7 @@
   }
 
   // Keep shell remounting synchronous with MutationObserver delivery. The
-  // Playground audio engine uses microtasks for reconciliation and must not be
+  // Play audio engine uses microtasks for reconciliation and must not be
   // perturbed by unrelated account-shell scheduling.
   const observer = new MutationObserver(mountIdentity);
   observer.observe(app, { childList: true });

@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 
-const baseUrl = process.env.HARA_PLAYGROUND_URL || "https://playground.hara-lang.org/";
+const baseUrl = process.env.HARA_PLAY_URL || "https://play.hara-lang.org/";
 const target = new URL(baseUrl);
 target.searchParams.set("repo", "greenways-ai/hodos");
 target.searchParams.set("presentation", "showcase");

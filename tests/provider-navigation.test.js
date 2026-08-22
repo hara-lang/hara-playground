@@ -40,11 +40,11 @@ function fakeClick(link) {
 }
 
 test("recognises only a complete same-origin provider document launch", () => {
-  const location = {href: "https://playground.hara-lang.org/"};
+  const location = {href: "https://play.hara-lang.org/"};
   assert.equal(isProviderProjectLink(fakeLink(
     "./provider.html?provider=alumbra%2Fworld&world=https%3A%2F%2Fgithub.com%2Fgreenways-ai%2Falumbra&state=ballroom%2Fday",
   ), location), true);
-  assert.equal(isProviderProjectLink(fakeLink("./?repo=hara-lang%2Fhara-playground"), location), false);
+  assert.equal(isProviderProjectLink(fakeLink("./?repo=hara-lang%2Fhara-play"), location), false);
   assert.equal(isProviderProjectLink(fakeLink("https://example.test/provider.html?provider=x&world=y&state=z"), location), false);
   assert.equal(isProviderProjectLink(fakeLink("./provider.html?provider=x&world=y"), location), false);
 });
@@ -53,7 +53,7 @@ test("provider cards bypass repository import and navigate to the dedicated docu
   const document = new FakeDocument();
   const assigned = [];
   const location = {
-    href: "https://playground.hara-lang.org/",
+    href: "https://play.hara-lang.org/",
     assign(value) { assigned.push(value); },
   };
   const controller = installProviderProjectNavigation({document, location, window: null});
@@ -66,7 +66,7 @@ test("provider cards bypass repository import and navigate to the dedicated docu
   assert.equal(event.defaultPrevented, true);
   assert.equal(event.propagationStopped, true);
   assert.deepEqual(assigned, [
-    "https://playground.hara-lang.org/provider.html?provider=alumbra%2Fworld&world=https%3A%2F%2Fgithub.com%2Fgreenways-ai%2Falumbra&state=ballroom%2Fday",
+    "https://play.hara-lang.org/provider.html?provider=alumbra%2Fworld&world=https%3A%2F%2Fgithub.com%2Fgreenways-ai%2Falumbra&state=ballroom%2Fday",
   ]);
 
   controller.dispose();
@@ -78,11 +78,11 @@ test("ordinary repository project cards retain the existing SPA handler", () => 
   const document = new FakeDocument();
   const assigned = [];
   const location = {
-    href: "https://playground.hara-lang.org/",
+    href: "https://play.hara-lang.org/",
     assign(value) { assigned.push(value); },
   };
   installProviderProjectNavigation({document, location, window: null});
-  const event = fakeClick(fakeLink("./?repo=hara-lang%2Fhara-playground&branch=main&path=samples%2Flive-values"));
+  const event = fakeClick(fakeLink("./?repo=hara-lang%2Fhara-play&branch=main&path=samples%2Flive-values"));
   document.dispatch(event);
 
   assert.equal(event.defaultPrevented, false);

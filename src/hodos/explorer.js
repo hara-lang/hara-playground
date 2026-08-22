@@ -8,7 +8,7 @@ import {
 } from "./explorer-state.js";
 
 const registry = createHodosComponentRegistry();
-registerHodosExplorerUi(registry, { createExplorerHost: createPlaygroundExplorerHost });
+registerHodosExplorerUi(registry, { createExplorerHost: createPlayExplorerHost });
 
 let areaHost = null;
 
@@ -116,12 +116,12 @@ function entryNode(document, entry, depth, model, children, expanded, dispatch, 
     : fileNode(document, entry, depth, model, dispatch, signal);
 }
 
-export function createPlaygroundExplorerHost({ container, dispatch }) {
+export function createPlayExplorerHost({ container, dispatch }) {
   const tree = container?.querySelector?.(".file-tree");
   const createFile = container?.querySelector?.("#new-file-button");
   const deleteFile = container?.querySelector?.("#delete-file-button");
   if (!tree || !createFile || !deleteFile) {
-    throw new Error("Hodos Explorer requires the Playground project controls");
+    throw new Error("Hodos Explorer requires the Play project controls");
   }
 
   const document = container.ownerDocument || globalThis.document;
@@ -175,7 +175,7 @@ export function createPlaygroundExplorerHost({ container, dispatch }) {
   };
 }
 
-export function explorerAreaFromPlayground(state) {
+export function explorerAreaFromPlay(state) {
   const entries = projectExplorerEntries(state.files, {
     selectedPath: state.selectedPath,
     dirty: state.dirty,
@@ -230,12 +230,12 @@ export function mountHodosExplorer(state) {
       }));
     },
   });
-  areaHost.open(explorerAreaFromPlayground(state));
+  areaHost.open(explorerAreaFromPlay(state));
   return true;
 }
 
 export function updateHodosExplorer(state) {
   if (!areaHost) return false;
-  areaHost.update(explorerAreaFromPlayground(state));
+  areaHost.update(explorerAreaFromPlay(state));
   return true;
 }

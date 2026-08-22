@@ -149,7 +149,7 @@ function conveyorConfig(body, base) {
 }
 
 /**
- * Reads the private Playground activity extension. The project descriptor stays
+ * Reads the private Play activity extension. The project descriptor stays
  * ordinary EDN; this bounded parser only decides which worker-owned activity to
  * create and which Hara behaviour may be installed into it.
  */

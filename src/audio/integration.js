@@ -5,9 +5,9 @@ import {
   reconcileWithoutObservation,
   setTextContentIfChanged
 } from "./dom-sync.js";
-import { PlaygroundAudioHost, coerceControlValue } from "./host.js";
+import { PlayAudioHost, coerceControlValue } from "./host.js";
 
-const OUTPUT_KEY = "hara-playground-output";
+const OUTPUT_KEY = "hara-play-output";
 const AUDIO_TAB = "audio";
 
 let root = null;
@@ -16,7 +16,7 @@ let scheduled = false;
 let workspaceMounted = false;
 let active = readSetting(OUTPUT_KEY, "preview") === AUDIO_TAB;
 
-const audio = new PlaygroundAudioHost({
+const audio = new PlayAudioHost({
   runtime,
   storage: globalThis.localStorage,
   onChange: scheduleMount

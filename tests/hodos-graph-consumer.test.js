@@ -4,7 +4,7 @@ import test from "node:test";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-test("Playground registers and installs the bounded Hodos Graph consumer", async () => {
+test("Play registers and installs the bounded Hodos Graph consumer", async () => {
   const [shell, main, styles, consumer, manifest] = await Promise.all([
     read("../src/hodos/workspace-shell.js"),
     read("../src/main.js"),

@@ -80,7 +80,7 @@ test("the isolated browser runner serves only normalized repository paths", asyn
   assert.match(runner, /x-content-type-options/);
 });
 
-test("the full Playground check opens the real sample and detects render-loop starvation", async () => {
+test("the full Play check opens the real sample and detects render-loop starvation", async () => {
   const runner = await read("scripts/verify-supersonic-project-open.mjs");
   for (const marker of ["samples/supersonic-live", "api.github.com", "raw.githubusercontent.com", "page.route", "__haraQueuedMicrotasks", "requestAnimationFrame", "page.on(\"crash\"", "#editor", "[data-output-tab=\"audio\"]", "audio/playback", "workspaceManifestStatus", "workspace.edn"]) {
     assert.ok(runner.includes(marker), `full project runner is missing ${marker}`);
@@ -95,7 +95,7 @@ test("the production smoke requires graph publication, Play, live update and Sto
   const pages = await read(".github/workflows/pages.yml");
   const runner = await read("scripts/verify-live-supersonic.mjs");
   assert.match(pages, /node scripts\/verify-live-supersonic\.mjs/);
-  assert.match(pages, /HARA_PLAYGROUND_URL:\s*\$\{\{ needs\.deploy\.outputs\.page_url \}\}/);
+  assert.match(pages, /HARA_PLAY_URL:\s*\$\{\{ needs\.deploy\.outputs\.page_url \}\}/);
   for (const marker of ["samples/supersonic-live", "#audio-play-button", "Glass Signal", "#audio-stop-button", "data-audio-parameter=\"tempo\"", "requestAnimationFrame", "page.on(\"crash\"", "pageerror", "requestfailed"]) {
     assert.ok(runner.includes(marker), `public smoke is missing ${marker}`);
   }

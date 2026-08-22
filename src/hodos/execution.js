@@ -20,10 +20,10 @@ import {
 import {
   applyExecutionControllerUpdate,
   appendExecutionDiagnostic,
-  createPlaygroundExecutionState,
-  executionAreaFromPlayground,
-  markPlaygroundExecutionStale,
-  selectPlaygroundExecution,
+  createPlayExecutionState,
+  executionAreaFromPlay,
+  markPlayExecutionStale,
+  selectPlayExecution,
   setExecutionBusy,
   withExecutionEnvironment,
 } from "./execution-state.js";
@@ -43,7 +43,7 @@ const eventType = (value) => value?.["event/type"] ?? value?.type ?? null;
 
 function writeOutputSetting(value) {
   try {
-    globalThis.localStorage?.setItem("hara-playground-output", value);
+    globalThis.localStorage?.setItem("hara-play-output", value);
   } catch {
     // Output selection remains functional when storage is unavailable.
   }
@@ -89,7 +89,7 @@ function updateExecutionHost() {
   if (!stateRef) return false;
   updateTabPresentation();
   if (!areaHost) return false;
-  areaHost.update(executionAreaFromPlayground(stateRef.execution));
+  areaHost.update(executionAreaFromPlay(stateRef.execution));
   return true;
 }
 
@@ -155,7 +155,7 @@ function currentController() {
 }
 
 function synchronizeExecutionEnvironment(state) {
-  state.execution ??= createPlaygroundExecutionState();
+  state.execution ??= createPlayExecutionState();
   const environment = sourceEnvironment(state);
   const live = currentController().inspect();
 
@@ -174,7 +174,7 @@ function synchronizeExecutionEnvironment(state) {
         sourceId: environment.currentSourceId,
         sourceVersion: environment.currentSourceVersion,
       });
-      state.execution = markPlaygroundExecutionStale(
+      state.execution = markPlayExecutionStale(
         state.execution,
         environment.currentSourceVersion,
       );
@@ -201,7 +201,7 @@ function synchronizeEditedSource(expectedPath) {
     sourceId: environment.currentSourceId,
     sourceVersion: environment.currentSourceVersion,
   });
-  stateRef.execution = markPlaygroundExecutionStale(
+  stateRef.execution = markPlayExecutionStale(
     stateRef.execution,
     environment.currentSourceVersion,
   );
@@ -269,7 +269,7 @@ async function executePatch(patch) {
   }
 
   if (patch.kind === "select") {
-    stateRef.execution = selectPlaygroundExecution(stateRef.execution, {
+    stateRef.execution = selectPlayExecution(stateRef.execution, {
       function: patch.function,
       ip: patch.ip,
       eventIndex: patch.eventIndex,
@@ -395,7 +395,7 @@ export function mountHodosExecution(state) {
       }));
     },
   });
-  areaHost.open(executionAreaFromPlayground(state.execution));
+  areaHost.open(executionAreaFromPlay(state.execution));
   updateTabPresentation();
   return true;
 }

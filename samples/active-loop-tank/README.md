@@ -1,6 +1,6 @@
 # The Living Tank
 
-This project proves a small inversion-of-control idea: the Playground worker owns a continuing tank simulation, while this project supplies replaceable Hara controller code.
+This project proves a small inversion-of-control idea: the Play worker owns a continuing tank simulation, while this project supplies replaceable Hara controller code.
 
 1. The worker creates and starts `tank/controller` before installing the controller.
 2. `src/main.hal` is staged in a versioned namespace and validated by the resident Hara runtime.

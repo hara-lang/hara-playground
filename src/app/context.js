@@ -4,7 +4,7 @@ import { DEFAULT_WORKSPACE, WorkspaceStore } from "../workspace/store.js";
 import { previewDocument } from "../ui/hta.js";
 import { createProblemsState } from "../hodos/problems-state.js";
 import { createExplorerState } from "../hodos/explorer-state.js";
-import { createPlaygroundExecutionState } from "../hodos/execution-state.js";
+import { createPlayExecutionState } from "../hodos/execution-state.js";
 import { showcasePresentationFromLocation } from "../studio/showcase.js";
 import {
   DEFAULT_ACTIVITY_ID,
@@ -19,9 +19,9 @@ export const STUDIO_SETTING_KEYS = Object.freeze({
   instaRepl: "hara-studio-instarepl",
   toolset: "hara-studio-toolset",
   activity: "hara-studio-activity",
-  rainbow: "hara-playground-rainbow-parens",
-  paredit: "hara-playground-paredit",
-  output: "hara-playground-output"
+  rainbow: "hara-play-rainbow-parens",
+  paredit: "hara-play-paredit",
+  output: "hara-play-output"
 });
 
 function readSetting(key, fallback) {
@@ -79,7 +79,7 @@ valueInspector: {
   error: ""
 },
   problems: createProblemsState(),
-  execution: createPlaygroundExecutionState(),
+  execution: createPlayExecutionState(),
   workspaceShell: {
     workspaceId: null,
     status: "idle",

@@ -93,8 +93,8 @@ export function validateManifestExtensions(sample, parsed, label) {
     if (packageProjectKeys.has(key)) fail(extensionLabel, `:${key} is already part of the package contract`);
     assertString(`${extensionLabel}.reason`, extension.reason);
     const issue = assertString(`${extensionLabel}.issue`, extension.issue);
-    if (!/^https:\/\/github\.com\/hara-lang\/hara-playground\/issues\/\d+$/.test(issue)) {
-      fail(`${extensionLabel}.issue`, "must link to a hara-playground issue");
+    if (!/^https:\/\/github\.com\/hara-lang\/hara-play\/issues\/\d+$/.test(issue)) {
+      fail(`${extensionLabel}.issue`, "must link to a hara-play issue");
     }
     return key;
   });

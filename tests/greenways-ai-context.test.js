@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildPlaygroundMessages } from "../src/ai/context.js";
+import { buildPlayMessages } from "../src/ai/context.js";
 
 test("builds a Hara-aware request with the current buffer", () => {
-  const result = buildPlaygroundMessages({
+  const result = buildPlayMessages({
     prompt: "Explain the transformation",
     selectedPath: "src/app/core.hal",
     content: "(defn answer [] 42)",
@@ -19,7 +19,7 @@ test("builds a Hara-aware request with the current buffer", () => {
 });
 
 test("keeps context bounded and reports truncation", () => {
-  const result = buildPlaygroundMessages({
+  const result = buildPlayMessages({
     prompt: "Review this buffer",
     selectedPath: "src/app/core.hal",
     content: "x".repeat(3000),
@@ -32,6 +32,6 @@ test("keeps context bounded and reports truncation", () => {
 });
 
 test("rejects empty or unbounded prompts", () => {
-  assert.throws(() => buildPlaygroundMessages({ prompt: "   " }), /Write a request/);
-  assert.throws(() => buildPlaygroundMessages({ prompt: "x".repeat(12001) }), /cannot exceed/);
+  assert.throws(() => buildPlayMessages({ prompt: "   " }), /Write a request/);
+  assert.throws(() => buildPlayMessages({ prompt: "x".repeat(12001) }), /cannot exceed/);
 });

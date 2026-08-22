@@ -4,7 +4,7 @@ import { createReplArea } from "@greenways/hodos-dev";
 import { registerHodosReplUi } from "@greenways/hodos-dev-ui";
 
 const registry = createHodosComponentRegistry();
-registerHodosReplUi(registry, { createReplHost: createPlaygroundReplHost });
+registerHodosReplUi(registry, { createReplHost: createPlayReplHost });
 
 let areaHost = null;
 
@@ -67,7 +67,7 @@ function entryNode(entry, namespace, dispatch, signal) {
   return line;
 }
 
-export function createPlaygroundReplHost({ container, dispatch }) {
+export function createPlayReplHost({ container, dispatch }) {
   const output = container?.querySelector?.("#repl-output");
   const form = container?.querySelector?.("#repl-form");
   const input = container?.querySelector?.("#repl-input");
@@ -75,7 +75,7 @@ export function createPlaygroundReplHost({ container, dispatch }) {
   const toolbarNamespace = container?.querySelector?.(".repl-toolbar span");
   const prompt = container?.querySelector?.(".repl-form > span");
   if (!output || !form || !input || !clear) {
-    throw new Error("Hodos REPL requires the Playground REPL controls");
+    throw new Error("Hodos REPL requires the Play REPL controls");
   }
 
   const abort = new AbortController();
@@ -127,7 +127,7 @@ export function createPlaygroundReplHost({ container, dispatch }) {
   };
 }
 
-export function replAreaFromPlayground(state) {
+export function replAreaFromPlay(state) {
   return createReplArea({
     id: "repl/main",
     sessionId: state.workspace ? `workspace:${state.workspace}` : null,
@@ -165,12 +165,12 @@ export function mountHodosRepl(state) {
       }));
     },
   });
-  areaHost.open(replAreaFromPlayground(state));
+  areaHost.open(replAreaFromPlay(state));
   return true;
 }
 
 export function updateHodosRepl(state) {
   if (!areaHost) return false;
-  areaHost.update(replAreaFromPlayground(state));
+  areaHost.update(replAreaFromPlay(state));
   return true;
 }

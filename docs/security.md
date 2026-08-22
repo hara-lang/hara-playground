@@ -1,10 +1,10 @@
 # Security model
 
-Hara Playground treats imported source code as untrusted.
+Hara Play treats imported source code as untrusted.
 
 ## Existing controls
 
-- Hara evaluation runs in a Web Worker, not the Playground document.
+- Hara evaluation runs in a Web Worker, not the Play document.
 - Preview output runs in an iframe with an empty `sandbox` attribute.
 - Preview documents include a restrictive Content Security Policy.
 - HTA attributes beginning with `on` are discarded.
@@ -28,7 +28,7 @@ GitHub source → workspace → Hara worker → validated effect → preview ifr
 ```
 
 The preview must never receive GitHub tokens. The runtime must never receive
-Playground-origin cookies, unrestricted OPFS handles, `AudioContext` objects,
+Play-origin cookies, unrestricted OPFS handles, `AudioContext` objects,
 `AudioNode` objects, DOM nodes, or output-device handles.
 
 ## Audio authority

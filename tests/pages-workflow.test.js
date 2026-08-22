@@ -78,7 +78,7 @@ test("the deployable Supersonic runtime is exercised in real Chromium", () => {
   assert.match(runtimeCi, /node scripts\/verify-browser-audio\.mjs/);
   assert.match(runtimeCi, /node scripts\/verify-supersonic-project-open\.mjs/);
   assert.match(runtimeCi, /PORT=4173 node scripts\/dev-server\.mjs/);
-  assert.match(runtimeCi, /HARA_PLAYGROUND_URL=http:\/\/127\.0\.0\.1:4173\//);
+  assert.match(runtimeCi, /HARA_PLAY_URL=http:\/\/127\.0\.0\.1:4173\//);
   assert.match(runtimeCi, /node scripts\/verify-live-supersonic\.mjs/);
 });
 
@@ -86,7 +86,7 @@ test("the production workflow verifies Peacock Ballroom, Hodos Document and Supe
   assert.match(pages, /npm run build/);
   assert.match(pages, /actions\/upload-pages-artifact@v3/);
   assert.match(pages, /actions\/deploy-pages@v4/);
-  assert.match(pages, /Verify public Playground deployment/);
+  assert.match(pages, /Verify public Play deployment/);
   assert.match(pages, /npm run web:prepare/);
   assert.match(pages, /node scripts\/verify-pages-deployment\.mjs/);
   assert.match(pages, /playwright@1\.53\.2/);
@@ -94,5 +94,5 @@ test("the production workflow verifies Peacock Ballroom, Hodos Document and Supe
   assert.match(pages, /node scripts\/verify-live-provider-world\.mjs/);
   assert.match(pages, /node scripts\/verify-live-showcase-document-edit\.mjs/);
   assert.match(pages, /node scripts\/verify-live-supersonic\.mjs/);
-  assert.match(pages, /HARA_PLAYGROUND_URL:\s*\$\{\{ needs\.deploy\.outputs\.page_url \}\}/);
+  assert.match(pages, /HARA_PLAY_URL:\s*\$\{\{ needs\.deploy\.outputs\.page_url \}\}/);
 });

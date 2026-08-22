@@ -46,8 +46,8 @@
       "manifestExtensions": [
         {
           "key": "playground/active-loop",
-          "issue": "https://github.com/hara-lang/hara-playground/issues/79",
-          "reason": "The current active-runtime host reads bounded Playground activity metadata from project.edn. This runtime-validation slice verifies the declared policy without treating that host metadata as Package-contract authority; moving it remains tracked by #79."
+          "issue": "https://github.com/hara-lang/hara-play/issues/79",
+          "reason": "The current active-runtime host reads bounded Play activity metadata from project.edn. This runtime-validation slice verifies the declared policy without treating that host metadata as Package-contract authority; moving it remains tracked by #79."
         }
       ]
     },
@@ -55,7 +55,7 @@
       "id": "active-loop-tank",
       "path": "samples/active-loop-tank",
       "manifest": "project.edn",
-      "manifestGitBlobSha": "87f8497b8d2de1402398adb0fe00a26259af8d73",
+      "manifestGitBlobSha": "94e84447822914a5fa42724d5306fc0b5fa1da27",
       "projectId": "playground.active-loop-tank",
       "mainNamespace": "samples.active-loop-tank",
       "source": "src/main.hal",
@@ -84,8 +84,8 @@
       "manifestExtensions": [
         {
           "key": "playground/active-loop",
-          "issue": "https://github.com/hara-lang/hara-playground/issues/79",
-          "reason": "The current active-runtime host reads bounded Playground activity metadata from project.edn. This runtime-validation slice verifies the declared controller without treating that host metadata as Package-contract authority; moving it remains tracked by #79."
+          "issue": "https://github.com/hara-lang/hara-play/issues/79",
+          "reason": "The current active-runtime host reads bounded Play activity metadata from project.edn. This runtime-validation slice verifies the declared controller without treating that host metadata as Package-contract authority; moving it remains tracked by #79."
         }
       ]
     },

@@ -45,7 +45,7 @@ function runLoader({ hostname, configuredOrigin } = {}) {
   return { appended, observed };
 }
 
-test("opts Playground into the shared popup Identity client", () => {
+test("opts Play into the shared popup Identity client", () => {
   assert.match(index, /<meta name="hara-identity-mode" content="popup" \/>/);
   assert.match(index, /src="\.\/src\/identity-loader\.js"/);
   assert.match(loader, /https:\/\/id\.hara-lang\.org/);
@@ -55,7 +55,7 @@ test("opts Playground into the shared popup Identity client", () => {
   assert.doesNotMatch(loader, /client_secret|access_token|HARA_GITHUB_OAUTH_CLIENT_SECRET/);
 });
 
-test("remounts the account control in both dynamic Playground headers without touching the audio microtask queue", () => {
+test("remounts the account control in both dynamic Play headers without touching the audio microtask queue", () => {
   assert.match(view, /class="lobby-nav"/);
   assert.match(view, /class="workbench-actions"/);
   assert.match(loader, /\.lobby-nav/);
@@ -71,7 +71,7 @@ test("publishes the loader because the build copies the complete source tree", (
 });
 
 test("selects remote Identity only for canonical Hara hosts", () => {
-  const production = runLoader({ hostname: "playground.hara-lang.org" });
+  const production = runLoader({ hostname: "play.hara-lang.org" });
   assert.equal(production.appended[0].src, "https://id.hara-lang.org/v1/identity-client.js");
   assert.equal(production.observed.length, 1);
 
@@ -96,7 +96,7 @@ test("allows an explicit trusted Identity origin for local integration tests", (
   assert.equal(enabled.appended[0].src, "https://id.testing.hara-lang.org/v1/identity-client.js");
 
   const rejected = runLoader({
-    hostname: "playground.hara-lang.org",
+    hostname: "play.hara-lang.org",
     configuredOrigin: "https://identity.example.test",
   });
   assert.deepEqual(rejected.appended, []);

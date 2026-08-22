@@ -1,4 +1,4 @@
-name: Deploy Hara Playground
+name: Deploy Hara Play
 
 on:
   push:
@@ -146,7 +146,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   smoke:
-    name: Verify public Playground deployment
+    name: Verify public Play deployment
     needs: deploy
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -161,8 +161,8 @@ jobs:
         run: npm run web:prepare
       - name: Match public assets to the deployed commit
         env:
-          HARA_PLAYGROUND_URL: ${{ needs.deploy.outputs.page_url }}
-          HARA_PLAYGROUND_COMMIT: ${{ github.sha }}
+          HARA_PLAY_URL: ${{ needs.deploy.outputs.page_url }}
+          HARA_PLAY_COMMIT: ${{ github.sha }}
         run: node scripts/verify-pages-deployment.mjs
       - name: Install pinned browser smoke tooling
         run: |
@@ -170,13 +170,13 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Exercise the public Peacock Ballroom provider
         env:
-          HARA_PLAYGROUND_URL: ${{ needs.deploy.outputs.page_url }}
+          HARA_PLAY_URL: ${{ needs.deploy.outputs.page_url }}
         run: node scripts/verify-live-provider-world.mjs
       - name: Exercise the public Hodos Document Showcase
         env:
-          HARA_PLAYGROUND_URL: ${{ needs.deploy.outputs.page_url }}
+          HARA_PLAY_URL: ${{ needs.deploy.outputs.page_url }}
         run: node scripts/verify-live-showcase-document-edit.mjs
       - name: Exercise the public Supersonic project
         env:
-          HARA_PLAYGROUND_URL: ${{ needs.deploy.outputs.page_url }}
+          HARA_PLAY_URL: ${{ needs.deploy.outputs.page_url }}
         run: node scripts/verify-live-supersonic.mjs

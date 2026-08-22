@@ -58,7 +58,7 @@ try {
   await installGitHubFixtureRoutes(page);
 
   const showcase = new URL(`${origin}/`);
-  showcase.searchParams.set("repo", "hara-lang/hara-playground");
+  showcase.searchParams.set("repo", "hara-lang/hara-play");
   showcase.searchParams.set("branch", "main");
   showcase.searchParams.set("commit", commit);
   showcase.searchParams.set("path", sampleRoot);
@@ -262,7 +262,7 @@ async function waitForServer(child, url) {
   child.stdout?.on("data", (chunk) => { output += chunk; });
   child.stderr?.on("data", (chunk) => { output += chunk; });
   for (let attempt = 0; attempt < 100; attempt += 1) {
-    if (child.exitCode != null) throw new Error(`Playground server exited early:\n${output}`);
+    if (child.exitCode != null) throw new Error(`Play server exited early:\n${output}`);
     try {
       const response = await fetch(url, {cache: "no-store"});
       if (response.ok) return;
@@ -271,7 +271,7 @@ async function waitForServer(child, url) {
     }
     await new Promise((resolveWait) => setTimeout(resolveWait, 100));
   }
-  throw new Error(`Playground server did not become ready:\n${output}`);
+  throw new Error(`Play server did not become ready:\n${output}`);
 }
 
 async function installGitHubFixtureRoutes(page) {
@@ -283,12 +283,12 @@ async function installGitHubFixtureRoutes(page) {
   await page.route("https://api.github.com/**", async (route) => {
     const url = new URL(route.request().url());
     let body = null;
-    if (url.pathname === "/repos/hara-lang/hara-playground") {
+    if (url.pathname === "/repos/hara-lang/hara-play") {
       body = {
         default_branch: "main",
-        html_url: "https://github.com/hara-lang/hara-playground",
+        html_url: "https://github.com/hara-lang/hara-play",
       };
-    } else if (url.pathname === `/repos/hara-lang/hara-playground/git/trees/${commit}`) {
+    } else if (url.pathname === `/repos/hara-lang/hara-play/git/trees/${commit}`) {
       body = {
         truncated: false,
         tree: [...sampleFiles].map(([path, content]) => ({
@@ -307,7 +307,7 @@ async function installGitHubFixtureRoutes(page) {
   });
   await page.route("https://raw.githubusercontent.com/**", async (route) => {
     const url = new URL(route.request().url());
-    const prefix = `/hara-lang/hara-playground/${commit}/`;
+    const prefix = `/hara-lang/hara-play/${commit}/`;
     if (!url.pathname.startsWith(prefix)) {
       return route.fulfill({status: 404, headers, body: "not found"});
     }

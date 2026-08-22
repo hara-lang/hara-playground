@@ -33,7 +33,7 @@ function responseFor(request, overrides = {}) {
   };
 }
 
-test("sends a typed request only to the production Playground origin", async () => {
+test("sends a typed request only to the production Play origin", async () => {
   const windowRef = new FakeWindow();
   const client = new GreenwaysAiClient({ windowRef });
   const pending = client.status({ timeoutMs: 1000 });
@@ -41,7 +41,7 @@ test("sends a typed request only to the production Playground origin", async () 
   const { message, targetOrigin } = windowRef.sent[0];
   assert.equal(targetOrigin, GREENWAYS_AI_ORIGIN);
   assert.deepEqual(message, {
-    source: "hara-playground",
+    source: "hara-play",
     direction: "request",
     protocol: GREENWAYS_AI_PROTOCOL,
     requestId: "playground/0123456789abcdef0123456789abcdef",
@@ -101,9 +101,9 @@ test("fails locally rather than posting credentials or requests to another origi
 test("rejects the .io origin and production lookalikes without posting", async () => {
   for (const origin of [
     "https://playground.hara-lang.io",
-    "https://playground.hara-lang.org.attacker.example",
+    "https://play.hara-lang.org.attacker.example",
     "https://hara-lang.org",
-    "http://playground.hara-lang.org",
+    "http://play.hara-lang.org",
   ]) {
     const windowRef = new FakeWindow(origin);
     const client = new GreenwaysAiClient({ windowRef });

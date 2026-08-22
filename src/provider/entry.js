@@ -53,10 +53,10 @@ function providerHref(state = PEACOCK_BALLROOM_DEFAULT_STATE) {
 }
 
 function renderProviderShell() {
-  if (!root) throw new Error("Hara Playground is missing its application root");
+  if (!root) throw new Error("Hara Play is missing its application root");
   root.innerHTML = `<main class="playground-provider-page">
     <nav class="playground-provider-toolbar" aria-label="Peacock Ballroom controls">
-      <a href="${playgroundHomeUrl()}">← Playground</a>
+      <a href="${playgroundHomeUrl()}">← Play</a>
       <strong>Peacock Ballroom</strong>
       <span data-provider-world-status>Resolving the repository provider manifest…</span>
       ${PEACOCK_BALLROOM_STATES.map((state) => `<button type="button" data-provider-state="${state}" aria-pressed="${state === requestedState}">${state.split("/").at(-1).replaceAll("-", " ")}</button>`).join("")}
@@ -86,7 +86,7 @@ async function waitForProviderReady(host) {
 
 async function openProviderWorld() {
   if (requestedProvider !== ALUMBRA_PROVIDER_ID) {
-    throw new Error(`Provider is not installed in Playground: ${requestedProvider}`);
+    throw new Error(`Provider is not installed in Play: ${requestedProvider}`);
   }
   if (requestedWorld !== "https://github.com/greenways-ai/alumbra") {
     throw new Error("Peacock Ballroom must resolve from the installed greenways-ai/alumbra repository identity");
@@ -124,7 +124,7 @@ async function openProviderWorld() {
     commit: graph.commit,
     projectId: graph.project.id,
     projectVersion: graph.project.version,
-    consumer: "hara-playground",
+    consumer: "hara-play",
   });
   const ready = await waitForProviderReady(activeHost);
   surface.status.textContent = `${launch.activityId} · ${launch.state} · ${graph.commit.slice(0, 8)}`;
@@ -135,7 +135,7 @@ async function openProviderWorld() {
   data.playgroundProviderActivity = launch.activityId;
   data.playgroundProviderState = launch.state;
   data.playgroundProviderAllocations = String(ready.allocations);
-  window.__HARA_PLAYGROUND_PROVIDER_WORLD__ = Object.freeze({
+  window.__HARA_PLAY_PROVIDER_WORLD__ = Object.freeze({
     graph: Object.freeze({
       repository: graph.repository.url,
       commit: graph.commit,
@@ -149,9 +149,9 @@ async function openProviderWorld() {
 
 function renderFailure(error) {
   if (!root) return;
-  root.innerHTML = `<main class="playground-provider-page"><section class="playground-provider-error"><p class="hara-kicker">PLAYGROUND / PROVIDER WORLD</p><h1>Unable to open the installed world.</h1><code>${escapeHtml(error?.message ?? error)}</code><p><a class="primary-action" href="${playgroundHomeUrl()}">Return to Playground</a></p></section></main>`;
+  root.innerHTML = `<main class="playground-provider-page"><section class="playground-provider-error"><p class="hara-kicker">PLAY / PROVIDER WORLD</p><h1>Unable to open the installed world.</h1><code>${escapeHtml(error?.message ?? error)}</code><p><a class="primary-action" href="${playgroundHomeUrl()}">Return to Play</a></p></section></main>`;
   document.documentElement.dataset.playgroundProviderReady = "false";
-  console.error("Hara Playground provider-backed world failed", error);
+  console.error("Hara Play provider-backed world failed", error);
 }
 
 void openProviderWorld().catch(renderFailure);

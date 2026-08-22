@@ -120,7 +120,7 @@ function publishError(message) {
 }
 
 export function selectShowcaseSurface(surfaceId) {
-  if (!active()) throw new Error("The Playground is not in Showcase presentation");
+  if (!active()) throw new Error("The Play is not in Showcase presentation");
   const descriptor = currentHodosWorkspaceDescriptor();
   if (!descriptor) throw new Error("The Showcase Workspace is not ready");
   const surface = playgroundSurfaceById(descriptor, surfaceId);

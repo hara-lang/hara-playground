@@ -1,9 +1,9 @@
 import { state } from "../app/context.js";
-import { buildPlaygroundMessages } from "./context.js";
+import { buildPlayMessages } from "./context.js";
 import { GREENWAYS_AI_ORIGIN, GreenwaysAiClient } from "./greenways-client.js";
 
 const client = new GreenwaysAiClient();
-const MODEL_STORAGE_PREFIX = "hara-playground-greenways-model:";
+const MODEL_STORAGE_PREFIX = "hara-play-greenways-model:";
 
 const assistant = {
   open: false,
@@ -93,7 +93,7 @@ function connectionView() {
     return {
       tone: "warn",
       label: "AI access needs approval",
-      detail: "Open Greenways OS to approve Hara Playground and model/generate.",
+      detail: "Open Greenways OS to approve Hara Play and model/generate.",
       action: "connect",
     };
   }
@@ -102,7 +102,7 @@ function connectionView() {
     return {
       tone: "warn",
       label: "Add an AI provider key",
-      detail: "Provider keys are installed in Greenways OS and never copied into Playground.",
+      detail: "Provider keys are installed in Greenways OS and never copied into Play.",
       action: "connect",
     };
   }
@@ -300,7 +300,7 @@ async function openGreenwaysOs() {
   renderPanel();
   try {
     await client.open();
-    assistant.notice = "Approve Playground and add a provider key in Greenways OS, then return here and refresh.";
+    assistant.notice = "Approve Play and add a provider key in Greenways OS, then return here and refresh.";
   } catch (error) {
     assistant.notice = "";
     assistant.error = error?.message || "Greenways OS could not be opened";
@@ -328,7 +328,7 @@ async function generate() {
 
   let context;
   try {
-    context = buildPlaygroundMessages({
+    context = buildPlayMessages({
       prompt: assistant.prompt,
       selectedPath: state.selectedPath,
       content: state.content,

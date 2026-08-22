@@ -1,6 +1,6 @@
-# Visual Playground and structural Hara editor
+# Visual Play and structural Hara editor
 
-Hara Playground has two deliberate surfaces:
+Hara Play has two deliberate surfaces:
 
 1. a project browser for opening a public GitHub repository, a featured sample,
    or a browser-owned local project; and
@@ -16,7 +16,7 @@ state, focus, evaluation, and delimiter depth.
 
 ## GitHub projects and project paths
 
-A Playground URL may point at a complete repository:
+A Play URL may point at a complete repository:
 
 ```text
 ?repo=owner/repository&branch=main
@@ -25,7 +25,7 @@ A Playground URL may point at a complete repository:
 It may also scope the import to a project directory inside a monorepo:
 
 ```text
-?repo=hara-lang/hara-playground&branch=main&path=samples/live-values
+?repo=hara-lang/hara-play&branch=main&path=samples/live-values
 ```
 
 The importer resolves the branch to a commit, reads the immutable recursive

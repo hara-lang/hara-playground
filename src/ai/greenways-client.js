@@ -1,6 +1,6 @@
 export const GREENWAYS_AI_PROTOCOL = "greenways-playground-ai/1";
-export const GREENWAYS_AI_ORIGIN = "https://playground.hara-lang.org";
-export const GREENWAYS_PAGE_SOURCE = "hara-playground";
+export const GREENWAYS_AI_ORIGIN = "https://play.hara-lang.org";
+export const GREENWAYS_PAGE_SOURCE = "hara-play";
 export const GREENWAYS_OS_SOURCE = "greenways-os";
 export const GREENWAYS_REQUEST_DIRECTION = "request";
 export const GREENWAYS_RESPONSE_DIRECTION = "response";
@@ -99,7 +99,7 @@ export class GreenwaysAiClient {
   requestWithId(operation, payload = {}, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
     if (!this.supportedOrigin) {
       const error = bridgeError(
-        "Greenways OS AI is available on https://playground.hara-lang.org",
+        "Greenways OS AI is available on https://play.hara-lang.org",
         "BRIDGE_UNAVAILABLE",
       );
       return { requestId: null, promise: Promise.reject(error) };

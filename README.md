@@ -1,9 +1,9 @@
-# Hara Playground
+# Hara Play
 
 The browser-native Hara project browser and live kernel editor published at
-`playground.hara-lang.org`.
+`play.hara-lang.org`.
 
-Hara Playground opens a local project, a featured sample project, or a public
+Hara Play opens a local project, a featured sample project, or a public
 GitHub repository; persists it in the browser; boots a long-lived Hara kernel in
 a Web Worker; exposes REPL and InstaREPL workflows; renders HTA output in a
 sandboxed preview; and routes declared Supersonic graphs to browser-owned audio
@@ -14,7 +14,7 @@ output.
 
 ## Interface
 
-The Playground starts with a Hodos-style project browser rather than dropping a
+The Play starts with a Hodos-style project browser rather than dropping a
 new user into an empty IDE. It provides:
 
 - an arbitrary public GitHub project field;
@@ -23,7 +23,7 @@ new user into an empty IDE. It provides:
   model, and Supersonic audio live coding; and
 - a local scratch project using the same project and kernel model.
 
-After a project opens, Hara evaluates its `workspace.edn`, Playground maps the
+After a project opens, Hara evaluates its `workspace.edn`, Play maps the
 manifest into its installed project/editor/output authorities, and Hodos renders
 the recursive responsive shell. The workbench presents a project tree,
 structural Hara editor, kernel status, toolsets and activities, Preview, REPL,
@@ -58,7 +58,7 @@ Ctrl/Cmd + Alt + Arrow Left   forward barf
 Ctrl/Cmd + Shift + F          format buffer
 ```
 
-See [Visual Playground and structural Hara editor](docs/playground-interface.md)
+See [Visual Play and structural Hara editor](docs/playground-interface.md)
 for the interaction model and kernel boundary.
 
 ## Supersonic live coding
@@ -66,7 +66,7 @@ for the interaction model and kernel boundary.
 Open the complete featured project:
 
 ```text
-https://playground.hara-lang.org/?repo=hara-lang/hara-playground&branch=main&path=samples/supersonic-live
+https://play.hara-lang.org/?repo=hara-lang/hara-play&branch=main&path=samples/supersonic-live
 ```
 
 The project declares `:audio/playback`, starts a silent graph, and exposes its
@@ -159,7 +159,7 @@ runtime/rust/host/broker.js
 runtime/rust/host/services.js
 ```
 
-The Playground carries a local HAL compatibility resource for the currently
+The Play carries a local HAL compatibility resource for the currently
 pinned archive. A newly built, Supersonic-complete Studio archive additionally
 provides the canonical reusable provider and namespace:
 
@@ -210,7 +210,7 @@ only capabilities supported by the current host.
 implementation. It declares visible areas, recursive split geometry, documents,
 selection and descriptive customizations. See
 [Workspace manifests](docs/workspace-manifest.md) for the canonical shape and
-the Hara/Playground/Hodos authority boundary.
+the Hara/Play/Hodos authority boundary.
 
 ## Open a GitHub project
 
@@ -225,16 +225,16 @@ https://github.com/owner/repository/tree/branch-name
 Deep links support repositories and monorepo project directories:
 
 ```text
-https://playground.hara-lang.org/?repo=owner/repository
-https://playground.hara-lang.org/?repo=owner/repository&branch=feature/name
-https://playground.hara-lang.org/?repo=owner/repository&branch=main&path=examples/project
-https://playground.hara-lang.org/#github/owner/repository
+https://play.hara-lang.org/?repo=owner/repository
+https://play.hara-lang.org/?repo=owner/repository&branch=feature/name
+https://play.hara-lang.org/?repo=owner/repository&branch=main&path=examples/project
+https://play.hara-lang.org/#github/owner/repository
 ```
 
 ## Repository layout
 
 ```text
-hara-playground/
+hara-play/
 ├── index.html
 ├── runtime.lock.json
 ├── runtime/                  # installed official runtime artifacts
@@ -267,9 +267,9 @@ hara-playground/
 - [Worker protocol](docs/worker-protocol.md)
 - [Security model](docs/security.md)
 - [Supersonic audio live coding](docs/audio-live-coding.md)
-- [Visual Playground and structural editor](docs/playground-interface.md)
+- [Visual Play and structural editor](docs/playground-interface.md)
 - [InstaREPL, toolsets and activities](docs/instarepl-activities.md)
-- [Migration from the original Playground](docs/migration.md)
+- [Migration from the original Play](docs/migration.md)
 - [Roadmap](docs/roadmap.md)
 
 ## License

@@ -1,6 +1,6 @@
 # InstaREPL, toolsets and activities
 
-Hara Playground includes a dependency-free live editing layer on top of the
+Hara Play includes a dependency-free live editing layer on top of the
 persistent worker runtime. It is intentionally implemented independently of the
 `textarea` renderer so the same behaviour can later be attached to CodeMirror,
 Monaco, a structural editor, or a visual document surface.
@@ -8,7 +8,7 @@ Monaco, a structural editor, or a visual document surface.
 ## InstaREPL behaviour
 
 InstaREPL is enabled by default for `.hal` and legacy `.hara` source files. After
-the editor is idle for 420 ms, the Playground chooses one evaluation target:
+the editor is idle for 420 ms, the Play chooses one evaluation target:
 
 1. the current non-empty selection;
 2. the smallest complete top-level collection containing the cursor; or

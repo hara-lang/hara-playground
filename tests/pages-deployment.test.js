@@ -66,7 +66,7 @@ test("exact public assets are compared with the repository and carry a commit ca
   const requested = [];
 
   const report = await verifyPagesDeployment({
-    baseUrl: "https://example.test/hara-playground",
+    baseUrl: "https://example.test/hara-play",
     commit: "abc123",
     repositoryRoot: root,
     exactPaths: ["src/main.js"],
@@ -80,7 +80,7 @@ test("exact public assets are compared with the repository and carry a commit ca
 
   assert.equal(report.attempts, 1);
   assert.deepEqual(requested, [
-    "https://example.test/hara-playground/src/main.js?hara-deployment=abc123"
+    "https://example.test/hara-play/src/main.js?hara-deployment=abc123"
   ]);
 });
 

@@ -6,7 +6,7 @@ import { formatInspectableValue } from "./value-projector.js";
 
 const registry = createHodosComponentRegistry();
 registerHodosValueInspectorUi(registry, {
-  createValueInspectorHost: createPlaygroundValueInspectorHost,
+  createValueInspectorHost: createPlayValueInspectorHost,
 });
 
 let areaHost = null;
@@ -88,7 +88,7 @@ function treeNode(document, value, label, path, expanded, dispatch, signal) {
   return node;
 }
 
-export function createPlaygroundValueInspectorHost({ container, dispatch }) {
+export function createPlayValueInspectorHost({ container, dispatch }) {
   if (!container) throw new Error("Hodos Value Inspector requires a container");
   const document = container.ownerDocument || globalThis.document;
   const abort = new AbortController();
@@ -190,7 +190,7 @@ export function createPlaygroundValueInspectorHost({ container, dispatch }) {
   };
 }
 
-export function valueInspectorAreaFromPlayground(state) {
+export function valueInspectorAreaFromPlay(state) {
   const inspector = state.valueInspector || {};
   return createValueInspectorArea({
     id: "value/main",
@@ -227,12 +227,12 @@ export function mountHodosValueInspector(state) {
       }));
     },
   });
-  areaHost.open(valueInspectorAreaFromPlayground(state));
+  areaHost.open(valueInspectorAreaFromPlay(state));
   return true;
 }
 
 export function updateHodosValueInspector(state) {
   if (!areaHost) return false;
-  areaHost.update(valueInspectorAreaFromPlayground(state));
+  areaHost.update(valueInspectorAreaFromPlay(state));
   return true;
 }

@@ -10,7 +10,7 @@
  #{:studio/eval
    :preview/hta}
 
- ;; The Playground reads this small extension after the Hara kernel boots.
+ ;; The Play reads this small extension after the Hara kernel boots.
  ;; The worker creates the clocked activity first, then stages this file as a
  ;; replaceable controller inside that already-running loop.
  :playground/active-loop

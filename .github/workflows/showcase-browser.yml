@@ -1,4 +1,4 @@
-name: Playground Showcase browser
+name: Play Showcase browser
 
 on:
   pull_request:

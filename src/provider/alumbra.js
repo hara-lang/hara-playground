@@ -79,7 +79,7 @@ export function createAlumbraWorldProviderRegistration({
       return Object.freeze({
         snapshot() {
           return deepFreeze({
-            format: "hara-playground.alumbra-provider-evidence/1",
+            format: "hara-play.alumbra-provider-evidence/1",
             status,
             providerId: launch.providerId,
             activityId: launch.activityId,

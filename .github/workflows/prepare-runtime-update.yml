@@ -141,7 +141,7 @@ jobs:
           - installed the archive through the atomic pinned-runtime installer
           - verified \`rust/studio/supersonic.js\`
           - verified \`rust/studio/hal/supersonic.hal\`
-          - passed the complete Playground test, syntax-check, and production-build suite
+          - passed the complete Play test, syntax-check, and production-build suite
           - confirmed that \`runtime.lock.json\` is the only tracked change
           - explicitly dispatched the ordinary CI workflow for the generated commit
 

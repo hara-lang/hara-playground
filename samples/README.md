@@ -1,9 +1,9 @@
-# Playground sample corpus
+# Play sample corpus
 
 `samples/catalog.json` is the machine-readable inventory for every project under
 `samples/`. It does not replace `project.edn`: each sample's `project.edn` remains
 the sole contributor-authored package/project manifest. The catalog records how
-the Playground validates and presents those projects against an exact draft
+the Play validates and presents those projects against an exact draft
 specification revision and pinned browser runtime.
 
 The catalog gate checks:
@@ -66,7 +66,7 @@ contact an external model provider.
 
 1. Keep package, build, extension, dependency, capability, and runtime-profile
    intent in `project.edn`.
-2. Keep Playground-only presentation or host metadata outside the package
+2. Keep Play-only presentation or host metadata outside the package
    manifest. A temporary exception must be listed under `manifestExtensions`
    with a reason and an open issue.
 3. Add or update `runtimeValidation` with one safe full-source load, deterministic

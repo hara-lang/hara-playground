@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 
-const baseUrl = process.env.HARA_PLAYGROUND_URL || "https://playground.hara-lang.org/";
+const baseUrl = process.env.HARA_PLAY_URL || "https://play.hara-lang.org/";
 const target = new URL("provider.html", baseUrl);
 target.searchParams.set("provider", "alumbra/world");
 target.searchParams.set("world", "https://github.com/greenways-ai/alumbra");
@@ -56,7 +56,7 @@ try {
 
   const outer = await page.evaluate(() => {
     const iframe = document.querySelector(".playground-provider-frame");
-    const evidence = window.__HARA_PLAYGROUND_PROVIDER_WORLD__;
+    const evidence = window.__HARA_PLAY_PROVIDER_WORLD__;
     return {
       title: document.title,
       ready: document.documentElement.dataset.playgroundProviderReady || "",

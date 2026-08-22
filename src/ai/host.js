@@ -17,7 +17,7 @@ const REQUEST_KEYS = new Set([
 const MESSAGE_KEYS = new Set(["role", "content"]);
 const MESSAGE_ROLES = new Set(["system", "user", "assistant"]);
 
-export class PlaygroundAiHost {
+export class PlayAiHost {
   constructor({ runtime, client = null } = {}) {
     if (!runtime) throw new Error("ai/runtime-required");
     this.client = client || new GreenwaysAiClient();

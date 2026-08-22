@@ -9,7 +9,7 @@ const shell = fs.readFileSync(new URL("../src/hodos/workspace-shell.js", import.
 const manifest = fs.readFileSync(new URL("../src/workspace/manifest.js", import.meta.url), "utf8");
 const styles = fs.readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 
-test("the active Playground shell mounts through Hodos without a competing controller", () => {
+test("the active Play shell mounts through Hodos without a competing controller", () => {
   assert.match(main, /mountHodosWorkspaceShell/);
   assert.match(main, /disposeHodosWorkspaceShell/);
   assert.doesNotMatch(main, /installWorkspaceLayout/);

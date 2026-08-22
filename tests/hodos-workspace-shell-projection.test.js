@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   playgroundAreaIds,
-  projectPlaygroundWorkspace,
+  projectPlayWorkspace,
 } from "../src/hodos/workspace-shell-state.js";
 
 const supersonic = {
@@ -20,10 +20,10 @@ const supersonic = {
 
 function state(view = supersonic, surfaceId = null, presentation = null) {
   return {
-    workspace: "github/hara-lang/hara-playground/samples/supersonic-live",
+    workspace: "github/hara-lang/hara-play/samples/supersonic-live",
     presentation,
     workspaceShell: {
-      workspaceId: "github/hara-lang/hara-playground/samples/supersonic-live",
+      workspaceId: "github/hara-lang/hara-play/samples/supersonic-live",
       view,
       surfaceId,
     },
@@ -39,8 +39,8 @@ function layoutAreaIds(layout, output = []) {
   return output;
 }
 
-test("Playground projection synthesizes project, editor and output shell geometry", () => {
-  const descriptor = projectPlaygroundWorkspace(state());
+test("Play projection synthesizes project, editor and output shell geometry", () => {
+  const descriptor = projectPlayWorkspace(state());
   const ids = [...playgroundAreaIds(descriptor)];
   assert.equal(descriptor["workspace/id"], "playground-supersonic-live");
   assert.deepEqual(ids, ["area/playground-project", "area/editor", "area/audio"]);
@@ -54,8 +54,8 @@ test("Playground projection synthesizes project, editor and output shell geometr
   assert.equal(descriptor["workspace/customizations"]["presentation/mode"], "studio");
 });
 
-test("Playground projection collapses output aliases while preserving surface identity", () => {
-  const descriptor = projectPlaygroundWorkspace(state(supersonic, "repl"));
+test("Play projection collapses output aliases while preserving surface identity", () => {
+  const descriptor = projectPlayWorkspace(state(supersonic, "repl"));
   const areas = descriptor["workspace/areas"];
   assert.equal(areas.some((area) => area["area/id"] === "area/repl"), false);
   assert.equal(descriptor["workspace/selection"]["surface/id"], "repl");
@@ -67,7 +67,7 @@ test("Playground projection collapses output aliases while preserving surface id
   }
 });
 
-test("Playground projection removes component descriptors and preserves unsupported areas", () => {
+test("Play projection removes component descriptors and preserves unsupported areas", () => {
   const view = {
     ...supersonic,
     "workspace/layout": {
@@ -84,7 +84,7 @@ test("Playground projection removes component descriptors and preserves unsuppor
       { "area/id": "area/custom", "area/type": "custom/timeline", "area/title": "Timeline" },
     ],
   };
-  const descriptor = projectPlaygroundWorkspace(state(view));
+  const descriptor = projectPlayWorkspace(state(view));
   assert.equal(descriptor["workspace/areas"].some((area) => area["area/component"]), false);
   const custom = descriptor["workspace/areas"].find((area) => area["area/id"] === "area/custom");
   assert.equal(custom["area/presentation"]["presentation/role"], "unsupported");
@@ -92,7 +92,7 @@ test("Playground projection removes component descriptors and preserves unsuppor
 });
 
 test("Showcase projection uses one declared surface and overrides carried selection", () => {
-  const descriptor = projectPlaygroundWorkspace(state(
+  const descriptor = projectPlayWorkspace(state(
     supersonic,
     "code",
     { mode: "showcase", surfaceId: "repl" },

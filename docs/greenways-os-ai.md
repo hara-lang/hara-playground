@@ -1,18 +1,18 @@
-# Greenways OS AI in Hara Playground
+# Greenways OS AI in Hara Play
 
-Hara Playground can ask an AI provider through keys installed in Greenways OS. Playground never receives, stores, logs, or exports the provider credential.
+Hara Play can ask an AI provider through keys installed in Greenways OS. Play never receives, stores, logs, or exports the provider credential.
 
 ## Connection flow
 
-1. Load the Greenways OS extension build that includes the Playground bridge.
-2. Open `https://playground.hara-lang.org`.
-3. Select **AI** in the Playground editor or project lobby.
+1. Load the Greenways OS extension build that includes the Play bridge.
+2. Open `https://play.hara-lang.org`.
+3. Select **AI** in the Play editor or project lobby.
 4. Select **Open Greenways OS**.
-5. In the Greenways screen, approve the current Hara Playground manifest and its bounded `model/generate` capability.
+5. In the Greenways screen, approve the current Hara Play manifest and its bounded `model/generate` capability.
 6. Add an OpenRouter, OpenAI, or Anthropic provider profile. The credential is retained only for the browser session.
-7. Return to Playground, refresh the connection, select the public provider profile, enter a provider model ID, and ask a question.
+7. Return to Play, refresh the connection, select the public provider profile, enter a provider model ID, and ask a question.
 
-The current file can be included as bounded context. Playground truncates very large buffers before sending the typed request. The extension independently enforces the exact production origin, current app approval, active capability grant, provider profile, network permission, input size, output-token limit, and timeout.
+The current file can be included as bounded context. Play truncates very large buffers before sending the typed request. The extension independently enforces the exact production origin, current app approval, active capability grant, provider profile, network permission, input size, output-token limit, and timeout.
 
 ## Website protocol
 
@@ -56,9 +56,9 @@ locally.
 
 To run the example:
 
-1. Install or load Greenways OS with the Hara Playground bridge.
+1. Install or load Greenways OS with the Hara Play bridge.
 2. Load a provider credential into a session-only provider profile.
-3. Open `https://playground.hara-lang.org`, then install and approve Hara Playground in Greenways OS.
+3. Open `https://play.hara-lang.org`, then install and approve Hara Play in Greenways OS.
 4. Grant `model/generate` and approve the selected provider's exact network origin.
 5. Open the **Greenways OS AI capability** sample, replace its public profile and model IDs, and evaluate `(ask)`.
 

@@ -4,7 +4,7 @@ import { SupersonicWebAudioEngine } from "./web-audio-engine.js";
 const AUDIO_CAPABILITY = "audio/playback";
 const NOOP = () => {};
 
-export class PlaygroundAudioHost {
+export class PlayAudioHost {
   constructor({ runtime, storage = null, onChange = NOOP, engine = null } = {}) {
     if (!runtime) throw new Error("audio/runtime-required");
     this.runtime = runtime;

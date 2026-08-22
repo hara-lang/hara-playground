@@ -18,10 +18,10 @@ function normalizeSelection(value, sourceLength) {
 }
 
 /**
- * Validate and normalize the Hodos Editor event projected into Playground.
+ * Validate and normalize the Hodos Editor event projected into Play.
  *
  * The function is deliberately pure: Hodos supplies semantic component events,
- * while the Playground controller decides how those events affect application
+ * while the Play controller decides how those events affect application
  * state, persistence, completion, and InstaREPL scheduling.
  */
 export function editorWorkspacePatch(value, currentSource = "") {
